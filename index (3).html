@@ -1,0 +1,1740 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#FFFFFF" id="themeColor">
+<title>책장 · 나의 독서 기록</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FFFFFF; --paper-2:#F3F6FB; --ink:#16243F; --ink-soft:#44516B;
+    --muted:#8B93A7; --line:#E2E7F0; --line-soft:#EEF1F7;
+    --seal:#1E4D8C; --seal-soft:#C5D6EC;
+    --surface:#FFFFFF; --on-accent:#FFFFFF; --header-bg:rgba(255,255,255,.85); --btn-primary-hover:#0F1A30;
+    --c-invest:#2E5E4E; --c-mgmt:#3B5070; --c-lit:#7A3B5E; --c-self:#8A6A2E; --c-etc:#5A5550;
+    --shadow:0 1px 2px rgba(20,30,55,.05), 0 8px 24px rgba(20,30,55,.08);
+    --serif:'Noto Serif KR', 'Apple SD Gothic Neo', serif;
+    --sans:'Noto Sans KR', 'Apple SD Gothic Neo', system-ui, sans-serif;
+  }
+  body.dark{
+    --paper:#0F141D; --paper-2:#202A3A; --ink:#E6EBF3; --ink-soft:#A7B2C4;
+    --muted:#7B8597; --line:#2B3445; --line-soft:#222A38;
+    --seal:#6BA6E6; --seal-soft:#33486A;
+    --surface:#182030; --on-accent:#0E1420; --header-bg:rgba(15,20,29,.82); --btn-primary-hover:#FFFFFF;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 26px rgba(0,0,0,.5);
+  }
+  body.dark .status.done{background:#1C2E26;color:#7FCBA8}
+  body.dark .status.reading{background:#1A2740;color:#7FB0EA}
+  body.dark .dr.up.on{background:#1C2E26;border-color:#2E5E4E;color:#7FCBA8}
+  body.dark .dr.down.on{background:var(--paper-2);border-color:var(--line);color:var(--muted)}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{font-family:var(--sans); background:var(--paper); color:var(--ink); -webkit-font-smoothing:antialiased; line-height:1.55}
+  button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+  input,textarea,select{font-family:inherit;font-size:14px;color:var(--ink)}
+  ::selection{background:var(--seal-soft)}
+  img{display:block}
+
+  /* ---- Top bar ---- */
+  header{position:sticky;top:0;z-index:40;background:var(--header-bg);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+  .bar{max-width:1180px;margin:0 auto;padding:14px 24px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+  .brand{display:flex;align-items:baseline;gap:10px;flex-shrink:0}
+  .brand .seal{width:30px;height:30px;border-radius:7px;border:1.5px solid var(--seal);color:var(--seal);font-family:var(--serif);font-weight:700;font-size:16px;display:flex;align-items:center;justify-content:center;transform:rotate(-4deg);align-self:center}
+  .brand h1{font-family:var(--serif);font-size:21px;font-weight:600;letter-spacing:-.01em}
+  .brand small{color:var(--muted);font-size:12px;margin-left:2px}
+  .search{flex:1;min-width:200px;position:relative}
+  .search input{width:100%;padding:9px 14px 9px 38px;border:1px solid var(--line);border-radius:10px;background:var(--surface);outline:none;transition:border-color .15s,box-shadow .15s}
+  .search input:focus{border-color:var(--ink-soft);box-shadow:0 0 0 3px rgba(30,77,140,.16)}
+  .search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted)}
+  .actions{display:flex;gap:8px;flex-shrink:0}
+  .btn{padding:9px 15px;border-radius:10px;font-size:13.5px;font-weight:500;border:1px solid var(--line);background:var(--surface);transition:.15s;white-space:nowrap}
+  .btn:hover{border-color:var(--ink-soft);background:var(--paper-2)}
+  .btn.primary{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+  .btn.primary:hover{background:var(--btn-primary-hover)}
+  .btn.ghost{border-color:transparent;color:var(--muted)}
+  .btn.ghost:hover{color:var(--ink);background:var(--paper-2)}
+  .btn:disabled{opacity:.5;cursor:default}
+  .theme-toggle{padding:9px 11px;font-size:15px;line-height:1}
+
+  /* ---- Sub bar ---- */
+  .subbar{max-width:1180px;margin:0 auto;padding:12px 24px 0;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .chips{display:flex;gap:7px;flex-wrap:wrap}
+  .chip{padding:6px 13px;border-radius:999px;font-size:12.5px;font-weight:500;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);transition:.15s}
+  .chip:hover{border-color:var(--ink-soft)}
+  .chip.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+  .chip .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:middle}
+  .tagchip{padding:6px 11px;border-radius:999px;font-size:12px;font-weight:500;border:1px solid var(--seal-soft);background:var(--surface);color:var(--seal);display:inline-flex;align-items:center;gap:6px}
+  .tagchip b{font-weight:600}
+  .tagchip .rm{font-size:14px;line-height:1;opacity:.7}
+  .tagchip:hover .rm{opacity:1}
+  .spacer{flex:1}
+  .tool{padding:7px 12px;border:1px solid var(--line);border-radius:9px;background:var(--surface);font-size:12.5px;color:var(--ink-soft);display:inline-flex;align-items:center;gap:6px;transition:.15s}
+  .tool:hover{border-color:var(--ink-soft)}
+  .tool.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+  .viewtog{display:flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;background:var(--surface)}
+  .viewtog button{padding:7px 12px;font-size:12.5px;color:var(--muted);transition:.15s}
+  .viewtog button.on{background:var(--ink);color:var(--paper)}
+  .sortsel{padding:7px 11px;border:1px solid var(--line);border-radius:9px;background:var(--surface);font-size:12.5px;color:var(--ink-soft)}
+
+  /* ---- Tag cloud panel ---- */
+  .tagcloud{max-width:1180px;margin:12px auto 0;padding:0 24px;overflow:hidden;max-height:0;transition:max-height .25s ease}
+  .tagcloud.open{max-height:340px}
+  .tagcloud-inner{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:flex;flex-wrap:wrap;gap:9px;align-items:center}
+  .tagcloud .tc-empty{color:var(--muted);font-size:13px}
+  .tc{border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:6px 13px;color:var(--ink-soft);transition:.15s;line-height:1.2}
+  .tc:hover{border-color:var(--seal);color:var(--seal)}
+  .tc.on{background:var(--seal);color:var(--on-accent);border-color:var(--seal)}
+  .tc .cnt{opacity:.55;font-size:.82em;margin-left:5px}
+  .tc.on .cnt{opacity:.8}
+
+  /* ---- Stats strip ---- */
+  .stats{max-width:1180px;margin:14px auto 0;padding:0 24px;display:flex;gap:26px;flex-wrap:wrap;color:var(--muted);font-size:12.5px}
+  .stats b{font-family:var(--serif);color:var(--ink);font-size:18px;font-weight:600;margin-right:5px}
+
+  /* ---- Main / grids ---- */
+  main{max-width:1180px;margin:0 auto;padding:22px 24px 80px}
+
+  /* shelf view */
+  .grid.shelf{display:grid;grid-template-columns:repeat(auto-fill,minmax(146px,1fr));gap:26px 20px}
+  .shelf .item{cursor:pointer}
+  .cover{position:relative;width:100%;aspect-ratio:2/3;border-radius:5px;overflow:hidden;background:var(--cc,var(--c-etc));box-shadow:0 2px 4px rgba(20,30,55,.12),0 10px 22px rgba(20,30,55,.15);transition:transform .15s,box-shadow .15s}
+  .shelf .item:hover .cover{transform:translateY(-5px);box-shadow:0 4px 8px rgba(20,30,55,.16),0 16px 30px rgba(20,30,55,.22)}
+  .cover img{width:100%;height:100%;object-fit:cover}
+  .cover::after{content:"";position:absolute;left:0;top:0;bottom:0;width:7px;background:linear-gradient(90deg,rgba(0,0,0,.22),rgba(0,0,0,0));pointer-events:none}
+  .cover.ph img{display:none}
+  .ph-body{display:none}
+  .cover.ph .ph-body{display:flex;flex-direction:column;justify-content:space-between;height:100%;padding:16px 14px;color:rgba(255,255,255,.95)}
+  .ph-body .pt{font-family:var(--serif);font-weight:600;font-size:15px;line-height:1.3;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+  .ph-body .pa{font-size:11px;opacity:.8}
+  .shelf .meta{margin-top:9px}
+  .shelf .meta .t{font-family:var(--serif);font-size:13.5px;font-weight:600;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .shelf .meta .a{font-size:11.5px;color:var(--muted);margin-top:2px;display:flex;align-items:center;justify-content:space-between;gap:6px}
+  .shelf .seal-rate i{width:10px;height:10px}
+
+  /* card view */
+  .grid.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:18px}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden;cursor:pointer;transition:transform .14s,box-shadow .14s,border-color .14s;display:flex;flex-direction:column}
+  .card:hover{transform:translateY(-3px);box-shadow:var(--shadow);border-color:var(--line-soft)}
+  .card .top{display:flex;gap:0}
+  .card .spine{height:7px;width:100%}
+  .card-body{padding:16px 16px 14px;display:flex;flex-direction:column;flex:1}
+  .card .cat{font-size:11px;font-weight:600;letter-spacing:.02em;margin-bottom:6px}
+  .card h3{font-family:var(--serif);font-size:16.5px;font-weight:600;line-height:1.35;letter-spacing:-.01em;margin-bottom:3px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .card .author{font-size:12.5px;color:var(--muted);margin-bottom:10px}
+  .card .oneliner{font-size:12.5px;color:var(--ink-soft);line-height:1.5;flex:1;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+  .card-foot{display:flex;align-items:center;justify-content:space-between;margin-top:12px;padding-top:11px;border-top:1px solid var(--line-soft)}
+  .status{font-size:11px;font-weight:600;padding:3px 9px;border-radius:999px}
+  .status.done{background:#E8F0EC;color:var(--c-invest)}
+  .status.reading{background:#E8EEF8;color:#1E4D8C}
+  .status.todo{background:var(--paper-2);color:var(--muted)}
+  .seal-rate{display:flex;gap:3px}
+  .seal-rate i{width:13px;height:13px;border-radius:3px;border:1px solid var(--seal-soft);display:block}
+  .seal-rate i.f{background:var(--seal);border-color:var(--seal)}
+
+  /* ---- Empty ---- */
+  .empty{text-align:center;padding:90px 20px;color:var(--muted)}
+  .empty .em-seal{width:64px;height:64px;border:2px solid var(--seal);border-radius:14px;color:var(--seal);font-family:var(--serif);font-weight:700;font-size:34px;display:flex;align-items:center;justify-content:center;margin:0 auto 22px;transform:rotate(-5deg)}
+  .empty h2{font-family:var(--serif);color:var(--ink);font-size:20px;font-weight:600;margin-bottom:8px}
+  .empty p{font-size:14px;margin-bottom:22px}
+
+  /* ---- Modal ---- */
+  .overlay{position:fixed;inset:0;background:rgba(16,24,42,.5);z-index:60;display:none;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto}
+  .overlay.show{display:flex}
+  .modal{background:var(--paper);border-radius:18px;width:100%;max-width:680px;box-shadow:0 24px 70px rgba(16,24,42,.32);animation:rise .22s ease}
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  .modal-head{display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid var(--line)}
+  .modal-head h2{font-family:var(--serif);font-size:19px;font-weight:600}
+  .x{width:32px;height:32px;border-radius:9px;color:var(--muted);font-size:20px;display:flex;align-items:center;justify-content:center;transition:.15s}
+  .x:hover{background:var(--paper-2);color:var(--ink)}
+  .modal-body{padding:22px 24px}
+  .modal-foot{padding:16px 24px;border-top:1px solid var(--line);display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
+
+  .field{margin-bottom:16px}
+  .field label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px;letter-spacing:.01em}
+  .field input,.field textarea,.field select{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);outline:none;transition:.15s;line-height:1.5}
+  .field input:focus,.field textarea:focus,.field select:focus{border-color:var(--ink-soft);box-shadow:0 0 0 3px rgba(30,77,140,.16)}
+  .field textarea{resize:vertical;min-height:64px}
+  .row{display:flex;gap:14px}
+  .row .field{flex:1}
+  .rate-edit{display:flex;gap:6px}
+  .rate-edit i{width:26px;height:26px;border-radius:6px;border:1.5px solid var(--seal-soft);cursor:pointer;transition:.12s}
+  .rate-edit i:hover{transform:scale(1.08)}
+  .rate-edit i.f{background:var(--seal);border-color:var(--seal)}
+
+  /* lookup box */
+  .qbox{background:var(--paper-2);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px}
+  .qbox .qh{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;margin-bottom:10px}
+  .qbox .qh .b{font-size:10px;font-weight:700;color:var(--c-mgmt);border:1px solid #cdd6e4;border-radius:5px;padding:2px 6px;letter-spacing:.04em}
+  .qrow{display:flex;gap:8px}
+  .qrow input{flex:1;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);outline:none}
+  .qnote{font-size:11.5px;color:var(--muted);margin-top:8px}
+  .qnote.err{color:var(--seal)}
+  .lk-results{margin-top:12px;display:flex;flex-direction:column;gap:7px;max-height:260px;overflow-y:auto}
+  .lk-item{display:flex;gap:11px;align-items:center;text-align:left;padding:8px;border:1px solid var(--line);border-radius:10px;background:var(--surface);transition:.13s;width:100%}
+  .lk-item:hover{border-color:var(--c-mgmt);background:var(--surface)}
+  .lk-cover{width:38px;height:54px;border-radius:4px;flex-shrink:0;background:var(--c-etc);overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+  .lk-cover img{width:100%;height:100%;object-fit:cover}
+  .lk-info{min-width:0}
+  .lk-t{font-family:var(--serif);font-size:14px;font-weight:600;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .lk-m{font-size:11.5px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+  /* AI box */
+  .ai-box{background:var(--paper-2);border:1px dashed var(--line);border-radius:12px;padding:16px;margin-bottom:18px}
+  .ai-box .ai-h{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;margin-bottom:9px}
+  .ai-box .ai-h .b{font-size:10px;font-weight:700;color:var(--seal);border:1px solid var(--seal-soft);border-radius:5px;padding:2px 6px;letter-spacing:.04em}
+  .ai-box textarea{width:100%;min-height:80px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);outline:none;resize:vertical}
+  .ai-box .ai-row{display:flex;gap:10px;align-items:center;margin-top:10px}
+  .ai-note{font-size:11.5px;color:var(--muted);flex:1}
+  .ai-note.err{color:var(--seal)}
+
+  /* cover edit */
+  .cover-edit{display:flex;gap:12px;align-items:flex-start}
+  .cv-thumb{width:54px;height:78px;border-radius:5px;flex-shrink:0;background:var(--paper-2);border:1px dashed var(--line);overflow:hidden;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:10px;text-align:center}
+  .cv-thumb img{width:100%;height:100%;object-fit:cover}
+  .cover-edit input{flex:1}
+
+  /* ---- Detail ---- */
+  .detail .d-spine{height:8px;border-radius:18px 18px 0 0}
+  .d-head{padding:24px 30px 18px;display:flex;gap:20px}
+  .d-cover{width:96px;flex-shrink:0;aspect-ratio:2/3;border-radius:6px;overflow:hidden;background:var(--cc,var(--c-etc));box-shadow:var(--shadow);position:relative}
+  .d-cover img{width:100%;height:100%;object-fit:cover}
+  .d-cover.ph img{display:none}
+  .d-cover .ph-mini{display:none}
+  .d-cover.ph .ph-mini{display:flex;align-items:center;justify-content:center;height:100%;padding:10px;color:rgba(255,255,255,.95);font-family:var(--serif);font-weight:600;font-size:13px;text-align:center;line-height:1.3}
+  .d-htext{min-width:0;flex:1}
+  .d-cat{font-size:12px;font-weight:600;margin-bottom:9px}
+  .d-head h2{font-family:var(--serif);font-size:25px;font-weight:700;line-height:1.3;letter-spacing:-.015em;margin-bottom:6px}
+  .d-meta{display:flex;align-items:center;gap:13px;flex-wrap:wrap;color:var(--muted);font-size:13px}
+  .d-meta .seal-rate i{width:15px;height:15px}
+  .d-pub{font-size:12.5px;color:var(--muted);margin-top:7px}
+  .d-body{padding:4px 30px 26px}
+  .d-sec{margin-bottom:22px}
+  .d-sec h4{font-size:12px;font-weight:700;letter-spacing:.06em;color:var(--seal);text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:9px}
+  .d-sec h4::after{content:"";flex:1;height:1px;background:var(--line)}
+  .d-sec p{font-size:14.5px;line-height:1.72;color:var(--ink-soft);white-space:pre-wrap}
+  .d-sec ul{list-style:none;display:flex;flex-direction:column;gap:9px}
+  .d-sec li{font-size:14.5px;line-height:1.6;color:var(--ink-soft);padding-left:20px;position:relative}
+  .d-sec li::before{content:"—";position:absolute;left:0;color:var(--seal)}
+  .quote{font-family:var(--serif);font-size:16px;font-style:italic;line-height:1.7;color:var(--ink);border-left:3px solid var(--seal);padding:4px 0 4px 18px;margin-bottom:12px;white-space:pre-wrap}
+  .tags{display:flex;gap:7px;flex-wrap:wrap;margin-top:4px}
+  .tags span{font-size:12px;color:var(--seal);background:var(--surface);border:1px solid var(--seal-soft);border-radius:999px;padding:4px 11px;cursor:pointer;transition:.13s}
+  .tags span:hover{background:var(--seal);color:var(--on-accent)}
+
+  /* photo attach (editor) */
+  .btn.small{padding:7px 12px;font-size:12.5px}
+  .photo-attach{display:flex;align-items:center;gap:10px;margin-top:9px;flex-wrap:wrap}
+  .photo-hint{font-size:11.5px;color:var(--muted)}
+  .photo-grid{display:flex;flex-direction:column;gap:10px;margin-top:11px}
+  .shot{display:flex;gap:11px;align-items:flex-start;background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:9px}
+  .shot-thumb{width:62px;height:84px;border-radius:7px;overflow:hidden;flex-shrink:0;border:1px solid var(--line);background:var(--paper-2)}
+  .shot-thumb img{width:100%;height:100%;object-fit:cover;cursor:zoom-in}
+  .shot-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+  .shot-text{width:100%;min-height:58px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--paper);outline:none;resize:vertical;font-size:13px;line-height:1.5}
+  .shot-text:focus{border-color:var(--ink-soft);box-shadow:0 0 0 3px rgba(30,77,140,.16)}
+  .shot-meta{display:flex;align-items:center;gap:10px;min-height:18px}
+  .ocr-status{font-size:11.5px;color:var(--seal);display:inline-flex;align-items:center;gap:6px}
+  .ocr-status::before{content:"";width:11px;height:11px;border:2px solid var(--seal-soft);border-top-color:var(--seal);border-radius:50%;animation:spin .7s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .ocr-read{font-size:11.5px;font-weight:600;color:var(--seal);border:1px solid var(--seal-soft);border-radius:7px;padding:3px 9px;transition:.13s}
+  .ocr-read:hover{background:var(--seal);color:var(--on-accent)}
+  .shot-del{width:24px;height:24px;border-radius:7px;color:var(--muted);font-size:16px;line-height:1;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:.13s}
+  .shot-del:hover{background:var(--paper-2);color:var(--seal)}
+  /* detail: photographed quote */
+  .shot-view{margin-top:12px}
+  .shot-view img{width:170px;max-width:100%;border-radius:10px;border:1px solid var(--line);cursor:zoom-in;transition:.15s;display:block}
+  .shot-view img:hover{border-color:var(--seal)}
+  .shot-cap{font-family:var(--serif);font-size:14.5px;font-style:italic;line-height:1.6;color:var(--ink);border-left:3px solid var(--seal-soft);padding:3px 0 3px 14px;margin-top:9px;white-space:pre-wrap}
+  .pthumb{position:relative;width:74px;height:74px;border-radius:9px;overflow:hidden;border:1px solid var(--line)}
+  .pthumb img{width:100%;height:100%;object-fit:cover;cursor:zoom-in}
+  .pthumb .del{position:absolute;top:3px;right:3px;width:21px;height:21px;border-radius:50%;background:rgba(16,24,42,.72);color:var(--on-accent);font-size:14px;line-height:1;display:flex;align-items:center;justify-content:center;transition:.13s}
+  .pthumb .del:hover{background:var(--seal)}
+  /* quote photos (detail) */
+  .quote-photos{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px}
+  .quote-photos img{width:124px;height:124px;object-fit:cover;border-radius:10px;border:1px solid var(--line);cursor:zoom-in;transition:border-color .15s,transform .15s}
+  .quote-photos img:hover{border-color:var(--seal);transform:translateY(-2px)}
+  /* lightbox */
+  .lightbox{position:fixed;inset:0;background:rgba(16,24,42,.9);z-index:80;display:none;align-items:center;justify-content:center;padding:24px;cursor:zoom-out}
+  .lightbox.show{display:flex}
+  .lightbox img{max-width:92vw;max-height:92vh;border-radius:8px;box-shadow:0 20px 60px rgba(0,0,0,.55)}
+  /* daily quote card */
+  .daily{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:clamp(22px,4vw,30px) clamp(20px,4vw,32px) clamp(20px,3.5vw,26px);margin-bottom:22px;overflow:hidden}
+  .daily::before{content:"\201C";position:absolute;top:-14px;left:16px;font-family:var(--serif);font-size:128px;line-height:1;color:var(--seal-soft);opacity:.55;pointer-events:none}
+  .daily-eyebrow{position:relative;z-index:2;display:flex;align-items:center;gap:8px;font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--seal);margin-bottom:14px}
+  .daily-shuffle{margin-left:auto;width:30px;height:30px;border-radius:8px;border:1px solid var(--line);color:var(--muted);font-size:15px;display:flex;align-items:center;justify-content:center;transition:transform .25s,border-color .15s,color .15s}
+  .daily-shuffle:hover{border-color:var(--seal);color:var(--seal);transform:rotate(180deg)}
+  .daily-text{position:relative;z-index:1;font-family:var(--serif);font-size:clamp(17px,2.2vw,21px);line-height:1.62;color:var(--ink);font-style:italic;cursor:pointer;white-space:pre-wrap}
+  .daily-src{position:relative;z-index:1;margin-top:16px;font-size:13px;color:var(--muted);cursor:pointer;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .daily-src .dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+  .daily-src b{font-family:var(--serif);font-weight:600;color:var(--ink-soft)}
+  .daily-src:hover b{color:var(--seal)}
+  .daily-react{display:flex;gap:8px;margin-top:16px;padding-top:14px;border-top:1px solid var(--line-soft)}
+  .dr{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border:1px solid var(--line);border-radius:9px;font-size:12.5px;font-weight:500;color:var(--ink-soft);background:var(--surface);transition:.14s}
+  .dr span{font-weight:600}
+  .dr:hover{border-color:var(--ink-soft)}
+  .dr.up.on{background:#E7F1EC;border-color:#9ECBB4;color:#2F6A52}
+  .dr.down.on{background:var(--paper-2);border-color:var(--line);color:var(--muted)}
+  /* now reading band */
+  .nowreading{margin-bottom:26px;background:var(--paper-2);border:1px solid var(--line);border-radius:16px;padding:16px 18px}
+  .nr-head{font-family:var(--serif);font-size:14.5px;font-weight:600;color:var(--ink);margin-bottom:13px;display:flex;align-items:center;gap:8px}
+  .nr-head span{font-family:var(--sans);font-size:11px;font-weight:600;color:var(--on-accent);background:var(--seal);border-radius:999px;padding:1px 8px}
+  .nr-row{display:flex;gap:12px;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin}
+  .nr-card{flex:0 0 auto;width:236px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:11px}
+  .nr-top{display:flex;gap:11px;cursor:pointer}
+  .nr-cover{width:44px;height:62px;border-radius:5px;flex-shrink:0;overflow:hidden;background:var(--cc,var(--c-etc));box-shadow:var(--shadow);position:relative}
+  .nr-cover img{width:100%;height:100%;object-fit:cover}
+  .nr-cover.ph img{display:none}
+  .nr-cover .ph-mini2{display:none}
+  .nr-cover.ph .ph-mini2{display:flex;align-items:center;justify-content:center;height:100%;padding:5px;color:rgba(255,255,255,.95);font-family:var(--serif);font-size:9px;text-align:center;line-height:1.2;overflow:hidden}
+  .nr-info{min-width:0}
+  .nr-info .t{font-family:var(--serif);font-size:14px;font-weight:600;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .nr-info .a{font-size:11.5px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .nr-actions{display:flex;gap:7px}
+  .nr-actions button{flex:1;padding:8px 6px;border:1px solid var(--line);border-radius:9px;background:var(--surface);font-size:12.5px;font-weight:500;color:var(--ink-soft);transition:.14s;display:flex;align-items:center;justify-content:center;gap:5px}
+  .nr-actions button:hover{border-color:var(--seal);color:var(--seal)}
+  /* quick sheet + toast */
+  .modal.quick{max-width:520px}
+  .toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--on-accent);padding:11px 20px;border-radius:999px;font-size:13px;font-weight:500;box-shadow:0 10px 30px rgba(16,24,42,.35);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:90;max-width:88vw;text-align:center}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  /* primary tabs */
+  .tabs{max-width:1180px;margin:0 auto;padding:2px clamp(16px,4vw,24px) 0;display:flex;gap:4px;border-bottom:1px solid var(--line)}
+  .tab{position:relative;padding:11px 16px 13px;font-size:14px;font-weight:600;color:var(--muted);transition:color .15s;display:flex;align-items:center;gap:7px}
+  .tab:hover{color:var(--ink-soft)}
+  .tab.on{color:var(--ink)}
+  .tab.on::after{content:"";position:absolute;left:12px;right:12px;bottom:-1px;height:2px;background:var(--seal);border-radius:2px}
+  .tab .tc-count{font-size:11px;font-weight:600;color:var(--muted);background:var(--paper-2);border-radius:999px;padding:1px 8px;min-width:20px;text-align:center}
+  .tab.on .tc-count{background:var(--seal-soft);color:var(--seal)}
+  /* excerpts (commonplace) view */
+  #excerptsView{padding-top:2px}
+  .excerpts{columns:1;column-gap:16px}
+  @media(min-width:640px){.excerpts{columns:2}}
+  @media(min-width:1000px){.excerpts{columns:3}}
+  .ex-card{break-inside:avoid;-webkit-column-break-inside:avoid;margin:0 0 16px;background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:17px 18px 14px;cursor:pointer;transition:transform .14s,box-shadow .14s,border-color .14s}
+  .ex-card:hover{transform:translateY(-2px);box-shadow:var(--shadow);border-color:var(--line-soft)}
+  .ex-type{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--seal);margin-bottom:9px}
+  .ex-text{font-family:var(--serif);font-size:15.5px;line-height:1.62;color:var(--ink);white-space:pre-wrap}
+  .ex-img{width:100%;border-radius:9px;border:1px solid var(--line);display:block}
+  .ex-src{margin-top:13px;padding-top:11px;border-top:1px solid var(--line-soft);font-size:12px;color:var(--muted);display:flex;align-items:center;gap:7px}
+  .ex-src .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+  .ex-src b{font-family:var(--serif);font-weight:600;color:var(--ink-soft)}
+  /* annual review */
+  .rv-open{margin-left:auto;font-size:12.5px;font-weight:600;color:var(--seal);border:1px solid var(--seal-soft);border-radius:999px;padding:5px 13px;transition:.14s}
+  .rv-open:hover{background:var(--seal);color:var(--on-accent)}
+  .modal.review{max-width:560px}
+  .review-body{padding:8px 26px 24px}
+  .rv-yearsel{display:flex;align-items:center;justify-content:center;gap:16px;margin:4px 0 18px}
+  .rv-yearsel button{width:32px;height:32px;border-radius:9px;border:1px solid var(--line);color:var(--ink-soft);font-size:18px;line-height:1}
+  .rv-yearsel button:hover:not(:disabled){border-color:var(--seal);color:var(--seal)}
+  .rv-yearsel button:disabled{opacity:.3}
+  .rv-year{font-family:var(--serif);font-size:23px;font-weight:700}
+  .rv-hero{text-align:center;padding:14px 0 4px}
+  .rv-hero .big{font-family:var(--serif);font-size:62px;font-weight:700;line-height:1;color:var(--seal)}
+  .rv-hero .cap{font-size:13px;color:var(--muted);margin-top:8px}
+  .rv-chips{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:18px 0 4px}
+  .rv-chip{background:var(--paper-2);border:1px solid var(--line);border-radius:12px;padding:11px 15px;text-align:center;min-width:92px}
+  .rv-chip b{display:block;font-family:var(--serif);font-size:21px;font-weight:700;color:var(--ink)}
+  .rv-chip span{font-size:11px;color:var(--muted)}
+  .rv-sec{margin-top:26px}
+  .rv-sec h3{font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--seal);margin-bottom:14px;display:flex;align-items:center;gap:9px}
+  .rv-sec h3::after{content:"";flex:1;height:1px;background:var(--line)}
+  .rv-months{display:flex;align-items:flex-end;gap:5px;height:92px}
+  .rv-mo{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end}
+  .rv-mo .bar{width:100%;background:var(--seal);border-radius:3px 3px 0 0;min-height:2px}
+  .rv-mo .ml{font-size:9px;color:var(--muted)}
+  .rv-mo .mv{font-size:9.5px;color:var(--ink-soft);font-weight:600;height:12px}
+  .rv-cat{display:flex;flex-direction:column;gap:9px}
+  .rv-crow{display:flex;align-items:center;gap:10px}
+  .rv-cname{font-size:12.5px;width:62px;color:var(--ink-soft);flex-shrink:0}
+  .rv-ctrack{flex:1;height:18px;background:var(--paper-2);border-radius:6px;overflow:hidden}
+  .rv-cfill{height:100%;border-radius:6px;min-width:3px}
+  .rv-cnum{font-size:12px;color:var(--muted);width:34px;text-align:right;flex-shrink:0}
+  .rv-books{display:flex;gap:13px;flex-wrap:wrap}
+  .rv-bk{width:64px;text-align:center;cursor:pointer}
+  .rv-bk .cv{width:64px;height:91px;border-radius:5px;overflow:hidden;background:var(--cc,var(--c-etc));box-shadow:var(--shadow);position:relative;margin-bottom:6px;display:flex;align-items:center;justify-content:center}
+  .rv-bk .cv img{width:100%;height:100%;object-fit:cover}
+  .rv-bk .cv.ph span{font-family:var(--serif);font-size:8.5px;color:rgba(255,255,255,.95);line-height:1.25;padding:5px;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+  .rv-bk:hover .cv{transform:translateY(-2px)}
+  .rv-bk .bt{font-size:10.5px;color:var(--ink-soft);line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .rv-quotes{display:flex;flex-direction:column;gap:12px}
+  .rv-q{border-left:3px solid var(--seal);padding:3px 0 3px 14px;cursor:pointer}
+  .rv-q:hover .qt{color:var(--seal)}
+  .rv-q .qt{font-family:var(--serif);font-size:14.5px;font-style:italic;line-height:1.55;color:var(--ink);transition:color .14s}
+  .rv-q .qs{font-size:11.5px;color:var(--muted);margin-top:5px}
+  .rv-empty{text-align:center;color:var(--muted);padding:34px 0;font-size:14px}
+  .hide{display:none !important}
+  .file-in{display:none}
+
+  /* ---- Barcode scanner ---- */
+  .scanbtn{width:100%;margin-top:9px;display:flex;align-items:center;justify-content:center;gap:8px}
+  .modal.scan{max-width:460px}
+  .scan-body{padding:18px 24px 6px}
+  .scan-view{position:relative;width:100%;aspect-ratio:4/3;background:#000;border-radius:12px;overflow:hidden}
+  .scan-view video{width:100%;height:100%;object-fit:cover;display:block}
+  .scan-frame{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:80%;height:40%;border:2px solid rgba(255,255,255,.92);border-radius:10px;box-shadow:0 0 0 2000px rgba(0,0,0,.32);pointer-events:none}
+  .scan-laser{position:absolute;left:11%;right:11%;top:50%;height:2px;background:var(--seal);box-shadow:0 0 8px var(--seal);opacity:.9;pointer-events:none;animation:scanmove 1.8s ease-in-out infinite}
+  @keyframes scanmove{0%,100%{transform:translateY(-54px)}50%{transform:translateY(54px)}}
+  .scan-status{margin-top:14px;font-size:13.5px;font-weight:600;color:var(--seal);text-align:center;min-height:18px}
+  .scan-hint{margin-top:6px;font-size:12px;color:var(--muted);text-align:center;line-height:1.5}
+
+  /* ---- Backup nudge + storage ---- */
+  .backup{margin-bottom:20px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+  .backup.warn{border-color:var(--seal);background:var(--paper-2)}
+  .backup-inner{display:flex;align-items:center;gap:13px;flex-wrap:wrap}
+  .backup-icon{font-size:21px;line-height:1;flex-shrink:0}
+  .backup-text{flex:1;min-width:170px}
+  .backup-title{font-family:var(--serif);font-size:14.5px;font-weight:600;color:var(--ink)}
+  .backup-sub{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.5}
+  .backup-actions{display:flex;gap:8px;flex-shrink:0}
+
+  @media (max-width:560px){
+    .bar{padding:12px 16px} .subbar,.stats,main,.tagcloud{padding-left:16px;padding-right:16px}
+    .backup-actions{width:100%} .backup-actions .btn{flex:1}
+    .row{flex-direction:column;gap:0}
+    .d-head{padding-left:20px;padding-right:20px;gap:14px} .d-body{padding-left:20px;padding-right:20px}
+    .d-cover{width:74px}
+    .grid.shelf{grid-template-columns:repeat(auto-fill,minmax(108px,1fr));gap:20px 14px}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="bar">
+    <div class="brand">
+      <span class="seal">冊</span>
+      <h1>책장 <small>나의 독서 기록</small></h1>
+    </div>
+    <div class="search">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <input id="q" type="text" placeholder="제목 · 저자 · 요약 · 구절 검색…">
+    </div>
+    <div class="actions">
+      <button class="btn ghost theme-toggle" id="themeBtn" title="다크 모드로" aria-label="테마 전환">🌙</button>
+      <button class="btn ghost" id="exportBtn">내보내기</button>
+      <button class="btn ghost" id="importBtn">불러오기</button>
+      <button class="btn primary" id="addBtn">＋ 책 추가</button>
+    </div>
+  </div>
+  <div class="tabs">
+    <button class="tab on" data-mode="library">책장</button>
+    <button class="tab" data-mode="excerpts">발췌집 <span class="tc-count">0</span></button>
+  </div>
+  <div class="subbar">
+    <div class="chips" id="catChips"></div>
+    <div class="chips" id="tagFilters"></div>
+    <div class="spacer"></div>
+    <button class="tool" id="tagBtn"># 태그</button>
+    <span id="libCtrls" style="display:flex;gap:10px">
+      <span class="viewtog">
+        <button data-view="shelf" class="on">책장</button>
+        <button data-view="cards">카드</button>
+      </span>
+      <select class="sortsel" id="sortSel">
+        <option value="recent">최근 등록순</option>
+        <option value="title">제목순</option>
+        <option value="rating">평점 높은순</option>
+        <option value="date">읽은 날짜순</option>
+      </select>
+    </span>
+    <select class="sortsel hide" id="exSort">
+      <option value="recent">최근 추가순</option>
+      <option value="book">책별</option>
+      <option value="random">무작위</option>
+    </select>
+  </div>
+  <div class="tagcloud" id="tagCloud"><div class="tagcloud-inner" id="tagCloudInner"></div></div>
+  <div class="stats" id="stats"></div>
+</header>
+
+<main>
+  <div id="libraryView">
+    <section class="backup hide" id="backup"></section>
+    <section class="daily hide" id="daily"></section>
+    <section class="nowreading hide" id="nowReading"></section>
+    <div class="grid shelf" id="grid"></div>
+    <div class="empty hide" id="empty">
+      <div class="em-seal">冊</div>
+      <h2 id="emptyTitle">아직 등록된 책이 없습니다</h2>
+      <p id="emptyMsg">제목이나 ISBN만 넣으면 표지·저자·출판사를 자동으로 채워드립니다.</p>
+      <button class="btn primary" id="emptyAdd">＋ 첫 책 추가하기</button>
+    </div>
+  </div>
+  <div id="excerptsView" class="hide">
+    <div class="excerpts" id="excerpts"></div>
+    <div class="empty hide" id="exEmpty"><div class="em-seal">“</div><h2></h2><p></p></div>
+  </div>
+</main>
+
+<input type="file" id="fileIn" class="file-in" accept="application/json">
+
+<!-- Edit / Add modal -->
+<div class="overlay" id="editOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h2 id="editTitle">책 추가</h2>
+      <button class="x" data-close>×</button>
+    </div>
+    <div class="modal-body">
+      <div class="qbox">
+        <div class="qh"><span class="b">검색</span> 제목 또는 ISBN으로 정보 가져오기</div>
+        <div class="qrow">
+          <input id="qInput" type="text" placeholder="예) 데미안  ·  9788954682152">
+          <button class="btn" id="qBtn">가져오기</button>
+        </div>
+        <button class="btn scanbtn" id="qScanBtn" type="button">📷 바코드로 스캔</button>
+        <div class="qnote" id="qNote">표지·저자·출판사·출간연도를 자동으로 채웁니다. 인터넷 연결 필요.</div>
+        <div class="lk-results" id="lkResults"></div>
+      </div>
+
+      <div class="ai-box">
+        <div class="ai-h"><span class="b">AI</span> 독서 노트로 요약 자동 생성</div>
+        <textarea id="aiInput" placeholder="읽으면서 메모한 내용을 자유롭게 붙여넣으세요. 핵심 내용 / 인사이트 / 인상 깊은 구절 / 적용점으로 정리해 드립니다."></textarea>
+        <div class="ai-row">
+          <span class="ai-note" id="aiNote">제목만 적어도 됩니다. 결과는 검토 후 수정하세요.</span>
+          <button class="btn" id="aiBtn">요약 생성</button>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="field"><label>제목</label><input id="fTitle" type="text"></div>
+        <div class="field"><label>저자</label><input id="fAuthor" type="text"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>출판사</label><input id="fPublisher" type="text"></div>
+        <div class="field"><label>출간연도</label><input id="fYear" type="text" placeholder="예) 2017"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>분류</label>
+          <select id="fCat"><option value="투자">투자</option><option value="경영">경영</option><option value="문학">문학</option><option value="자기계발">자기계발</option><option value="기타">기타</option></select>
+        </div>
+        <div class="field"><label>상태</label>
+          <select id="fStatus"><option value="done">완독</option><option value="reading">읽는 중</option><option value="todo">읽을 책</option></select>
+        </div>
+        <div class="field"><label>읽은 날짜</label><input id="fDate" type="date"></div>
+      </div>
+      <div class="field"><label>평점</label><div class="rate-edit" id="rateEdit"></div></div>
+      <div class="field"><label>표지</label>
+        <div class="cover-edit">
+          <div class="cv-thumb" id="cvThumb">표지 없음</div>
+          <input id="fCover" type="text" placeholder="표지 이미지 URL (가져오기 시 자동 입력 · 비우면 제거)">
+        </div>
+      </div>
+      <div class="field"><label>한 줄 소개</label><input id="fOneliner" type="text" placeholder="이 책을 한 문장으로"></div>
+      <div class="field"><label>핵심 내용</label><textarea id="fKey" placeholder="줄바꿈으로 항목 구분"></textarea></div>
+      <div class="field"><label>주요 인사이트</label><textarea id="fInsight" placeholder="줄바꿈으로 항목 구분"></textarea></div>
+      <div class="field"><label>인상 깊은 구절</label><textarea id="fQuote" placeholder="줄바꿈으로 구절 구분"></textarea>
+        <div class="photo-attach">
+          <button type="button" class="btn small" id="addPhotoBtn">📷 사진 첨부</button>
+          <span class="photo-hint" id="photoHint">책 페이지를 찍어 함께 보관하세요. 저장 시 자동으로 용량을 줄입니다.</span>
+        </div>
+        <div class="photo-grid" id="photoGrid"></div>
+        <input type="file" id="photoInput" accept="image/*" multiple class="file-in">
+      </div>
+      <div class="field"><label>적용점 · 메모</label><textarea id="fNote"></textarea></div>
+      <div class="field"><label>태그</label><input id="fTags" type="text" placeholder="쉼표로 구분 (예: 가치투자, 멘탈모델)"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn ghost hide" id="deleteBtn">삭제</button>
+      <button class="btn" data-close>취소</button>
+      <button class="btn primary" id="saveBtn">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- Detail modal -->
+<div class="overlay" id="detailOverlay">
+  <div class="modal detail">
+    <div class="d-spine" id="dSpine"></div>
+    <div class="modal-head" style="border:none;padding-bottom:0"><div></div><button class="x" data-close>×</button></div>
+    <div class="d-head">
+      <div class="d-cover ph" id="dCover"><img id="dCoverImg" alt=""><div class="ph-mini" id="dCoverPh"></div></div>
+      <div class="d-htext">
+        <div class="d-cat" id="dCat"></div>
+        <h2 id="dTitle"></h2>
+        <div class="d-meta" id="dMeta"></div>
+        <div class="d-pub" id="dPub"></div>
+      </div>
+    </div>
+    <div class="d-body" id="dBody"></div>
+    <div class="modal-foot">
+      <button class="btn" id="dEdit">수정</button>
+      <button class="btn primary" data-close>닫기</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="reviewOverlay">
+  <div class="modal review">
+    <div class="modal-head">
+      <h2>📖 독서 결산</h2>
+      <button class="x" data-rclose>×</button>
+    </div>
+    <div class="review-body" id="reviewBody"></div>
+    <div class="modal-foot">
+      <button class="btn" id="reviewCopy">요약 복사</button>
+      <button class="btn primary" data-rclose>닫기</button>
+    </div>
+  </div>
+</div>
+
+<div class="lightbox" id="lightbox"><img id="lightboxImg" alt="구절 사진"></div>
+
+<!-- Quick capture sheet (scoped to one book) -->
+<div class="overlay" id="quickOverlay">
+  <div class="modal quick">
+    <div class="modal-head">
+      <h2 id="quickTitle">구절 추가</h2>
+      <button class="x" data-qclose>×</button>
+    </div>
+    <div class="modal-body">
+      <div class="field" style="margin-bottom:4px">
+        <textarea id="qcText" placeholder="인상 깊은 구절을 입력하거나, 아래에서 페이지 사진을 첨부하세요." style="min-height:120px"></textarea>
+        <div class="photo-attach">
+          <button type="button" class="btn small" id="qcPhotoBtn">📷 사진 첨부</button>
+          <span class="photo-hint" id="qcPhotoHint">페이지를 찍어 함께 보관하세요.</span>
+        </div>
+        <div class="photo-grid" id="qcPhotoGrid"></div>
+        <input type="file" id="qcPhotoInput" accept="image/*" multiple class="file-in">
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" data-qclose>취소</button>
+      <button class="btn primary" id="qcSave">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- Barcode scanner -->
+<div class="overlay" id="scanOverlay">
+  <div class="modal scan">
+    <div class="modal-head">
+      <h2>바코드 스캔</h2>
+      <button class="x" id="scanClose">×</button>
+    </div>
+    <div class="scan-body">
+      <div class="scan-view">
+        <video id="scanVideo" playsinline muted></video>
+        <div class="scan-frame"></div>
+        <div class="scan-laser"></div>
+      </div>
+      <div class="scan-status" id="scanStatus">카메라 준비 중…</div>
+      <div class="scan-hint">책 뒤표지의 ISBN 바코드(978 · 979로 시작)를 사각형 안에 맞춰 주세요.</div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" id="scanCancel">취소</button>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="directPhotoInput" accept="image/*" capture="environment" class="file-in">
+<div class="toast" id="toast"></div>
+
+<script>
+/* ── 설정 ──────────────────────────────────────────────
+   알라딘 상품 API 프록시 주소.
+   Cloudflare Worker(aladin-proxy-worker.js)를 배포한 뒤 그 주소를 넣으면
+   알라딘에서 한국 책을 우선 조회합니다. 비워두면 구글 북스(country=KR)만 사용합니다.
+   예) const ALADIN_PROXY='https://aladin-proxy.내이름.workers.dev';
+   ────────────────────────────────────────────────────── */
+const ALADIN_PROXY='https://aladin-proxy.tim62578.workers.dev';
+
+const STORE_KEY='bookshelf_data_v1';
+const VIEW_KEY='bookshelf_view';
+const MODE_KEY='bookshelf_mode';
+const THEME_KEY='bookshelf_theme';
+const CATS={'투자':'var(--c-invest)','경영':'var(--c-mgmt)','문학':'var(--c-lit)','자기계발':'var(--c-self)','기타':'var(--c-etc)'};
+const CAT_HEX={'투자':'#2E5E4E','경영':'#3B5070','문학':'#7A3B5E','자기계발':'#8A6A2E','기타':'#5A5550'};
+const STATUS_LABEL={done:'완독',reading:'읽는 중',todo:'읽을 책'};
+
+let books=[];
+let memoryOnly=false;
+let lkResults=[];
+let state={q:'',cat:'전체',tags:[],sort:'recent',view:'shelf',mode:'library',theme:'light',exSort:'recent',excerptSeed:0,editId:null,rate:0,detailId:null,cloudOpen:false,photos:[],quickId:null,quickPhotos:[],directCaptureId:null,dailyKey:null,dailyDay:0};
+
+/* ---------- storage ---------- */
+function load(){
+  try{ const raw=localStorage.getItem(STORE_KEY); books=raw?JSON.parse(raw):[]; }
+  catch(e){ memoryOnly=true; books=[]; }
+  try{ const v=localStorage.getItem(VIEW_KEY); if(v==='cards'||v==='shelf') state.view=v; }catch(e){}
+  try{ const mo=localStorage.getItem(MODE_KEY); if(mo==='library'||mo==='excerpts') state.mode=mo; }catch(e){}
+  try{ const t=localStorage.getItem(THEME_KEY); if(t==='dark'||t==='light') state.theme=t; else if(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) state.theme='dark'; }catch(e){}
+  loadReactions();
+  loadBackup();
+  migrate();
+}
+function migrate(){
+  let changed=false;
+  books.forEach(b=>{
+    if(!Array.isArray(b.quoteShots)){
+      b.quoteShots=(b.quotePhotos||[]).map(img=>({img,text:''}));
+      changed=true;
+    }
+    if('quotePhotos' in b){ delete b.quotePhotos; changed=true; }
+  });
+  if(changed) save();
+}
+function save(){ if(memoryOnly) return true; try{ localStorage.setItem(STORE_KEY,JSON.stringify(books)); return true; }catch(e){ console.warn('save failed',e); return false; } }
+function saveView(){ try{ localStorage.setItem(VIEW_KEY,state.view); }catch(e){} }
+function saveMode(){ try{ localStorage.setItem(MODE_KEY,state.mode); }catch(e){} }
+function applyTheme(){
+  const dark=state.theme==='dark';
+  document.body.classList.toggle('dark',dark);
+  const b=document.getElementById('themeBtn');
+  if(b){ b.textContent=dark?'☀️':'🌙'; b.title=dark?'라이트 모드로':'다크 모드로'; }
+  const mc=document.getElementById('themeColor'); if(mc) mc.setAttribute('content', dark?'#0F141D':'#FFFFFF');
+}
+function toggleTheme(){ state.theme=state.theme==='dark'?'light':'dark'; try{ localStorage.setItem(THEME_KEY,state.theme); }catch(e){} applyTheme(); }
+const REACT_KEY='bookshelf_reactions';
+let reactions={};
+function loadReactions(){ try{ reactions=JSON.parse(localStorage.getItem(REACT_KEY)||'{}')||{}; }catch(e){ reactions={}; } }
+function saveReactions(){ try{ localStorage.setItem(REACT_KEY,JSON.stringify(reactions)); }catch(e){} }
+function hashStr(s){ let h=0; s=s||''; for(let i=0;i<s.length;i++){ h=(h*31+s.charCodeAt(i))|0; } return h.toString(36); }
+function passKey(p){ return p.id+'|'+hashStr(p.text); }
+function reactionOf(p){ return reactions[passKey(p)]||0; }
+function setReaction(p,val){ const k=passKey(p); if(val===0) delete reactions[k]; else reactions[k]=val; saveReactions(); }
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+function esc(s){ return (s||'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m])); }
+function catColor(c){ return CATS[c]||'var(--c-etc)'; }
+function catHex(c){ return CAT_HEX[c]||'#5A5550'; }
+
+/* ---------- Google Books lookup ---------- */
+function cleanCover(url){ if(!url) return ''; return url.replace(/^http:\/\//,'https://').replace(/&edge=curl/,''); }
+function mapCat(cats){
+  const s=(cats||[]).join(' ').toLowerCase();
+  if(/invest|finance|stock|money|trading/.test(s)) return '투자';
+  if(/business|econom|management|market|entrepreneur/.test(s)) return '경영';
+  if(/fiction|literary|novel|poetry|drama|classic|story|stories/.test(s)) return '문학';
+  if(/self-?help|personal|psychology|motivat|productivity/.test(s)) return '자기계발';
+  return '';
+}
+function fetchWithTimeout(url,ms){
+  const ctrl=new AbortController();
+  const t=setTimeout(()=>ctrl.abort(),ms||9000);
+  return fetch(url,{signal:ctrl.signal}).finally(()=>clearTimeout(t));
+}
+async function lookupAladin(raw,isIsbn){
+  const digits=raw.replace(/[^0-9Xx]/g,'');
+  const u=new URL(ALADIN_PROXY);
+  if(isIsbn) u.searchParams.set('isbn',digits); else u.searchParams.set('title',raw);
+  const res=await fetchWithTimeout(u.toString(),9000);
+  if(!res.ok) throw new Error('nlk http '+res.status);
+  const data=await res.json();
+  if(!data || data.ok===false) throw new Error('nlk '+((data&&data.error)||'error'));
+  return (data.items||[]).map(it=>({
+    title:(it.title||'').trim(),
+    author:(it.author||'').trim(),
+    publisher:(it.publisher||'').trim(),
+    year:(it.year||'').toString().slice(0,4),
+    cover:cleanCover(it.cover||''),
+    cat:(it.cat&&CATS[it.cat])?it.cat:''
+  })).filter(x=>x.title);
+}
+async function lookupGoogle(raw,isIsbn){
+  const digits=raw.replace(/[^0-9Xx]/g,'');
+  const q=isIsbn?('isbn:'+digits):encodeURIComponent(raw);
+  const url=`https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=6&country=KR`;
+  let res=null,err=null;
+  for(let attempt=0;attempt<2;attempt++){
+    try{
+      const r=await fetchWithTimeout(url,9000);
+      if(r.ok){ res=r; break; }
+      err=new Error('http '+r.status);
+      if(!(r.status>=500||r.status===429)) break;
+    }catch(e){ err=e; }
+    if(attempt===0) await new Promise(rs=>setTimeout(rs,600));
+  }
+  if(!res) throw err||new Error('google failed');
+  const data=await res.json();
+  return (data.items||[]).map(it=>{
+    const v=it.volumeInfo||{};
+    return {
+      title:v.title?(v.subtitle?`${v.title}: ${v.subtitle}`:v.title):'',
+      author:(v.authors||[]).join(', '),
+      publisher:v.publisher||'',
+      year:(v.publishedDate||'').slice(0,4),
+      cover:cleanCover((v.imageLinks||{}).thumbnail||(v.imageLinks||{}).smallThumbnail||''),
+      cat:mapCat(v.categories)
+    };
+  }).filter(x=>x.title);
+}
+async function lookup(){
+  const raw=document.getElementById('qInput').value.trim();
+  if(!raw){ setQNote('제목이나 ISBN을 입력하세요.',true); return; }
+  const digits=raw.replace(/[^0-9Xx]/g,'');
+  const isIsbn=(digits.length===10||digits.length===13);
+  const btn=document.getElementById('qBtn'); btn.disabled=true; btn.textContent='검색 중…';
+  setQNote('검색하고 있습니다…',false);
+  document.getElementById('lkResults').innerHTML='';
+  let items=null, usedAladin=false;
+  // 1) 알라딘 우선 (프록시 설정 시)
+  if(ALADIN_PROXY){
+    try{ const r=await lookupAladin(raw,isIsbn); if(r&&r.length){ items=r; usedAladin=true; } }
+    catch(e){ console.warn('알라딘 조회 실패, 구글 북스로 대체:', (e&&e.message)||e); }
+  }
+  // 2) 구글 북스 폴백 (country=KR)
+  if(!items){
+    try{ items=await lookupGoogle(raw,isIsbn); }
+    catch(e){
+      lkResults=[];
+      setQNote(isIsbn?'검색에 실패했어요. 잠시 후 다시 시도하거나 ISBN을 확인해 주세요.':'검색에 실패했어요. 인터넷 연결이나 제목 철자를 확인해 주세요.',true);
+      btn.disabled=false; btn.textContent='가져오기'; return;
+    }
+  }
+  // 알라딘이 ISBN 단건을 찾았는데 표지가 없으면 구글에서 표지만 보강
+  if(usedAladin && isIsbn && items.length && !items[0].cover){
+    try{ const g=await lookupGoogle(raw,true); if(g.length && g[0].cover) items[0].cover=g[0].cover; }catch(e){}
+  }
+  lkResults=items||[];
+  if(lkResults.length===0){
+    setQNote(isIsbn?'검색 결과가 없어요. ISBN을 다시 확인해 주세요.':'검색 결과가 없어요. 제목 철자나 띄어쓰기를 바꿔 보세요.',true);
+  }else{
+    setQNote(`${lkResults.length}건 · ${usedAladin?'알라딘':'구글 북스'} — 맞는 책을 선택하세요.`,false);
+    renderLkResults();
+  }
+  btn.disabled=false; btn.textContent='가져오기';
+}
+function setQNote(t,err){ const n=document.getElementById('qNote'); n.textContent=t; n.classList.toggle('err',!!err); }
+function renderLkResults(){
+  document.getElementById('lkResults').innerHTML=lkResults.map((r,i)=>{
+    const cov=r.cover?`<img src="${esc(r.cover)}" alt="">`:'';
+    const meta=[r.author,r.publisher,r.year].filter(Boolean).join(' · ');
+    return `<button class="lk-item" data-i="${i}"><div class="lk-cover">${cov}</div><div class="lk-info"><div class="lk-t">${esc(r.title)}</div><div class="lk-m">${esc(meta)||'정보 없음'}</div></div></button>`;
+  }).join('');
+  document.getElementById('lkResults').querySelectorAll('.lk-item').forEach(b=>b.onclick=()=>applyResult(+b.dataset.i));
+}
+function applyResult(i){
+  const r=lkResults[i]; if(!r) return;
+  document.getElementById('fTitle').value=r.title||'';
+  if(r.author) document.getElementById('fAuthor').value=r.author;
+  if(r.publisher) document.getElementById('fPublisher').value=r.publisher;
+  if(r.year) document.getElementById('fYear').value=r.year;
+  if(r.cat && CATS[r.cat]) document.getElementById('fCat').value=r.cat;
+  document.getElementById('fCover').value=r.cover||'';
+  updateCvThumb();
+  document.getElementById('lkResults').innerHTML='';
+  setQNote('적용했습니다. 나머지 항목을 채워 저장하세요.',false);
+}
+
+/* ---------- chips / cloud / stats ---------- */
+function renderChips(){
+  const wrap=document.getElementById('catChips');
+  const all=['전체',...Object.keys(CATS)];
+  wrap.innerHTML=all.map(c=>{
+    const on=state.cat===c?'on':'';
+    const dot=c==='전체'?'':`<span class="dot" style="background:${catColor(c)}"></span>`;
+    return `<button class="chip ${on}" data-cat="${c}">${dot}${c}</button>`;
+  }).join('');
+  wrap.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{ state.cat=b.dataset.cat; render(); });
+}
+function tagCounts(){
+  const m={};
+  books.forEach(b=>(b.tags||[]).forEach(t=>{ m[t]=(m[t]||0)+1; }));
+  return m;
+}
+function renderTagFilters(){
+  const wrap=document.getElementById('tagFilters');
+  wrap.innerHTML=state.tags.map(t=>`<button class="tagchip" data-t="${esc(t)}"><b>#${esc(t)}</b><span class="rm">×</span></button>`).join('');
+  wrap.querySelectorAll('.tagchip').forEach(b=>b.onclick=()=>{ toggleTag(b.dataset.t); });
+}
+function renderTagCloud(){
+  const counts=tagCounts();
+  const tags=Object.keys(counts).sort((a,b)=>counts[b]-counts[a]||a.localeCompare(b,'ko'));
+  const inner=document.getElementById('tagCloudInner');
+  if(tags.length===0){ inner.innerHTML='<span class="tc-empty">아직 태그가 없습니다. 책에 태그를 달면 여기에 모입니다.</span>'; return; }
+  const max=Math.max(...tags.map(t=>counts[t])), min=Math.min(...tags.map(t=>counts[t]));
+  inner.innerHTML=tags.map(t=>{
+    const sz=max===min?14:13+Math.round((counts[t]-min)/(max-min)*7);
+    const on=state.tags.includes(t)?'on':'';
+    return `<button class="tc ${on}" data-t="${esc(t)}" style="font-size:${sz}px">#${esc(t)}<span class="cnt">${counts[t]}</span></button>`;
+  }).join('');
+  inner.querySelectorAll('.tc').forEach(b=>b.onclick=()=>{ toggleTag(b.dataset.t); });
+}
+function toggleTag(t){
+  const i=state.tags.indexOf(t);
+  if(i>=0) state.tags.splice(i,1); else state.tags.push(t);
+  render();
+}
+function renderStats(){
+  const total=books.length, done=books.filter(b=>b.status==='done').length, reading=books.filter(b=>b.status==='reading').length;
+  const years=availableYears(); const yLabel=years.length?years[0]:new Date().getFullYear();
+  const btn = total>0 ? `<button class="rv-open" id="reviewBtn">🎉 ${yLabel} 결산</button>` : '';
+  document.getElementById('stats').innerHTML=`<span><b>${total}</b>권</span><span><b>${done}</b>완독</span><span><b>${reading}</b>읽는 중</span>${btn}`;
+  const rb=document.getElementById('reviewBtn'); if(rb) rb.onclick=()=>openReview();
+}
+
+/* ---------- 연간 독서 결산 ---------- */
+function bookYear(b){
+  if(b.date && /^\d{4}/.test(b.date)) return +b.date.slice(0,4);
+  if(b.createdAt) return new Date(b.createdAt).getFullYear();
+  return null;
+}
+function availableYears(){
+  const set=new Set();
+  books.forEach(b=>{ const y=bookYear(b); if(y) set.add(y); });
+  return [...set].sort((a,b)=>b-a);
+}
+function lovedPassages(arr){
+  const loved=[];
+  arr.forEach(b=>{
+    const base={id:b.id,title:b.title,author:b.author,cat:b.cat};
+    const lines=(b.quote||'').split('\n').map(s=>s.trim()).filter(Boolean)
+      .concat((b.insight||'').split('\n').map(s=>s.trim()).filter(Boolean))
+      .concat((b.quoteShots||[]).map(s=>(s.text||'').trim()).filter(Boolean));
+    lines.forEach(t=>{ if(reactions[b.id+'|'+hashStr(t)]===1) loved.push({...base,text:t}); });
+  });
+  return loved;
+}
+function reviewData(Y){
+  const ofYear=books.filter(b=>bookYear(b)===Y);
+  const done=ofYear.filter(b=>b.status==='done');
+  const catCounts={}; done.forEach(b=>{ catCounts[b.cat]=(catCounts[b.cat]||0)+1; });
+  const months=new Array(12).fill(0);
+  done.forEach(b=>{ if(b.date&&/^\d{4}-\d{2}/.test(b.date)){ const m=+b.date.slice(5,7)-1; if(m>=0&&m<12) months[m]++; } });
+  const rated=done.filter(b=>b.rate>0);
+  const avg=rated.length? rated.reduce((s,b)=>s+b.rate,0)/rated.length : 0;
+  const fiveStars=done.filter(b=>b.rate===5);
+  let passageCount=0; ofYear.forEach(b=>{ passageCount += (b.quote||'').split('\n').filter(s=>s.trim()).length + (b.insight||'').split('\n').filter(s=>s.trim()).length + (b.quoteShots||[]).filter(s=>(s.text||'').trim()).length; });
+  let topCat='',mx=0; Object.entries(catCounts).forEach(([k,v])=>{ if(v>mx){mx=v;topCat=k;} });
+  let loved=lovedPassages(ofYear);
+  if(loved.length===0){ fiveStars.forEach(b=>{ const q=(b.quote||'').split('\n').map(s=>s.trim()).filter(Boolean)[0]; if(q) loved.push({id:b.id,title:b.title,author:b.author,cat:b.cat,text:q}); }); }
+  return {Y, totalCount:ofYear.length, doneCount:done.length, catCounts, months, avg, fiveStars, passageCount, topCat, loved};
+}
+function openReview(){
+  const years=availableYears();
+  state.reviewYear = years.length ? years[0] : new Date().getFullYear();
+  renderReview(); open('reviewOverlay');
+}
+function renderReview(){
+  const body=document.getElementById('reviewBody');
+  const years=availableYears();
+  if(years.length===0){ body.innerHTML=`<div class="rv-empty">아직 기록이 없어요. 책을 추가하면 결산을 볼 수 있어요.</div>`; return; }
+  const Y=state.reviewYear, d=reviewData(Y), yi=years.indexOf(Y);
+  let h=`<div class="rv-yearsel"><button id="rvPrev" ${yi>=years.length-1?'disabled':''}>‹</button><span class="rv-year">${Y}</span><button id="rvNext" ${yi<=0?'disabled':''}>›</button></div>`;
+  if(d.totalCount===0){ h+=`<div class="rv-empty">${Y}년에 기록된 책이 없어요.</div>`; body.innerHTML=h; wireReviewYear(years,yi); return; }
+  h+=`<div class="rv-hero"><div class="big">${d.doneCount}</div><div class="cap">${Y}년에 완독한 책</div></div>`;
+  h+=`<div class="rv-chips"><div class="rv-chip"><b>${d.passageCount}</b><span>모은 문장</span></div>`;
+  if(d.avg) h+=`<div class="rv-chip"><b>★ ${d.avg.toFixed(1)}</b><span>평균 별점</span></div>`;
+  if(d.topCat) h+=`<div class="rv-chip"><b>${d.topCat}</b><span>최다 분류</span></div>`;
+  h+=`</div>`;
+  const maxMo=Math.max(...d.months);
+  if(maxMo>0){
+    h+=`<div class="rv-sec"><h3>월별 완독</h3><div class="rv-months">`;
+    d.months.forEach((v,i)=>{ const pct=v?Math.max(10,Math.round(v/maxMo*100)):0; h+=`<div class="rv-mo"><div class="mv">${v||''}</div><div class="bar" style="height:${pct}%"></div><div class="ml">${i+1}</div></div>`; });
+    h+=`</div></div>`;
+  }
+  const cats=Object.entries(d.catCounts).filter(([k,v])=>v>0).sort((a,b)=>b[1]-a[1]);
+  if(cats.length){
+    const cmax=cats[0][1];
+    h+=`<div class="rv-sec"><h3>분류 비중</h3><div class="rv-cat">`;
+    cats.forEach(([k,v])=>{ h+=`<div class="rv-crow"><span class="rv-cname">${k}</span><div class="rv-ctrack"><div class="rv-cfill" style="width:${Math.round(v/cmax*100)}%;background:${catHex(k)}"></div></div><span class="rv-cnum">${v}권</span></div>`; });
+    h+=`</div></div>`;
+  }
+  if(d.fiveStars.length){
+    h+=`<div class="rv-sec"><h3>별 다섯, 올해의 책</h3><div class="rv-books">`;
+    d.fiveStars.forEach(b=>{
+      const cov=b.coverUrl?`<div class="cv" style="--cc:${catHex(b.cat)}"><img src="${esc(b.coverUrl)}" alt="" onerror="this.remove()"></div>`:`<div class="cv ph" style="--cc:${catHex(b.cat)}"><span>${esc(b.title||'')}</span></div>`;
+      h+=`<div class="rv-bk" data-bid="${b.id}">${cov}<div class="bt">${esc(b.title||'')}</div></div>`;
+    });
+    h+=`</div></div>`;
+  }
+  if(d.loved.length){
+    h+=`<div class="rv-sec"><h3>올해 아낀 문장</h3><div class="rv-quotes">`;
+    d.loved.slice(0,6).forEach(p=>{ h+=`<div class="rv-q" data-bid="${p.id}"><div class="qt">“${esc(p.text)}”</div><div class="qs">『${esc(p.title)||'제목 없음'}』${p.author?' · '+esc(p.author):''}</div></div>`; });
+    h+=`</div></div>`;
+  }
+  body.innerHTML=h;
+  wireReviewYear(years,yi);
+  body.querySelectorAll('[data-bid]').forEach(el=>el.onclick=()=>{ close('reviewOverlay'); openDetail(el.dataset.bid); });
+}
+function wireReviewYear(years,yi){
+  const prev=document.getElementById('rvPrev'), next=document.getElementById('rvNext');
+  if(prev && yi<years.length-1) prev.onclick=()=>{ state.reviewYear=years[yi+1]; renderReview(); };
+  if(next && yi>0) next.onclick=()=>{ state.reviewYear=years[yi-1]; renderReview(); };
+}
+function reviewSummaryText(){
+  const Y=state.reviewYear, d=reviewData(Y);
+  let s=`📖 ${Y} 독서 결산\n\n완독 ${d.doneCount}권`;
+  if(d.avg) s+=` · 평균 ★${d.avg.toFixed(1)}`;
+  s+=`\n모은 문장 ${d.passageCount}개`;
+  const cats=Object.entries(d.catCounts).filter(([k,v])=>v>0).sort((a,b)=>b[1]-a[1]);
+  if(cats.length) s+=`\n분류: ${cats.map(([k,v])=>k+' '+v).join(' · ')}`;
+  if(d.fiveStars.length) s+=`\n\n★★★★★ 올해의 책\n${d.fiveStars.map(b=>'· '+(b.title||'')+(b.author?' / '+b.author:'')).join('\n')}`;
+  if(d.loved.length) s+=`\n\n아낀 문장\n${d.loved.slice(0,5).map(p=>'“'+p.text+'” — '+(p.title||'')).join('\n')}`;
+  return s;
+}
+function copyReview(){
+  const s=reviewSummaryText();
+  const done=()=>showToast('결산 요약을 복사했어요');
+  if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(s).then(done,()=>fallbackCopy(s));
+  else fallbackCopy(s);
+}
+function fallbackCopy(s){ const ta=document.createElement('textarea'); ta.value=s; document.body.appendChild(ta); ta.select(); try{ document.execCommand('copy'); showToast('결산 요약을 복사했어요'); }catch(e){ showToast('복사에 실패했어요'); } ta.remove(); }
+
+/* ---------- filtering ---------- */
+function matches(b){
+  if(state.cat!=='전체' && b.cat!==state.cat) return false;
+  if(state.tags.length){ const bt=b.tags||[]; if(!state.tags.every(t=>bt.includes(t))) return false; }
+  if(state.q){
+    const hay=[b.title,b.author,b.publisher,b.oneliner,b.key,b.insight,b.quote,b.note,(b.tags||[]).join(' '),(b.quoteShots||[]).map(s=>s.text||'').join(' ')].join(' ').toLowerCase();
+    if(!hay.includes(state.q.toLowerCase())) return false;
+  }
+  return true;
+}
+function sortBooks(arr){
+  const s=state.sort;
+  return arr.slice().sort((a,b)=>{
+    if(s==='title') return (a.title||'').localeCompare(b.title||'','ko');
+    if(s==='rating') return (b.rate||0)-(a.rate||0);
+    if(s==='date') return (b.date||'').localeCompare(a.date||'');
+    return (b.createdAt||0)-(a.createdAt||0);
+  });
+}
+function sealRate(n){ let h=''; for(let i=1;i<=5;i++) h+=`<i class="${i<=n?'f':''}"></i>`; return `<div class="seal-rate">${h}</div>`; }
+
+/* ---------- render grid ---------- */
+function coverHTML(b,cls){
+  const ph=b.coverUrl?'':'ph';
+  const img=b.coverUrl?`<img src="${esc(b.coverUrl)}" alt="" onerror="this.closest('.cover,.d-cover').classList.add('ph')">`:'<img alt="">';
+  const body=`<div class="ph-body"><div class="pt">${esc(b.title)||'제목 없음'}</div><div class="pa">${esc(b.author)||''}</div></div>`;
+  return `<div class="cover ${ph}" style="--cc:${catHex(b.cat)}">${img}${body}</div>`;
+}
+function render(){
+  renderChips(); renderTagFilters(); renderTagCloud(); renderStats();
+  applyMode(); updateTabCounts();
+  if(state.mode==='excerpts'){ renderExcerpts(); return; }
+  renderLibrary();
+}
+function renderLibrary(){
+  const grid=document.getElementById('grid'); const empty=document.getElementById('empty');
+  grid.className='grid '+state.view;
+
+  const filterActive = !(state.cat==='전체' && !state.q && state.tags.length===0);
+  const reading = books.filter(b=>b.status==='reading');
+  const bandVisible = !filterActive && reading.length>0;
+  renderBackup(!filterActive);
+  renderNowReading(bandVisible ? reading : null);
+  renderDaily(!filterActive);
+
+  let list = books.filter(matches);
+  if(bandVisible) list = list.filter(b=>b.status!=='reading');
+  list = sortBooks(list);
+
+  if(books.length===0){
+    grid.innerHTML=''; empty.classList.remove('hide');
+    document.getElementById('emptyTitle').textContent='아직 등록된 책이 없습니다';
+    document.getElementById('emptyMsg').textContent='제목이나 ISBN만 넣으면 표지·저자·출판사를 자동으로 채워드립니다.';
+    return;
+  }
+  if(list.length===0 && !bandVisible){
+    grid.innerHTML=''; empty.classList.remove('hide');
+    document.getElementById('emptyTitle').textContent='검색 결과가 없습니다';
+    document.getElementById('emptyMsg').textContent='다른 키워드 · 분류 · 태그로 찾아보세요.';
+    return;
+  }
+  empty.classList.add('hide');
+
+  if(state.view==='shelf'){
+    grid.innerHTML=list.map(b=>`
+      <div class="item" data-id="${b.id}">
+        ${coverHTML(b)}
+        <div class="meta">
+          <div class="t">${esc(b.title)||'(제목 없음)'}</div>
+          <div class="a"><span>${esc(b.author)||'저자 미상'}</span>${sealRate(b.rate)}</div>
+        </div>
+      </div>`).join('');
+    grid.querySelectorAll('.item').forEach(c=>c.onclick=()=>openDetail(c.dataset.id));
+  }else{
+    grid.innerHTML=list.map(b=>`
+      <article class="card" data-id="${b.id}">
+        <div class="spine" style="background:${catColor(b.cat)}"></div>
+        <div class="card-body">
+          <div class="cat" style="color:${catColor(b.cat)}">${b.cat||'기타'}</div>
+          <h3>${esc(b.title)||'(제목 없음)'}</h3>
+          <div class="author">${esc(b.author)||'저자 미상'}</div>
+          <div class="oneliner">${esc(b.oneliner)||esc((b.key||'').split('\n')[0])||''}</div>
+          <div class="card-foot">${sealRate(b.rate)}<span class="status ${b.status}">${STATUS_LABEL[b.status]||''}</span></div>
+        </div>
+      </article>`).join('');
+    grid.querySelectorAll('.card').forEach(c=>c.onclick=()=>openDetail(c.dataset.id));
+  }
+}
+
+/* ---------- mode tabs + 발췌집 (commonplace) view ---------- */
+function applyMode(){
+  const ex = state.mode==='excerpts';
+  document.getElementById('libraryView').classList.toggle('hide', ex);
+  document.getElementById('excerptsView').classList.toggle('hide', !ex);
+  document.getElementById('libCtrls').classList.toggle('hide', ex);
+  document.getElementById('exSort').classList.toggle('hide', !ex);
+  document.getElementById('stats').classList.toggle('hide', ex);
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on', t.dataset.mode===state.mode));
+}
+function updateTabCounts(){
+  const c=document.querySelector('.tab[data-mode="excerpts"] .tc-count');
+  if(c) c.textContent=excerptPool().length;
+}
+function setMode(m){ if(state.mode===m) return; state.mode=m; saveMode(); render(); }
+function excerptPool(){
+  const pool=[];
+  books.forEach(b=>{
+    const base={id:b.id,title:b.title,author:b.author,cat:b.cat,tags:(b.tags||[]),bump:(b.updatedAt||b.createdAt||0)};
+    (b.quote||'').split('\n').map(s=>s.trim()).filter(Boolean).forEach(t=>pool.push({...base,text:t,type:'구절'}));
+    (b.insight||'').split('\n').map(s=>s.trim()).filter(Boolean).forEach(t=>pool.push({...base,text:t,type:'인사이트'}));
+    (b.quoteShots||[]).forEach(s=>pool.push({...base,text:(s.text||'').trim(),type:'사진',img:s.img}));
+  });
+  return pool;
+}
+function seededShuffle(arr,seed){
+  const a=arr.slice(); let s=seed||1;
+  for(let i=a.length-1;i>0;i--){ s=(s*9301+49297)%233280; const j=Math.floor(s/233280*(i+1)); const t=a[i]; a[i]=a[j]; a[j]=t; }
+  return a;
+}
+function exCardHTML(p){
+  const typeLabel = p.type==='사진' ? '📷 사진' : p.type;
+  const body = (p.text && p.text.trim())
+    ? `<div class="ex-text">${esc(p.text)}</div>`
+    : (p.img ? `<img class="ex-img" src="${p.img}" alt="구절 사진" loading="lazy">` : `<div class="ex-text" style="color:var(--muted)">(내용 없음)</div>`);
+  return `<article class="ex-card" data-id="${p.id}">
+    <div class="ex-type">${typeLabel}</div>
+    ${body}
+    <div class="ex-src"><span class="dot" style="background:${catHex(p.cat)}"></span><b>『${esc(p.title)||'제목 없음'}』</b>${p.author?' · '+esc(p.author):''}</div>
+  </article>`;
+}
+function renderExcerpts(){
+  const cont=document.getElementById('excerpts');
+  const empty=document.getElementById('exEmpty');
+  let arr=excerptPool();
+  const total=arr.length;
+  if(state.cat!=='전체') arr=arr.filter(p=>p.cat===state.cat);
+  if(state.tags.length) arr=arr.filter(p=>state.tags.every(t=>(p.tags||[]).includes(t)));
+  if(state.q){ const ql=state.q.toLowerCase(); arr=arr.filter(p=>((p.text||'')+' '+(p.title||'')+' '+(p.author||'')).toLowerCase().includes(ql)); }
+  if(state.exSort==='book') arr.sort((a,b)=>(a.title||'').localeCompare(b.title||'','ko'));
+  else if(state.exSort==='random') arr=seededShuffle(arr, state.excerptSeed);
+  else arr.sort((a,b)=>(b.bump||0)-(a.bump||0));
+  if(total===0){
+    cont.innerHTML=''; empty.classList.remove('hide');
+    empty.querySelector('h2').textContent='아직 모은 문장이 없어요';
+    empty.querySelector('p').textContent='책에 구절·인사이트를 적거나 페이지를 찍어보세요. 여기에 모입니다.';
+    return;
+  }
+  if(arr.length===0){
+    cont.innerHTML=''; empty.classList.remove('hide');
+    empty.querySelector('h2').textContent='해당하는 문장이 없어요';
+    empty.querySelector('p').textContent='다른 태그 · 분류 · 검색어로 찾아보세요.';
+    return;
+  }
+  empty.classList.add('hide');
+  cont.innerHTML=arr.map(exCardHTML).join('');
+  cont.querySelectorAll('.ex-card').forEach(c=>c.onclick=()=>openDetail(c.dataset.id));
+}
+
+/* ---------- now reading band + quick capture ---------- */
+function nrCover(b){
+  const ph=b.coverUrl?'':'ph';
+  const img=b.coverUrl?`<img src="${esc(b.coverUrl)}" alt="" onerror="this.closest('.nr-cover').classList.add('ph')">`:'<img alt="">';
+  return `<div class="nr-cover ${ph}" style="--cc:${catHex(b.cat)}">${img}<div class="ph-mini2">${esc(b.title)||''}</div></div>`;
+}
+function nrCard(b){
+  return `<div class="nr-card" data-id="${b.id}">
+    <div class="nr-top" data-act="open">${nrCover(b)}<div class="nr-info"><div class="t">${esc(b.title)||'(제목 없음)'}</div><div class="a">${esc(b.author)||'저자 미상'}</div></div></div>
+    <div class="nr-actions"><button data-act="text">✏️ 한 줄</button><button data-act="photo">📷 사진</button></div>
+  </div>`;
+}
+function renderNowReading(reading){
+  const wrap=document.getElementById('nowReading');
+  if(!reading || reading.length===0){ wrap.classList.add('hide'); wrap.innerHTML=''; return; }
+  const sorted=reading.slice().sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
+  wrap.classList.remove('hide');
+  wrap.innerHTML=`<div class="nr-head">지금 읽는 중 <span>${sorted.length}</span></div><div class="nr-row">${sorted.map(nrCard).join('')}</div>`;
+  wrap.querySelectorAll('.nr-card').forEach(card=>{
+    const id=card.dataset.id;
+    card.querySelector('[data-act="open"]').onclick=()=>openDetail(id);
+    card.querySelector('[data-act="text"]').onclick=e=>{ e.stopPropagation(); openQuick(id); };
+    card.querySelector('[data-act="photo"]').onclick=e=>{ e.stopPropagation(); directCapture(id); };
+  });
+}
+function openQuick(id){
+  const b=books.find(x=>x.id===id); if(!b) return;
+  state.quickId=id; state.quickPhotos=[];
+  document.getElementById('quickTitle').textContent=`『${b.title||'제목 없음'}』에 구절 추가`;
+  document.getElementById('qcText').value='';
+  document.getElementById('qcPhotoHint').textContent='페이지를 찍어 함께 보관하세요.';
+  renderQuickPhotos();
+  open('quickOverlay');
+  setTimeout(()=>document.getElementById('qcText').focus(),60);
+}
+function closeQuick(){ close('quickOverlay'); state.quickId=null; state.quickPhotos=[]; }
+function renderQuickPhotos(){ renderShots(document.getElementById('qcPhotoGrid'), state.quickPhotos, renderQuickPhotos); }
+async function addQuickPhotos(files){
+  const arr=Array.from(files||[]).filter(f=>f.type.startsWith('image/'));
+  if(!arr.length) return;
+  const hint=document.getElementById('qcPhotoHint'); hint.textContent='사진 처리 중…';
+  let failed=0;
+  for(const f of arr){ try{ const img=await compressImage(f); const shot={img,text:''}; state.quickPhotos.push(shot); renderQuickPhotos(); runShotOCR(shot, renderQuickPhotos); }catch(e){ failed++; } }
+  hint.textContent = failed? `${failed}장은 형식 문제로 추가하지 못했습니다.` : '페이지를 찍어 함께 보관하세요.';
+}
+function saveQuick(){
+  const b=books.find(x=>x.id===state.quickId); if(!b){ closeQuick(); return; }
+  const txt=document.getElementById('qcText').value.trim();
+  if(!txt && state.quickPhotos.length===0){ closeQuick(); return; }
+  if(txt) b.quote = b.quote ? (b.quote+'\n'+txt) : txt;
+  if(state.quickPhotos.length) b.quoteShots = (b.quoteShots||[]).concat(state.quickPhotos);
+  b.updatedAt=Date.now();
+  const ok=save(); bumpBackupChanges(); closeQuick(); render();
+  showToast((ok||memoryOnly)?'저장했어요 · 책장에 반영됨':'저장 공간 부족 — 사진을 줄여 주세요');
+}
+function directCapture(id){ state.directCaptureId=id; document.getElementById('directPhotoInput').click(); }
+async function handleDirectPhotos(files){
+  const b=books.find(x=>x.id===state.directCaptureId); if(!b) return;
+  const arr=Array.from(files||[]).filter(f=>f.type.startsWith('image/'));
+  if(!arr.length) return;
+  showToast('사진 저장 중…');
+  const fresh=[];
+  for(const f of arr){ try{ const img=await compressImage(f); const shot={img,text:''}; b.quoteShots=(b.quoteShots||[]); b.quoteShots.push(shot); fresh.push(shot); }catch(e){} }
+  if(fresh.length){ b.updatedAt=Date.now(); const ok=save(); bumpBackupChanges(); render(); showToast((ok||memoryOnly)?`사진 ${fresh.length}장 저장됨 · 글자 읽는 중…`:'저장 공간 부족 — 사진을 줄여 주세요'); fresh.forEach(s=>runShotOCR(s,null)); }
+  else showToast('사진을 추가하지 못했습니다');
+}
+let toastTimer;
+function showToast(msg){
+  const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+/* ---------- daily quote ("오늘 다시 보는 문장") ---------- */
+function passagePool(){
+  const pool=[];
+  books.forEach(b=>{
+    (b.quote||'').split('\n').map(s=>s.trim()).filter(Boolean).forEach(t=>pool.push({text:t,type:'구절',id:b.id,title:b.title,author:b.author,cat:b.cat}));
+    (b.insight||'').split('\n').map(s=>s.trim()).filter(Boolean).forEach(t=>pool.push({text:t,type:'인사이트',id:b.id,title:b.title,author:b.author,cat:b.cat}));
+    (b.quoteShots||[]).forEach(s=>{ const t=(s.text||'').trim(); if(t) pool.push({text:t,type:'구절',id:b.id,title:b.title,author:b.author,cat:b.cat}); });
+  });
+  return pool;
+}
+function todayKey(){ const d=new Date(); return d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate(); }
+function dailyIndex(n,seed){ let x=Math.sin(seed*9301+49297)*233280; x=x-Math.floor(x); return Math.floor(x*n); }
+function pickDailyKey(){
+  const pool=passagePool(); if(!pool.length) return null;
+  let weighted=[];
+  pool.forEach(p=>{ const r=reactionOf(p); if(r===-1) return; const w=r===1?3:1; for(let k=0;k<w;k++) weighted.push(p); });
+  if(!weighted.length) weighted=pool.slice();
+  return passKey(weighted[dailyIndex(weighted.length,todayKey())]);
+}
+function randomDailyKey(excludeKey){
+  const pool=passagePool().filter(p=>reactionOf(p)!==-1);
+  if(!pool.length) return null;
+  if(pool.length===1) return passKey(pool[0]);
+  let pick; do{ pick=pool[Math.floor(Math.random()*pool.length)]; }while(passKey(pick)===excludeKey);
+  return passKey(pick);
+}
+function renderDaily(show){
+  const el=document.getElementById('daily');
+  const pool=show?passagePool():[];
+  if(!show || pool.length===0){ el.classList.add('hide'); el.innerHTML=''; return; }
+  const today=todayKey();
+  if(state.dailyDay!==today){ state.dailyDay=today; state.dailyKey=null; }
+  let p = state.dailyKey ? pool.find(x=>passKey(x)===state.dailyKey) : null;
+  if(!p){ state.dailyKey=pickDailyKey(); p=pool.find(x=>passKey(x)===state.dailyKey); }
+  if(!p){ el.classList.add('hide'); el.innerHTML=''; return; }
+  el.classList.remove('hide');
+  const r=reactionOf(p);
+  const src=`<span class="dot" style="background:${catHex(p.cat)}"></span><span><b>『${esc(p.title)||'제목 없음'}』</b>${p.author?' · '+esc(p.author):''}</span>`;
+  el.innerHTML=`
+    <div class="daily-eyebrow">오늘 다시 보는 ${p.type==='구절'?'문장':'인사이트'}
+      <button class="daily-shuffle" id="dailyShuffle" title="다른 문장 보기">↻</button>
+    </div>
+    <div class="daily-text">${esc(p.text)}</div>
+    <div class="daily-src">${src}</div>
+    <div class="daily-react">
+      <button class="dr up ${r===1?'on':''}" data-r="up">👍 <span>좋아요</span></button>
+      <button class="dr down ${r===-1?'on':''}" data-r="down">🔕 <span>그만</span></button>
+    </div>`;
+  el.querySelector('.daily-text').onclick=()=>openDetail(p.id);
+  el.querySelector('.daily-src').onclick=()=>openDetail(p.id);
+  el.querySelector('#dailyShuffle').onclick=e=>{ e.stopPropagation(); dailyShuffle(); };
+  el.querySelector('.dr.up').onclick=e=>{ e.stopPropagation(); handleReact(p,'up'); };
+  el.querySelector('.dr.down').onclick=e=>{ e.stopPropagation(); handleReact(p,'down'); };
+}
+function handleReact(p,kind){
+  const cur=reactionOf(p);
+  if(kind==='up'){
+    const nv=cur===1?0:1; setReaction(p,nv);
+    showToast(nv===1?'👍 좋아요 · 더 자주 보여드릴게요':'좋아요를 취소했어요');
+    render();
+  }else{
+    const nv=cur===-1?0:-1; setReaction(p,nv);
+    if(nv===-1){ showToast('🔕 이 문장은 그만 보여드릴게요'); state.dailyKey=randomDailyKey(passKey(p)); }
+    else showToast('숨김을 해제했어요');
+    render();
+  }
+}
+function dailyShuffle(){
+  const k=randomDailyKey(state.dailyKey);
+  if(k){ state.dailyKey=k; render(); }
+}
+
+/* ---------- detail ---------- */
+function openDetail(id){
+  const b=books.find(x=>x.id===id); if(!b) return;
+  state.detailId=id;
+  document.getElementById('dSpine').style.background=catColor(b.cat);
+  const dc=document.getElementById('dCover'); dc.style.setProperty('--cc',catHex(b.cat));
+  const di=document.getElementById('dCoverImg');
+  if(b.coverUrl){ dc.classList.remove('ph'); di.src=b.coverUrl; di.onerror=()=>dc.classList.add('ph'); }
+  else { dc.classList.add('ph'); di.removeAttribute('src'); }
+  document.getElementById('dCoverPh').textContent=b.title||'';
+  document.getElementById('dCat').textContent=b.cat||'기타';
+  document.getElementById('dCat').style.color=catColor(b.cat);
+  document.getElementById('dTitle').textContent=b.title||'(제목 없음)';
+  document.getElementById('dMeta').innerHTML=
+    `<span>${esc(b.author)||'저자 미상'}</span>${sealRate(b.rate)}`+
+    `<span class="status ${b.status}" style="position:static">${STATUS_LABEL[b.status]||''}</span>`+
+    (b.date?`<span>읽은 날 ${b.date}</span>`:'');
+  const pub=[b.publisher,b.year].filter(Boolean).join(' · ');
+  document.getElementById('dPub').textContent=pub?`${pub} 발행`:'';
+
+  const sec=[];
+  if(b.oneliner) sec.push(secP('한 줄 소개',b.oneliner));
+  if(b.key) sec.push(secList('핵심 내용',b.key));
+  if(b.insight) sec.push(secList('주요 인사이트',b.insight));
+  if(b.quote || (b.quoteShots&&b.quoteShots.length)) sec.push(secQuote('인상 깊은 구절',b.quote,b.quoteShots));
+  if(b.note) sec.push(secP('적용점 · 메모',b.note));
+  if(b.tags&&b.tags.length) sec.push(`<div class="d-sec"><h4>태그</h4><div class="tags">${b.tags.map(t=>`<span data-t="${esc(t)}">#${esc(t)}</span>`).join('')}</div></div>`);
+  if(sec.length===0) sec.push(`<div class="d-sec"><p style="color:var(--muted)">아직 요약 내용이 없습니다. 수정에서 채워보세요.</p></div>`);
+  const body=document.getElementById('dBody'); body.innerHTML=sec.join('');
+  body.querySelectorAll('.tags span').forEach(s=>s.onclick=()=>{ if(!state.tags.includes(s.dataset.t)) state.tags.push(s.dataset.t); close('detailOverlay'); render(); });
+  body.querySelectorAll('.shot-view img').forEach(im=>im.onclick=()=>openLightbox(im.src));
+  open('detailOverlay');
+}
+function secP(t,v){ return `<div class="d-sec"><h4>${t}</h4><p>${esc(v)}</p></div>`; }
+function secList(t,v){ const items=v.split('\n').map(s=>s.trim()).filter(Boolean); if(items.length<=1) return secP(t,v); return `<div class="d-sec"><h4>${t}</h4><ul>${items.map(i=>`<li>${esc(i)}</li>`).join('')}</ul></div>`; }
+function secQuote(t,v,shots){
+  const items=(v||'').split('\n').map(s=>s.trim()).filter(Boolean);
+  let h=`<div class="d-sec"><h4>${t}</h4>`;
+  h+=items.map(i=>`<div class="quote">${esc(i)}</div>`).join('');
+  if(shots&&shots.length){
+    h+=shots.map(s=>`<div class="shot-view"><img src="${s.img}" alt="구절 사진" loading="lazy">${(s.text||'').trim()?`<div class="shot-cap">${esc(s.text)}</div>`:''}</div>`).join('');
+  }
+  return h+`</div>`;
+}
+
+/* ---------- edit ---------- */
+function updateCvThumb(){
+  const url=document.getElementById('fCover').value.trim();
+  const t=document.getElementById('cvThumb');
+  if(url){ t.innerHTML=`<img src="${esc(url)}" alt="" onerror="this.parentElement.textContent='이미지 오류'">`; }
+  else { t.textContent='표지 없음'; }
+}
+function compressImage(file,maxDim=1280,quality=0.72){
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=()=>{
+      const img=new Image();
+      img.onload=()=>{
+        let w=img.width,h=img.height;
+        if(w>=h && w>maxDim){ h=Math.round(h*maxDim/w); w=maxDim; }
+        else if(h>w && h>maxDim){ w=Math.round(w*maxDim/h); h=maxDim; }
+        const cv=document.createElement('canvas'); cv.width=w; cv.height=h;
+        cv.getContext('2d').drawImage(img,0,0,w,h);
+        try{ resolve(cv.toDataURL('image/jpeg',quality)); }catch(e){ reject(e); }
+      };
+      img.onerror=()=>reject(new Error('이미지를 읽을 수 없습니다'));
+      img.src=reader.result;
+    };
+    reader.onerror=()=>reject(new Error('파일 읽기 실패'));
+    reader.readAsDataURL(file);
+  });
+}
+function renderPhotoGrid(){ renderShots(document.getElementById('photoGrid'), state.photos, renderPhotoGrid); }
+async function addPhotos(files){
+  const arr=Array.from(files||[]).filter(f=>f.type.startsWith('image/'));
+  if(!arr.length) return;
+  const hint=document.getElementById('photoHint'); const base=hint.textContent;
+  hint.textContent='사진 처리 중…';
+  let failed=0;
+  for(const f of arr){
+    try{ const img=await compressImage(f); const shot={img,text:''}; state.photos.push(shot); renderPhotoGrid(); runShotOCR(shot, renderPhotoGrid); }
+    catch(e){ failed++; }
+  }
+  hint.textContent = failed? `${failed}장은 형식 문제로 추가하지 못했습니다.` : base;
+}
+function openLightbox(src){ document.getElementById('lightboxImg').src=src; document.getElementById('lightbox').classList.add('show'); }
+function closeLightbox(){ document.getElementById('lightbox').classList.remove('show'); }
+
+/* ---------- OCR (Tesseract.js, lazy CDN + cached) ---------- */
+const ocrBusy=new WeakSet();
+let _tessScript=null, _ocrWorker=null, _ocrWorkerP=null;
+function loadTesseract(){
+  if(window.Tesseract) return Promise.resolve();
+  if(_tessScript) return _tessScript;
+  _tessScript=new Promise((res,rej)=>{
+    const s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+    s.async=true; s.onload=()=>res(); s.onerror=()=>{ _tessScript=null; rej(new Error('OCR 로드 실패')); };
+    document.head.appendChild(s);
+  });
+  return _tessScript;
+}
+async function getOcrWorker(){
+  if(_ocrWorker) return _ocrWorker;
+  if(_ocrWorkerP) return _ocrWorkerP;
+  _ocrWorkerP=(async()=>{
+    showToast('글자 인식 준비 중… (첫 1회만 받아요)');
+    await loadTesseract();
+    const w=await window.Tesseract.createWorker('kor+eng');
+    _ocrWorker=w; return w;
+  })();
+  try{ return await _ocrWorkerP; }catch(e){ _ocrWorkerP=null; throw e; }
+}
+async function ocrImage(dataUrl){
+  const w=await getOcrWorker();
+  const { data:{ text } }=await w.recognize(dataUrl);
+  return (text||'').replace(/[ \t]+\n/g,'\n').replace(/\n{3,}/g,'\n\n').trim();
+}
+async function runShotOCR(shot, reRender){
+  ocrBusy.add(shot); if(reRender) reRender();
+  let ok=true, txt='';
+  try{ txt=await ocrImage(shot.img); shot.text=txt; }
+  catch(e){ ok=false; }
+  ocrBusy.delete(shot); if(reRender) reRender();
+  save(); render();
+  if(!ok) showToast('글자 인식 실패 — 인터넷 연결을 확인하세요');
+  else if(!txt) showToast('글자를 찾지 못했어요 — 직접 입력해 주세요');
+}
+
+/* ---------- shot rows (photo + editable OCR text), shared by editor & quick sheet ---------- */
+function shotRowHTML(s,i){
+  const busy=ocrBusy.has(s);
+  const status=busy?'<span class="ocr-status">글자 읽는 중…</span>':'';
+  const readBtn=(!busy && !(s.text||'').trim())?`<button type="button" class="ocr-read" data-i="${i}">글자 읽기</button>`:'';
+  return `<div class="shot">
+    <div class="shot-thumb"><img src="${s.img}" data-i="${i}" alt=""></div>
+    <div class="shot-main">
+      <textarea class="shot-text" data-i="${i}" placeholder="${busy?'글자 읽는 중…':'사진 속 글자 (자동 인식 후 수정 가능)'}">${esc(s.text||'')}</textarea>
+      <div class="shot-meta">${status}${readBtn}</div>
+    </div>
+    <button type="button" class="shot-del" data-i="${i}">×</button>
+  </div>`;
+}
+function renderShots(container, arr, selfRender){
+  container.innerHTML=arr.map((s,i)=>shotRowHTML(s,i)).join('');
+  container.querySelectorAll('.shot-del').forEach(b=>b.onclick=()=>{ arr.splice(+b.dataset.i,1); selfRender(); });
+  container.querySelectorAll('.shot-thumb img').forEach(im=>im.onclick=()=>openLightbox(im.src));
+  container.querySelectorAll('.shot-text').forEach(t=>t.oninput=()=>{ arr[+t.dataset.i].text=t.value; });
+  container.querySelectorAll('.ocr-read').forEach(b=>b.onclick=()=>{ runShotOCR(arr[+b.dataset.i], selfRender); });
+}
+function renderRateEdit(){
+  const w=document.getElementById('rateEdit');
+  let h=''; for(let i=1;i<=5;i++) h+=`<i class="${i<=state.rate?'f':''}" data-r="${i}"></i>`;
+  w.innerHTML=h;
+  w.querySelectorAll('i').forEach(el=>el.onclick=()=>{ const r=+el.dataset.r; state.rate=(state.rate===r)?0:r; renderRateEdit(); });
+}
+function openEdit(id){
+  state.editId=id||null;
+  document.getElementById('editTitle').textContent=id?'책 수정':'책 추가';
+  document.getElementById('deleteBtn').classList.toggle('hide',!id);
+  document.getElementById('qInput').value=''; document.getElementById('lkResults').innerHTML=''; lkResults=[];
+  setQNote('표지·저자·출판사·출간연도를 자동으로 채웁니다. 인터넷 연결 필요.',false);
+  document.getElementById('aiInput').value=''; setAiNote('제목만 적어도 됩니다. 결과는 검토 후 수정하세요.',false);
+  const b=id?books.find(x=>x.id===id):null;
+  document.getElementById('fTitle').value=b?.title||'';
+  document.getElementById('fAuthor').value=b?.author||'';
+  document.getElementById('fPublisher').value=b?.publisher||'';
+  document.getElementById('fYear').value=b?.year||'';
+  document.getElementById('fCat').value=b?.cat||'투자';
+  document.getElementById('fStatus').value=b?.status||'done';
+  document.getElementById('fDate').value=b?.date||'';
+  document.getElementById('fCover').value=b?.coverUrl||'';
+  document.getElementById('fOneliner').value=b?.oneliner||'';
+  document.getElementById('fKey').value=b?.key||'';
+  document.getElementById('fInsight').value=b?.insight||'';
+  document.getElementById('fQuote').value=b?.quote||'';
+  document.getElementById('fNote').value=b?.note||'';
+  document.getElementById('fTags').value=(b?.tags||[]).join(', ');
+  state.rate=b?.rate||0; renderRateEdit(); updateCvThumb();
+  state.photos=(b?.quoteShots||[]).map(s=>({img:s.img,text:s.text||''})); renderPhotoGrid();
+  open('editOverlay');
+}
+function collectForm(){
+  return {
+    title:document.getElementById('fTitle').value.trim(),
+    author:document.getElementById('fAuthor').value.trim(),
+    publisher:document.getElementById('fPublisher').value.trim(),
+    year:document.getElementById('fYear').value.trim(),
+    cat:document.getElementById('fCat').value,
+    status:document.getElementById('fStatus').value,
+    date:document.getElementById('fDate').value,
+    coverUrl:document.getElementById('fCover').value.trim(),
+    oneliner:document.getElementById('fOneliner').value.trim(),
+    key:document.getElementById('fKey').value.trim(),
+    insight:document.getElementById('fInsight').value.trim(),
+    quote:document.getElementById('fQuote').value.trim(),
+    quoteShots:state.photos.slice(),
+    note:document.getElementById('fNote').value.trim(),
+    tags:document.getElementById('fTags').value.split(',').map(s=>s.trim()).filter(Boolean),
+    rate:state.rate
+  };
+}
+function saveBook(){
+  const data=collectForm();
+  if(!data.title){ alert('제목을 입력하세요.'); return; }
+  if(state.editId){ const b=books.find(x=>x.id===state.editId); Object.assign(b,data,{updatedAt:Date.now()}); }
+  else { books.push(Object.assign({id:uid(),createdAt:Date.now(),updatedAt:Date.now()},data)); }
+  const ok=save();
+  if(!ok && !memoryOnly){ alert('브라우저 저장 공간이 가득 찼습니다. 첨부한 사진 용량이 큰 것 같아요.\n사진을 일부 삭제한 뒤 다시 저장해 주세요.\n(변경 내용은 화면엔 보이지만 아직 영구 저장되지 않았습니다.)'); }
+  bumpBackupChanges(); close('editOverlay'); render();
+}
+function deleteBook(){
+  if(!state.editId) return;
+  if(!confirm('이 책 기록을 삭제할까요?')) return;
+  books=books.filter(x=>x.id!==state.editId);
+  bumpBackupChanges(); save(); close('editOverlay'); render();
+}
+
+/* ---------- AI summarize ---------- */
+function setAiNote(t,err){ const n=document.getElementById('aiNote'); n.textContent=t; n.classList.toggle('err',!!err); }
+async function aiSummarize(){
+  const raw=document.getElementById('aiInput').value.trim();
+  const title=document.getElementById('fTitle').value.trim();
+  if(!raw && !title){ setAiNote('책 제목이나 노트를 입력하세요.',true); return; }
+  const btn=document.getElementById('aiBtn'); btn.disabled=true; btn.textContent='생성 중…'; setAiNote('요약을 생성하고 있습니다…',false);
+  const prompt=`당신은 독서 기록 정리 도우미입니다. 아래 입력을 바탕으로 책 요약을 JSON으로만 출력하세요.
+입력에 제목/저자가 있으면 사용하고, 없으면 책 제목 "${title}"의 일반적 내용을 활용하세요. 추측이 불확실하면 빈 문자열로 두세요.
+오직 아래 형식의 JSON만 출력 (마크다운/설명 금지):
+{"title":"","author":"","cat":"투자|경영|문학|자기계발|기타 중 하나","oneliner":"한 문장 소개","key":"핵심 내용 3~5개를 줄바꿈으로","insight":"주요 인사이트 2~4개를 줄바꿈으로","quote":"인상 깊은 구절 0~2개를 줄바꿈으로","note":"적용점 한두 문장","tags":["태그","태그"]}
+
+입력:
+${raw||title}`;
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,messages:[{role:'user',content:prompt}]})
+    });
+    if(!res.ok) throw new Error('http '+res.status);
+    const data=await res.json();
+    let txt=(data.content||[]).map(c=>c.text||'').join('').trim().replace(/```json|```/g,'').trim();
+    const o=JSON.parse(txt);
+    if(o.title && !title) document.getElementById('fTitle').value=o.title;
+    if(o.author && !document.getElementById('fAuthor').value) document.getElementById('fAuthor').value=o.author;
+    if(o.cat && CATS[o.cat]) document.getElementById('fCat').value=o.cat;
+    if(o.oneliner) document.getElementById('fOneliner').value=o.oneliner;
+    if(o.key) document.getElementById('fKey').value=o.key;
+    if(o.insight) document.getElementById('fInsight').value=o.insight;
+    if(o.quote) document.getElementById('fQuote').value=o.quote;
+    if(o.note) document.getElementById('fNote').value=o.note;
+    if(o.tags&&o.tags.length) document.getElementById('fTags').value=o.tags.join(', ');
+    setAiNote('생성 완료. 내용을 검토·수정한 뒤 저장하세요.',false);
+  }catch(e){
+    setAiNote('AI 요약은 claude.ai 환경에서만 동작합니다. (로컬 파일에서는 직접 입력해 주세요)',true);
+  }finally{ btn.disabled=false; btn.textContent='요약 생성'; }
+}
+
+/* ---------- barcode scan (ISBN) ---------- */
+let scanStream=null, scanTimer=null, scanDetector=null, zxingReader=null, _zxingP=null, scanLock=false;
+function isValidIsbn(s){
+  s=(s||'').replace(/[^0-9Xx]/g,'');
+  if(s.length===13 && (s.indexOf('978')===0 || s.indexOf('979')===0)) return true;
+  if(s.length===10) return true;
+  return false;
+}
+function setScanStatus(t,err){ const n=document.getElementById('scanStatus'); if(n){ n.textContent=t; n.classList.toggle('err',!!err); } }
+function loadZxing(){
+  if(window.ZXing && window.ZXing.BrowserMultiFormatReader) return Promise.resolve();
+  if(_zxingP) return _zxingP;
+  _zxingP=new Promise((res,rej)=>{
+    const s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js';
+    s.async=true; s.onload=()=>res(); s.onerror=()=>{ _zxingP=null; rej(new Error('zxing load failed')); };
+    document.head.appendChild(s);
+  });
+  return _zxingP;
+}
+async function startScan(){
+  scanLock=false;
+  open('scanOverlay');
+  setScanStatus('카메라 준비 중…',false);
+  const video=document.getElementById('scanVideo'); video.muted=true;
+  // 1) 네이티브 BarcodeDetector (안드로이드 크롬 등)
+  if('BarcodeDetector' in window){
+    let formats=[];
+    try{ formats=await window.BarcodeDetector.getSupportedFormats(); }catch(e){}
+    if(formats.indexOf('ean_13')>=0){
+      try{ scanStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}}}); }
+      catch(e){ setScanStatus('카메라 권한이 필요해요. 브라우저 설정에서 허용해 주세요.',true); return; }
+      video.srcObject=scanStream;
+      try{ await video.play(); }catch(e){}
+      try{ scanDetector=new window.BarcodeDetector({formats:['ean_13','ean_8']}); }catch(e){ scanDetector=null; }
+      if(scanDetector){ setScanStatus('책 뒤표지 바코드를 비춰 주세요',false); scanLoopNative(video); return; }
+      if(scanStream){ scanStream.getTracks().forEach(t=>t.stop()); scanStream=null; }
+      video.srcObject=null;
+    }
+  }
+  // 2) ZXing 폴백 (iOS 사파리 등)
+  try{ setScanStatus('스캐너 불러오는 중… (첫 1회만)',false); await loadZxing(); }
+  catch(e){ setScanStatus('스캐너를 불러오지 못했어요. 인터넷을 확인하거나 직접 입력해 주세요.',true); return; }
+  try{
+    zxingReader=new window.ZXing.BrowserMultiFormatReader();
+    setScanStatus('책 뒤표지 바코드를 비춰 주세요',false);
+    const cb=(result)=>{ if(result){ const raw=(result.getText?result.getText():String(result)).replace(/[^0-9Xx]/g,''); if(isValidIsbn(raw)) onScanned(raw); } };
+    if(zxingReader.decodeFromConstraints) zxingReader.decodeFromConstraints({video:{facingMode:{ideal:'environment'}}}, video, cb);
+    else zxingReader.decodeFromVideoDevice(null, video, cb);
+  }catch(e){ setScanStatus('카메라를 열 수 없어요. 권한을 확인해 주세요.',true); }
+}
+function scanLoopNative(video){
+  if(!scanStream) return;
+  scanDetector.detect(video).then(codes=>{
+    if(!scanStream) return;
+    for(const c of (codes||[])){ const raw=(c.rawValue||'').replace(/[^0-9Xx]/g,''); if(isValidIsbn(raw)){ onScanned(raw); return; } }
+    scanTimer=setTimeout(()=>scanLoopNative(video),160);
+  }).catch(()=>{ if(scanStream) scanTimer=setTimeout(()=>scanLoopNative(video),320); });
+}
+function onScanned(isbn){
+  if(scanLock) return; scanLock=true;
+  stopScan();
+  const inp=document.getElementById('qInput'); if(inp) inp.value=isbn;
+  showToast('바코드 인식 · '+isbn);
+  lookup();
+}
+function stopScan(){
+  if(scanTimer){ clearTimeout(scanTimer); scanTimer=null; }
+  if(zxingReader){ try{ zxingReader.reset(); }catch(e){} zxingReader=null; }
+  if(scanStream){ scanStream.getTracks().forEach(t=>t.stop()); scanStream=null; }
+  scanDetector=null;
+  const v=document.getElementById('scanVideo'); if(v){ try{ v.pause(); }catch(e){} v.srcObject=null; }
+  close('scanOverlay');
+  if(document.getElementById('editOverlay').classList.contains('show')) document.body.style.overflow='hidden';
+}
+
+/* ---------- backup nudge + storage meter ---------- */
+const BACKUP_KEY='bookshelf_backup';
+const STORAGE_LIMIT=5*1048576;
+let backup={at:0,count:0,changes:0,snoozeUntil:0};
+function loadBackup(){ try{ const o=JSON.parse(localStorage.getItem(BACKUP_KEY)||'null'); if(o&&typeof o==='object') backup=Object.assign({at:0,count:0,changes:0,snoozeUntil:0},o); }catch(e){} }
+function saveBackupMeta(){ try{ localStorage.setItem(BACKUP_KEY,JSON.stringify(backup)); }catch(e){} }
+function bumpBackupChanges(n){ backup.changes=(backup.changes||0)+(n||1); saveBackupMeta(); }
+function markBackedUp(){ backup={at:Date.now(),count:books.length,changes:0,snoozeUntil:0}; saveBackupMeta(); }
+function storageBytes(){ let total=0; try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); const v=localStorage.getItem(k)||''; total+=k.length+v.length; } }catch(e){} return total*2; }
+function fmtSize(bytes){ if(bytes>=1048576) return (bytes/1048576).toFixed(1)+'MB'; return Math.max(1,Math.round(bytes/1024))+'KB'; }
+function renderBackup(show){
+  const el=document.getElementById('backup'); if(!el) return;
+  const hideIt=()=>{ el.classList.add('hide'); el.classList.remove('warn'); el.innerHTML=''; };
+  if(!show || books.length===0){ hideIt(); return; }
+  const bytes=storageBytes(), pct=bytes/STORAGE_LIMIT;
+  const newBooks=Math.max(0, books.length-(backup.count||0));
+  const changes=backup.changes||0;
+  const days=backup.at ? (Date.now()-backup.at)/86400000 : Infinity;
+  let type=null;
+  if(!memoryOnly && pct>=0.8) type='storage';
+  else if(Date.now() <= (backup.snoozeUntil||0)) type=null;
+  else if(!backup.at) type = books.length>=3 ? 'first' : null;
+  else if(newBooks>=3 || changes>=6 || (days>=10 && (newBooks>=1||changes>=1))) type='backup';
+  if(!type){ hideIt(); return; }
+  let icon='📦', title='', sub='';
+  if(type==='storage'){
+    icon='⚠️'; title='저장 공간이 거의 찼어요';
+    sub=`약 ${Math.round(pct*100)}% 사용 중 (${fmtSize(bytes)}). 지금 백업해 두고, 오래된 사진을 정리하면 좋아요.`;
+  }else if(type==='first'){
+    title='기록을 백업해 둘까요?';
+    sub=`아직 백업한 적이 없어요. 브라우저 기록을 지우거나 기기를 바꾸면 책장이 사라질 수 있어요. · 현재 ${fmtSize(bytes)} 사용`;
+  }else{
+    title='백업해 둘까요?';
+    let lead;
+    if(newBooks>0 && changes>0) lead=`마지막 백업 후 ${newBooks}권을 더했고 기록도 바뀌었어요.`;
+    else if(newBooks>0) lead=`마지막 백업 후 ${newBooks}권을 더했어요.`;
+    else if(changes>0) lead='마지막 백업 후 기록이 바뀌었어요.';
+    else lead='마지막 백업이 좀 지났어요.';
+    sub=`${lead} 지금 내보내면 안전해요. · 현재 ${fmtSize(bytes)} 사용`;
+  }
+  el.classList.remove('hide');
+  el.classList.toggle('warn', type==='storage');
+  el.innerHTML=`<div class="backup-inner">
+    <div class="backup-icon">${icon}</div>
+    <div class="backup-text"><div class="backup-title">${title}</div><div class="backup-sub">${sub}</div></div>
+    <div class="backup-actions">
+      <button class="btn small" id="backupLater">나중에</button>
+      <button class="btn primary small" id="backupNow">내보내기</button>
+    </div>
+  </div>`;
+  el.querySelector('#backupNow').onclick=()=>{ exportData(); };
+  el.querySelector('#backupLater').onclick=()=>{ backup.snoozeUntil=Date.now()+3*86400000; saveBackupMeta(); el.classList.add('hide'); };
+}
+
+/* ---------- export / import ---------- */
+function exportData(){
+  if(books.length===0){ alert('내보낼 책이 없습니다.'); return; }
+  const blob=new Blob([JSON.stringify(books,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download=`책장_백업_${new Date().toISOString().slice(0,10)}.json`; a.click(); URL.revokeObjectURL(a.href);
+  markBackedUp(); render(); showToast('백업 파일을 내보냈어요');
+}
+function importData(file){
+  const r=new FileReader();
+  r.onload=()=>{
+    try{
+      const arr=JSON.parse(r.result); if(!Array.isArray(arr)) throw 0;
+      if(!confirm(`${arr.length}권을 불러옵니다.\n확인=기존 기록에 추가 / 취소=중단`)) return;
+      arr.forEach(b=>{ if(!b.id) b.id=uid(); if(!b.createdAt) b.createdAt=Date.now(); });
+      const ids=new Set(books.map(b=>b.id));
+      arr.forEach(b=>{ if(!ids.has(b.id)) books.push(b); });
+      const ok=save(); render();
+      alert((ok||memoryOnly)?'불러오기 완료.':'불러왔지만 저장 공간이 부족해 영구 저장되지 않았습니다. 사진 용량을 줄여 보세요.');
+    }catch(e){ alert('JSON 파일을 읽을 수 없습니다.'); }
+  };
+  r.readAsText(file);
+}
+
+/* ---------- modal helpers ---------- */
+function open(id){ document.getElementById(id).classList.add('show'); document.body.style.overflow='hidden'; }
+function close(id){ document.getElementById(id).classList.remove('show'); document.body.style.overflow=''; }
+
+/* ---------- wire ---------- */
+document.getElementById('q').oninput=e=>{ state.q=e.target.value; render(); };
+document.getElementById('sortSel').onchange=e=>{ state.sort=e.target.value; render(); };
+document.getElementById('exSort').onchange=e=>{ state.exSort=e.target.value; if(state.exSort==='random') state.excerptSeed=Date.now(); render(); };
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>setMode(t.dataset.mode));
+document.getElementById('themeBtn').onclick=toggleTheme;
+document.getElementById('addBtn').onclick=()=>openEdit(null);
+document.getElementById('emptyAdd').onclick=()=>openEdit(null);
+document.getElementById('saveBtn').onclick=saveBook;
+document.getElementById('deleteBtn').onclick=deleteBook;
+document.getElementById('aiBtn').onclick=aiSummarize;
+document.getElementById('qBtn').onclick=lookup;
+document.getElementById('qScanBtn').onclick=startScan;
+document.getElementById('scanClose').onclick=stopScan;
+document.getElementById('scanCancel').onclick=stopScan;
+document.getElementById('qInput').addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); lookup(); } });
+document.getElementById('fCover').addEventListener('input',updateCvThumb);
+document.getElementById('addPhotoBtn').onclick=()=>document.getElementById('photoInput').click();
+document.getElementById('photoInput').onchange=e=>{ addPhotos(e.target.files); e.target.value=''; };
+document.getElementById('lightbox').onclick=closeLightbox;
+document.getElementById('dEdit').onclick=()=>{ close('detailOverlay'); openEdit(state.detailId); };
+document.getElementById('exportBtn').onclick=exportData;
+document.getElementById('importBtn').onclick=()=>document.getElementById('fileIn').click();
+document.getElementById('fileIn').onchange=e=>{ if(e.target.files[0]) importData(e.target.files[0]); e.target.value=''; };
+document.getElementById('tagBtn').onclick=()=>{ state.cloudOpen=!state.cloudOpen; document.getElementById('tagCloud').classList.toggle('open',state.cloudOpen); document.getElementById('tagBtn').classList.toggle('on',state.cloudOpen); };
+document.querySelectorAll('.viewtog button').forEach(b=>b.onclick=()=>{
+  state.view=b.dataset.view; saveView();
+  document.querySelectorAll('.viewtog button').forEach(x=>x.classList.toggle('on',x.dataset.view===state.view));
+  render();
+});
+document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>{ close('editOverlay'); close('detailOverlay'); });
+document.querySelectorAll('[data-rclose]').forEach(b=>b.onclick=()=>close('reviewOverlay'));
+document.getElementById('reviewCopy').onclick=copyReview;
+document.querySelectorAll('[data-qclose]').forEach(b=>b.onclick=closeQuick);
+document.getElementById('qcSave').onclick=saveQuick;
+document.getElementById('qcPhotoBtn').onclick=()=>document.getElementById('qcPhotoInput').click();
+document.getElementById('qcPhotoInput').onchange=e=>{ addQuickPhotos(e.target.files); e.target.value=''; };
+document.getElementById('directPhotoInput').onchange=e=>{ handleDirectPhotos(e.target.files); e.target.value=''; };
+document.querySelectorAll('.overlay').forEach(o=>o.onclick=e=>{ if(e.target===o){ o.classList.remove('show'); document.body.style.overflow=''; if(o.id==='quickOverlay'){ state.quickId=null; state.quickPhotos=[]; } } });
+document.getElementById('scanOverlay').onclick=e=>{ if(e.target.id==='scanOverlay') stopScan(); };
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ if(document.getElementById('lightbox').classList.contains('show')){ closeLightbox(); return; } if(document.getElementById('scanOverlay').classList.contains('show')){ stopScan(); return; } close('editOverlay'); close('detailOverlay'); close('reviewOverlay'); closeQuick(); } });
+
+/* ---------- init ---------- */
+load();
+applyTheme();
+document.querySelectorAll('.viewtog button').forEach(x=>x.classList.toggle('on',x.dataset.view===state.view));
+render();
+</script>
+</body>
+</html>

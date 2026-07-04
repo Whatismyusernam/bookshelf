@@ -392,6 +392,39 @@
   .auth-toggle{text-align:center;margin-top:18px;font-size:13px;color:var(--muted)}
   .auth-toggle button{color:var(--seal);font-weight:600;font-size:13px;margin-left:5px}
   .auth-toggle button:hover{text-decoration:underline}
+  .auth-info{background:var(--paper-2);border:1px solid var(--line);border-radius:9px;padding:9px 12px;font-size:12.5px;color:var(--ink-soft);margin-bottom:14px;line-height:1.5}
+  .auth-forgot{text-align:center;margin-top:12px}
+  .auth-forgot button{color:var(--muted);font-size:12.5px}
+  .auth-forgot button:hover{color:var(--seal);text-decoration:underline}
+  /* ---- On this day ---- */
+  .onthisday{background:var(--paper-2);border:1px solid var(--line);border-radius:16px;padding:16px 18px;margin-bottom:22px}
+  .otd-head{display:flex;align-items:center;gap:8px;font-family:var(--serif);font-size:14.5px;font-weight:600;color:var(--ink);margin-bottom:13px}
+  .otd-list{display:flex;gap:12px;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin}
+  .otd-card{flex:0 0 auto;width:212px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:11px;display:flex;gap:11px;cursor:pointer;align-items:center;transition:border-color .14s}
+  .otd-card:hover{border-color:var(--seal)}
+  .otd-cover{width:40px;height:56px;border-radius:5px;flex-shrink:0;overflow:hidden;background:var(--cc,var(--c-etc));box-shadow:var(--shadow);position:relative}
+  .otd-cover img{width:100%;height:100%;object-fit:cover}
+  .otd-cover.ph img{display:none}
+  .otd-cover .otd-ph{display:none}
+  .otd-cover.ph .otd-ph{display:flex;align-items:center;justify-content:center;height:100%;padding:4px;color:rgba(255,255,255,.95);font-family:var(--serif);font-size:8px;text-align:center;line-height:1.2;overflow:hidden}
+  .otd-info{min-width:0}
+  .otd-ago{font-size:10.5px;font-weight:700;color:var(--seal);letter-spacing:.02em}
+  .otd-t{font-family:var(--serif);font-size:13.5px;font-weight:600;line-height:1.3;margin-top:2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  /* ---- Milestones (badges) ---- */
+  .rv-badges{display:flex;flex-wrap:wrap;gap:9px;justify-content:center}
+  .badge{display:flex;flex-direction:column;align-items:center;gap:6px;width:82px;text-align:center;padding:12px 6px;border-radius:12px;border:1px solid var(--line);background:var(--paper-2)}
+  .badge.on{border-color:var(--seal);background:var(--surface)}
+  .badge .ic{font-size:24px;filter:grayscale(1);opacity:.4}
+  .badge.on .ic{filter:none;opacity:1}
+  .badge .bl{font-size:10.5px;color:var(--muted);line-height:1.25}
+  .badge.on .bl{color:var(--ink-soft)}
+  .rv-next{margin-top:14px;font-size:12.5px;color:var(--muted);text-align:center}
+  .rv-next b{color:var(--seal);font-weight:600}
+  /* ---- Reading heatmap (잔디) ---- */
+  .hm-wrap{overflow-x:auto;padding-bottom:4px;scrollbar-width:thin}
+  .hm{display:grid;grid-template-rows:repeat(7,9px);grid-auto-flow:column;grid-auto-columns:9px;gap:2px;width:max-content}
+  .hm-c{width:9px;height:9px;border-radius:2px;display:block}
+  .hm-legend{font-size:11px;color:var(--muted);margin-top:8px}
 </style>
 </head>
 <body>
@@ -402,11 +435,19 @@
     <div class="auth-brand"><span class="seal">冊</span><div><h1>책장</h1><small>나의 독서 기록</small></div></div>
     <div class="auth-loading" id="authLoading">불러오는 중…</div>
     <div id="authForm" class="hide">
+      <div class="auth-info hide" id="authInfo"></div>
       <div class="auth-field"><label>이메일</label><input id="authEmail" type="email" autocomplete="email" placeholder="you@example.com"></div>
-      <div class="auth-field"><label>비밀번호</label><input id="authPassword" type="password" autocomplete="current-password" placeholder="6자 이상"></div>
+      <div class="auth-field" id="authPwField"><label>비밀번호</label><input id="authPassword" type="password" autocomplete="current-password" placeholder="6자 이상"></div>
       <div class="auth-err hide" id="authErr"></div>
       <button class="btn primary auth-submit" id="authSubmit">로그인</button>
+      <div class="auth-forgot" id="authForgotRow"><button id="authForgot">비밀번호를 잊으셨나요?</button></div>
       <div class="auth-toggle"><span id="authToggleText">계정이 없으신가요?</span><button id="authToggle">회원가입</button></div>
+    </div>
+    <div id="authNewPw" class="hide">
+      <div class="auth-info" id="authNewInfo">새 비밀번호를 정해 주세요.</div>
+      <div class="auth-field"><label>새 비밀번호</label><input id="authNewPassword" type="password" autocomplete="new-password" placeholder="6자 이상"></div>
+      <div class="auth-err hide" id="authNewErr"></div>
+      <button class="btn primary auth-submit" id="authNewSubmit">비밀번호 변경</button>
     </div>
   </div>
 </div>
@@ -463,6 +504,7 @@
 <main>
   <div id="libraryView">
     <section class="daily hide" id="daily"></section>
+    <section class="onthisday hide" id="onThisDay"></section>
     <section class="nowreading hide" id="nowReading"></section>
     <div class="grid shelf" id="grid"></div>
     <div class="empty hide" id="empty">
@@ -583,8 +625,22 @@
     </div>
     <div class="review-body" id="reviewBody"></div>
     <div class="modal-foot">
+      <button class="btn" id="reviewImage">🖼️ 이미지 저장</button>
       <button class="btn" id="reviewCopy">요약 복사</button>
       <button class="btn primary" data-rclose>닫기</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="weekOverlay">
+  <div class="modal review">
+    <div class="modal-head">
+      <h2>📆 이번 주 돌아보기</h2>
+      <button class="x" data-wclose>×</button>
+    </div>
+    <div class="review-body" id="weekBody"></div>
+    <div class="modal-foot">
+      <button class="btn primary" data-wclose>닫기</button>
     </div>
   </div>
 </div>
@@ -630,31 +686,148 @@ const STATUS_LABEL={done:'완독',reading:'읽는 중',todo:'읽을 책'};
 
 let books=[];
 let memoryOnly=false;
+let sb=null;              // Supabase 클라이언트 (인증 스크립트에서 생성)
+let currentUserId=null;   // 로그인한 사용자 id
 let lkResults=[];
 let state={q:'',cat:'전체',tags:[],sort:'recent',view:'shelf',mode:'library',theme:'light',exSort:'recent',excerptSeed:0,editId:null,rate:0,detailId:null,cloudOpen:false,photos:[],quickId:null,quickPhotos:[],directCaptureId:null,dailyKey:null,dailyDay:0};
 
-/* ---------- storage ---------- */
+/* ---------- device prefs (local: 테마/뷰/모드는 기기별 설정이라 localStorage 유지) ---------- */
 function load(){
-  try{ const raw=localStorage.getItem(STORE_KEY); books=raw?JSON.parse(raw):[]; }
-  catch(e){ memoryOnly=true; books=[]; }
   try{ const v=localStorage.getItem(VIEW_KEY); if(v==='cards'||v==='shelf') state.view=v; }catch(e){}
   try{ const mo=localStorage.getItem(MODE_KEY); if(mo==='library'||mo==='excerpts') state.mode=mo; }catch(e){}
   try{ const t=localStorage.getItem(THEME_KEY); if(t==='dark'||t==='light') state.theme=t; else if(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) state.theme='dark'; }catch(e){}
-  loadReactions();
-  migrate();
 }
-function migrate(){
-  let changed=false;
-  books.forEach(b=>{
-    if(!Array.isArray(b.quoteShots)){
-      b.quoteShots=(b.quotePhotos||[]).map(img=>({img,text:''}));
-      changed=true;
-    }
-    if('quotePhotos' in b){ delete b.quotePhotos; changed=true; }
+
+/* ---------- cloud data layer (Supabase) ---------- */
+const BUCKET='quote-shots';   // 사진 파일 창고 (비공개 버킷)
+/* 앱(camelCase) ↔ DB(snake_case) 변환기: 경계에서만 이름을 바꿔 나머지 코드는 DB를 모름 */
+function toRow(b){
+  return {
+    id:b.id, user_id:currentUserId,
+    created_at:b.createdAt?new Date(b.createdAt).toISOString():new Date().toISOString(),
+    title:b.title||'', author:b.author||'', publisher:b.publisher||'', year:b.year||'',
+    cat:b.cat||'기타', status:b.status||'done', date:b.date||null,
+    cover_url:b.coverUrl||'', rate:b.rate||0,
+    oneliner:b.oneliner||'', key:b.key||'', insight:b.insight||'',
+    quote:b.quote||'', note:b.note||'', tags:b.tags||[]
+  };
+}
+function fromRow(r, shots){
+  return {
+    id:r.id,
+    createdAt:r.created_at?Date.parse(r.created_at):Date.now(),
+    updatedAt:r.updated_at?Date.parse(r.updated_at):Date.now(),
+    title:r.title||'', author:r.author||'', publisher:r.publisher||'', year:r.year||'',
+    cat:r.cat||'기타', status:r.status||'done', date:r.date||'',
+    coverUrl:r.cover_url||'', rate:r.rate||0,
+    oneliner:r.oneliner||'', key:r.key||'', insight:r.insight||'',
+    quote:r.quote||'', note:r.note||'', tags:r.tags||[],
+    quoteShots:(shots||[]).map(s=>({id:s.id, img:s.img, text:s.text||'', path:s.path||''}))
+  };
+}
+/* base64 dataURL → Blob (Storage 업로드용) */
+function dataUrlToBlob(dataUrl){
+  const parts=dataUrl.split(','); const head=parts[0]||'';
+  const mime=(head.match(/data:(.*?);/)||[])[1]||'image/jpeg';
+  const bin=atob(parts[1]||''); const bytes=new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i);
+  return new Blob([bytes],{type:mime});
+}
+/* URL(서명 URL 등) → base64 dataURL (백업 내보내기용) */
+async function urlToDataUrl(url){
+  const res=await fetch(url); const blob=await res.blob();
+  return await new Promise((resolve,reject)=>{ const r=new FileReader(); r.onload=()=>resolve(r.result); r.onerror=reject; r.readAsDataURL(blob); });
+}
+/* Storage에 올라간 사진들 → 표시용 서명 URL 만들어 img에 채우기 (7일 유효, 세션마다 갱신) */
+async function signShots(allShots){
+  const withPath=allShots.filter(s=>s.path);
+  if(!withPath.length) return;
+  const { data, error } = await sb.storage.from(BUCKET).createSignedUrls(withPath.map(s=>s.path), 60*60*24*7);
+  if(error){ console.warn('sign failed', error); return; }
+  (data||[]).forEach((d,i)=>{ if(d && d.signedUrl) withPath[i].img=d.signedUrl; });
+}
+async function cloudLoad(){
+  const { data:bookRows, error:be } = await sb.from('books').select('*').order('created_at',{ascending:true});
+  if(be) throw be;
+  const { data:shotRows, error:se } = await sb.from('quote_shots').select('*').order('created_at',{ascending:true});
+  if(se) throw se;
+  const { data:reactRows, error:re } = await sb.from('reactions').select('*');
+  if(re) throw re;
+  const shotsByBook={}; const allShots=[];
+  (shotRows||[]).forEach(row=>{
+    const s={ id:row.id, text:row.ocr_text||'', path:row.img_url||'', img: row.img_url ? '' : (row.img||'') };
+    (shotsByBook[row.book_id]=shotsByBook[row.book_id]||[]).push(s); allShots.push(s);
   });
-  if(changed) save();
+  await signShots(allShots);
+  books=(bookRows||[]).map(r=>fromRow(r, shotsByBook[r.id]));
+  reactions={};
+  (reactRows||[]).forEach(r=>{ reactions[r.book_id+'|'+r.passage_hash]=r.value; });
+  goals={};
+  try{
+    const { data:goalRows, error:ge } = await sb.from('yearly_goals').select('*');
+    if(!ge) (goalRows||[]).forEach(r=>{ goals[r.year]=r.count; });
+    else console.warn('goals load skipped', ge);   // 테이블 미생성 시에도 앱은 정상 동작
+  }catch(e){ console.warn('goals load skipped', e); }
 }
-function save(){ if(memoryOnly) return true; try{ localStorage.setItem(STORE_KEY,JSON.stringify(books)); return true; }catch(e){ console.warn('save failed',e); return false; } }
+/* 책의 사진을 Storage/DB와 맞추기: 새 사진 업로드 → 삭제된 사진 정리 → 행 upsert */
+async function syncShots(b){
+  const shots=(b.quoteShots||[]);
+  shots.forEach(s=>{ if(!s.id) s.id=uid(); if(s.path===undefined) s.path=''; });
+  // 1) 아직 안 올라간(base64) 사진 업로드 → 경로 기록
+  for(const s of shots){
+    if(!s.path && s.img && s.img.indexOf('data:')===0){
+      const path=currentUserId+'/'+s.id+'.jpg';
+      const { error:ue } = await sb.storage.from(BUCKET).upload(path, dataUrlToBlob(s.img), { contentType:'image/jpeg' });
+      if(ue && !/exist/i.test(ue.message||'')) throw ue;   // 이미 있으면 그대로 사용
+      s.path=path;
+    }
+  }
+  // 2) DB엔 있는데 지금 목록엔 없는 사진 = 삭제된 것 → 파일+행 제거
+  const { data:existing, error:le } = await sb.from('quote_shots').select('id,img_url').eq('book_id', b.id);
+  if(le) throw le;
+  const keep=new Set(shots.map(s=>s.id));
+  const gone=(existing||[]).filter(r=>!keep.has(r.id));
+  if(gone.length){
+    const paths=gone.map(r=>r.img_url).filter(Boolean);
+    if(paths.length) await sb.storage.from(BUCKET).remove(paths);
+    await sb.from('quote_shots').delete().in('id', gone.map(r=>r.id));
+  }
+  // 3) 현재 사진 행 upsert (Storage 사진은 base64 비움 / 옛 base64는 유지)
+  if(shots.length){
+    const rows=shots.map(s=>({ id:s.id, book_id:b.id, user_id:currentUserId, img: s.path ? null : (s.img||null), img_url: s.path||null, ocr_text:s.text||'' }));
+    const { error:pe } = await sb.from('quote_shots').upsert(rows, { onConflict:'id' });
+    if(pe) throw pe;
+  }
+}
+async function cloudSaveBook(b){
+  const { error } = await sb.from('books').upsert(toRow(b), { onConflict:'id' });
+  if(error) throw error;
+  await syncShots(b);
+}
+async function cloudDeleteBook(id){
+  // 사진 파일은 cascade로 안 지워지므로 Storage에서 먼저 삭제
+  const { data:shots } = await sb.from('quote_shots').select('img_url').eq('book_id', id);
+  const paths=(shots||[]).map(r=>r.img_url).filter(Boolean);
+  if(paths.length) await sb.storage.from(BUCKET).remove(paths);
+  const { error } = await sb.from('books').delete().eq('id', id); // 행(사진·반응)은 FK cascade
+  if(error) throw error;
+}
+async function cloudSaveReaction(bookId, hash, value){
+  try{
+    if(value===0){
+      await sb.from('reactions').delete().eq('book_id', bookId).eq('passage_hash', hash);
+    } else {
+      await sb.from('reactions').upsert(
+        { user_id:currentUserId, book_id:bookId, passage_hash:hash, value },
+        { onConflict:'user_id,book_id,passage_hash' }
+      );
+    }
+  }catch(e){ console.warn('reaction save failed', e); }
+}
+async function bootWithData(){
+  try{ await cloudLoad(); render(); return true; }
+  catch(e){ console.warn('cloud load failed', e); render(); return false; }
+}
 function saveView(){ try{ localStorage.setItem(VIEW_KEY,state.view); }catch(e){} }
 function saveMode(){ try{ localStorage.setItem(MODE_KEY,state.mode); }catch(e){} }
 function applyTheme(){
@@ -665,14 +838,12 @@ function applyTheme(){
   const mc=document.getElementById('themeColor'); if(mc) mc.setAttribute('content', dark?'#0F141D':'#FFFFFF');
 }
 function toggleTheme(){ state.theme=state.theme==='dark'?'light':'dark'; try{ localStorage.setItem(THEME_KEY,state.theme); }catch(e){} applyTheme(); }
-const REACT_KEY='bookshelf_reactions';
 let reactions={};
-function loadReactions(){ try{ reactions=JSON.parse(localStorage.getItem(REACT_KEY)||'{}')||{}; }catch(e){ reactions={}; } }
-function saveReactions(){ try{ localStorage.setItem(REACT_KEY,JSON.stringify(reactions)); }catch(e){} }
+let goals={};   // {연도: 목표권수} — yearly_goals 테이블에서 로드
 function hashStr(s){ let h=0; s=s||''; for(let i=0;i<s.length;i++){ h=(h*31+s.charCodeAt(i))|0; } return h.toString(36); }
 function passKey(p){ return p.id+'|'+hashStr(p.text); }
 function reactionOf(p){ return reactions[passKey(p)]||0; }
-function setReaction(p,val){ const k=passKey(p); if(val===0) delete reactions[k]; else reactions[k]=val; saveReactions(); }
+function setReaction(p,val){ const k=passKey(p); if(val===0) delete reactions[k]; else reactions[k]=val; cloudSaveReaction(p.id, hashStr(p.text), val); }
 function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
 function esc(s){ return (s||'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m])); }
 function catColor(c){ return CATS[c]||'var(--c-etc)'; }
@@ -784,8 +955,23 @@ function toggleTag(t){
 function renderStats(){
   const total=books.length, done=books.filter(b=>b.status==='done').length, reading=books.filter(b=>b.status==='reading').length;
   const years=availableYears(); const yLabel=years.length?years[0]:new Date().getFullYear();
-  const btn = total>0 ? `<button class="rv-open" id="reviewBtn">🎉 ${yLabel} 결산</button>` : '';
-  document.getElementById('stats').innerHTML=`<span><b>${total}</b>권</span><span><b>${done}</b>완독</span><span><b>${reading}</b>읽는 중</span>${btn}`;
+  const nowY=new Date().getFullYear();
+  const goal=goals[nowY]||0;
+  const doneY=books.filter(b=>b.status==='done'&&bookYear(b)===nowY).length;
+  let goalHtml;
+  if(goal){
+    const C=2*Math.PI*8, pct=Math.min(1, doneY/goal);
+    goalHtml=`<button class="rv-open" id="goalBtn" title="목표 수정 (탭)" style="display:inline-flex;align-items:center;gap:7px"><svg width="18" height="18" viewBox="0 0 20 20" style="transform:rotate(-90deg)"><circle cx="10" cy="10" r="8" fill="none" stroke="var(--line)" stroke-width="3"/><circle cx="10" cy="10" r="8" fill="none" stroke="var(--seal)" stroke-width="3" stroke-linecap="round" stroke-dasharray="${(pct*C).toFixed(1)} ${C.toFixed(1)}"/></svg>${doneY}/${goal}권</button>`;
+  } else {
+    goalHtml=`<button class="rv-open" id="goalBtn" title="올해 완독 목표 정하기">🎯 목표</button>`;
+  }
+  const weekBtn = total>0 ? `<button class="rv-open" id="weekBtn" style="margin-left:8px">📆 이번 주</button>` : '';
+  const diceBtn = total>0 ? `<button class="rv-open" id="diceBtn" style="margin-left:8px" title="오랜만인 책 랜덤으로 꺼내기">🎲 산책</button>` : '';
+  const btn = total>0 ? `<button class="rv-open" id="reviewBtn" style="margin-left:8px">🎉 ${yLabel} 결산</button>` : '';
+  document.getElementById('stats').innerHTML=`<span><b>${total}</b>권</span><span><b>${done}</b>완독</span><span><b>${reading}</b>읽는 중</span>${goalHtml}${weekBtn}${diceBtn}${btn}`;
+  const gb=document.getElementById('goalBtn'); if(gb) gb.onclick=setGoal;
+  const wb=document.getElementById('weekBtn'); if(wb) wb.onclick=openWeek;
+  const db=document.getElementById('diceBtn'); if(db) db.onclick=walkShelf;
   const rb=document.getElementById('reviewBtn'); if(rb) rb.onclick=()=>openReview();
 }
 
@@ -849,6 +1035,25 @@ function renderReview(){
     d.months.forEach((v,i)=>{ const pct=v?Math.max(10,Math.round(v/maxMo*100)):0; h+=`<div class="rv-mo"><div class="mv">${v||''}</div><div class="bar" style="height:${pct}%"></div><div class="ml">${i+1}</div></div>`; });
     h+=`</div></div>`;
   }
+  // 독서 달력 (잔디): 읽은 날 + 등록한 날
+  const act={};
+  const dayKey=dt=>`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+  books.forEach(b=>{
+    if(b.date&&/^\d{4}-\d{2}-\d{2}/.test(b.date)&&+b.date.slice(0,4)===Y) act[b.date.slice(0,10)]=(act[b.date.slice(0,10)]||0)+1;
+    if(b.createdAt){ const cd=new Date(b.createdAt); if(cd.getFullYear()===Y) act[dayKey(cd)]=(act[dayKey(cd)]||0)+1; }
+  });
+  if(Object.keys(act).length){
+    h+=`<div class="rv-sec"><h3>독서 달력</h3><div class="hm-wrap"><div class="hm">`;
+    const first=new Date(Y,0,1);
+    for(let i=0;i<first.getDay();i++) h+=`<i class="hm-c" style="visibility:hidden"></i>`;
+    const last=new Date(Y,11,31);
+    for(let dt=new Date(Y,0,1); dt<=last; dt.setDate(dt.getDate()+1)){
+      const k=dayKey(dt), v=act[k]||0;
+      const st = v===0 ? 'background:var(--paper-2)' : `background:var(--seal);opacity:${v===1?'.4':(v===2?'.7':'1')}`;
+      h+=`<i class="hm-c" style="${st}" title="${k}${v?` · ${v}건`:''}"></i>`;
+    }
+    h+=`</div></div><div class="hm-legend">기록한 날일수록 진해요 (읽은 날 + 등록한 날) · 옆으로 스크롤</div></div>`;
+  }
   const cats=Object.entries(d.catCounts).filter(([k,v])=>v>0).sort((a,b)=>b[1]-a[1]);
   if(cats.length){
     const cmax=cats[0][1];
@@ -869,6 +1074,7 @@ function renderReview(){
     d.loved.slice(0,6).forEach(p=>{ h+=`<div class="rv-q" data-bid="${p.id}"><div class="qt">“${esc(p.text)}”</div><div class="qs">『${esc(p.title)||'제목 없음'}』${p.author?' · '+esc(p.author):''}</div></div>`; });
     h+=`</div></div>`;
   }
+  h+=milestonesHTML();
   body.innerHTML=h;
   wireReviewYear(years,yi);
   body.querySelectorAll('[data-bid]').forEach(el=>el.onclick=()=>{ close('reviewOverlay'); openDetail(el.dataset.bid); });
@@ -896,6 +1102,177 @@ function copyReview(){
   else fallbackCopy(s);
 }
 function fallbackCopy(s){ const ta=document.createElement('textarea'); ta.value=s; document.body.appendChild(ta); ta.select(); try{ document.execCommand('copy'); showToast('결산 요약을 복사했어요'); }catch(e){ showToast('복사에 실패했어요'); } ta.remove(); }
+
+/* ---------- 재방문 기능: 이날의 기록 / 성취 뱃지 / 결산 이미지 ---------- */
+function bookAnchorDate(b){
+  let d=null;
+  if(b.date && /^\d{4}-\d{2}-\d{2}/.test(b.date)) d=new Date(b.date+'T00:00:00');
+  else if(b.createdAt) d=new Date(b.createdAt);
+  return (d && !isNaN(d.getTime())) ? d : null;
+}
+function onThisDayItems(){
+  const now=new Date(), M=now.getMonth(), D=now.getDate(), Y=now.getFullYear();
+  const monthAgo=new Date(Y, M-1, D);   // 1개월 전 (연/월 롤오버 자동 처리)
+  const items=[];
+  books.forEach(b=>{
+    const a=bookAnchorDate(b); if(!a) return;
+    if(a.getMonth()===M && a.getDate()===D && a.getFullYear()<Y){
+      items.push({b, ago:(Y-a.getFullYear())+'년 전', sort:(Y-a.getFullYear())*12});
+    } else if(a.getFullYear()===monthAgo.getFullYear() && a.getMonth()===monthAgo.getMonth() && a.getDate()===monthAgo.getDate()){
+      items.push({b, ago:'1개월 전', sort:1});
+    }
+  });
+  return items.sort((x,y)=>x.sort-y.sort);
+}
+function renderOnThisDay(show){
+  const el=document.getElementById('onThisDay');
+  const items=show?onThisDayItems():[];
+  if(!items.length){ el.classList.add('hide'); el.innerHTML=''; return; }
+  el.classList.remove('hide');
+  const cards=items.map(({b,ago})=>{
+    const ph=b.coverUrl?'':'ph';
+    const img=b.coverUrl?`<img src="${esc(b.coverUrl)}" alt="" onerror="this.closest('.otd-cover').classList.add('ph')">`:'<img alt="">';
+    return `<div class="otd-card" data-id="${b.id}"><div class="otd-cover ${ph}" style="--cc:${catHex(b.cat)}">${img}<div class="otd-ph">${esc(b.title)||''}</div></div><div class="otd-info"><div class="otd-ago">${ago}</div><div class="otd-t">${esc(b.title)||'(제목 없음)'}</div></div></div>`;
+  }).join('');
+  el.innerHTML=`<div class="otd-head">📅 이날의 기록</div><div class="otd-list">${cards}</div>`;
+  el.querySelectorAll('.otd-card').forEach(c=>c.onclick=()=>openDetail(c.dataset.id));
+}
+function countPassages(){
+  let n=0;
+  books.forEach(b=>{ n += (b.quote||'').split('\n').filter(s=>s.trim()).length + (b.insight||'').split('\n').filter(s=>s.trim()).length + (b.quoteShots||[]).filter(s=>(s.text||'').trim()).length; });
+  return n;
+}
+function milestones(){
+  const done=books.filter(b=>b.status==='done').length;
+  const quotes=countPassages();
+  const defs=[
+    {ic:'📖', label:'첫 책', metric:done, need:1},
+    {ic:'📚', label:'10권 완독', metric:done, need:10},
+    {ic:'🏆', label:'25권 완독', metric:done, need:25},
+    {ic:'👑', label:'50권 완독', metric:done, need:50},
+    {ic:'✍️', label:'문장 50개', metric:quotes, need:50},
+    {ic:'📝', label:'문장 100개', metric:quotes, need:100}
+  ];
+  return defs.map(d=>Object.assign({}, d, {on:d.metric>=d.need}));
+}
+function milestonesHTML(){
+  const ms=milestones();
+  const badges=ms.map(m=>`<div class="badge ${m.on?'on':''}"><div class="ic">${m.ic}</div><div class="bl">${m.label}</div></div>`).join('');
+  const next=ms.find(m=>!m.on);
+  const nextTxt = next
+    ? `<div class="rv-next">다음 뱃지 <b>${next.label}</b>까지 <b>${Math.max(0,next.need-next.metric)}</b> 남았어요</div>`
+    : `<div class="rv-next">모든 뱃지를 모았어요! 🎉</div>`;
+  return `<div class="rv-sec"><h3>🏅 성취 · 전체 기록</h3><div class="rv-badges">${badges}</div>${nextTxt}</div>`;
+}
+/* 결산을 세로 카드 이미지(PNG)로 저장 */
+function _rr(ctx,x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+function _wrap(ctx,text,x,y,maxW,lineH,maxLines){
+  const chars=(text||'').split(''); let line=''; const lines=[];
+  for(const ch of chars){ const t=line+ch; if(ctx.measureText(t).width>maxW && line){ lines.push(line); line=ch; } else line=t; }
+  if(line) lines.push(line);
+  let ls=lines; if(ls.length>maxLines){ ls=ls.slice(0,maxLines); ls[maxLines-1]=ls[maxLines-1].replace(/.$/,'…'); }
+  ls.forEach((ln,i)=>ctx.fillText(ln,x,y+i*lineH));
+}
+async function exportReviewImage(){
+  const Y=state.reviewYear, d=reviewData(Y);
+  showToast('이미지 만드는 중…');
+  try{ if(document.fonts && document.fonts.ready) await document.fonts.ready; }catch(e){}
+  const W=1080, H=1350, cv=document.createElement('canvas'); cv.width=W; cv.height=H;
+  const ctx=cv.getContext('2d');
+  const dark=document.body.classList.contains('dark');
+  const bg=dark?'#0F141D':'#FFFFFF', ink=dark?'#E6EBF3':'#16243F', seal=dark?'#6BA6E6':'#1E4D8C', muted=dark?'#7B8597':'#8B93A7';
+  ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.strokeStyle=seal; ctx.lineWidth=4; _rr(ctx, W/2-46, 118, 92, 92, 16); ctx.stroke();
+  ctx.fillStyle=seal; ctx.font='700 54px "Noto Serif KR", serif'; ctx.fillText('冊', W/2, 118+48);
+  ctx.fillStyle=muted; ctx.font='500 34px "Noto Sans KR", sans-serif'; ctx.fillText(`${Y} 독서 결산`, W/2, 296);
+  ctx.fillStyle=seal; ctx.font='700 210px "Noto Serif KR", serif'; ctx.fillText(String(d.doneCount), W/2, 460);
+  ctx.fillStyle=ink; ctx.font='500 42px "Noto Sans KR", sans-serif'; ctx.fillText('권 완독', W/2, 612);
+  ctx.fillStyle=muted; ctx.font='400 30px "Noto Sans KR", sans-serif';
+  const stat=[`모은 문장 ${d.passageCount}`, d.avg?`평균 ★${d.avg.toFixed(1)}`:null, d.topCat?`최다 ${d.topCat}`:null].filter(Boolean).join('    ·    ');
+  ctx.fillText(stat, W/2, 690);
+  if(d.loved.length){
+    const q=d.loved[0];
+    ctx.strokeStyle=seal; ctx.lineWidth=5; ctx.beginPath(); ctx.moveTo(150, 838); ctx.lineTo(150, 1110); ctx.stroke();
+    ctx.textAlign='left'; ctx.fillStyle=ink; ctx.font='italic 400 42px "Noto Serif KR", serif';
+    _wrap(ctx, '“'+q.text+'”', 190, 884, W-360, 60, 4);
+    ctx.fillStyle=muted; ctx.font='400 28px "Noto Sans KR", sans-serif'; ctx.fillText('— 『'+(q.title||'제목 없음')+'』', 190, 1092);
+    ctx.textAlign='center';
+  }
+  ctx.fillStyle=muted; ctx.font='400 26px "Noto Sans KR", sans-serif'; ctx.fillText('책장 · 나의 독서 기록', W/2, H-84);
+  cv.toBlob(blob=>{
+    if(!blob){ showToast('이미지 생성에 실패했어요'); return; }
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`책장_결산_${Y}.png`; a.click(); URL.revokeObjectURL(a.href);
+    showToast('결산 이미지를 저장했어요');
+  }, 'image/png');
+}
+
+/* ---------- 연간 목표 (진행 링) ---------- */
+async function cloudSaveGoal(year, count){
+  if(count>0){
+    const { error } = await sb.from('yearly_goals').upsert({ user_id:currentUserId, year, count }, { onConflict:'user_id,year' });
+    if(error) throw error;
+  } else {
+    const { error } = await sb.from('yearly_goals').delete().eq('year', year);
+    if(error) throw error;
+  }
+}
+async function setGoal(){
+  const Y=new Date().getFullYear();
+  const cur=goals[Y]||'';
+  const raw=prompt(`${Y}년 완독 목표 권수를 입력하세요.\n(비우거나 0을 넣으면 목표를 지웁니다)`, cur);
+  if(raw===null) return;
+  const n=parseInt(raw,10);
+  const count=(isNaN(n)||n<=0)?0:Math.min(n,999);
+  if(count) goals[Y]=count; else delete goals[Y];
+  render();
+  try{ await cloudSaveGoal(Y,count); showToast(count?`올해 목표 ${count}권! 🎯`:'목표를 지웠어요'); }
+  catch(e){ console.warn(e); showToast('목표 저장 실패 — 목표 테이블(SQL)을 만들었는지 확인하세요'); }
+}
+/* ---------- 책장 산책 (오랜만인 책 랜덤) ---------- */
+function walkShelf(){
+  if(books.length===0) return;
+  const pool=books.slice().sort((a,b)=>(a.updatedAt||a.createdAt||0)-(b.updatedAt||b.createdAt||0));
+  const cand=pool.slice(0, Math.max(1, Math.ceil(pool.length*0.6)));   // 오래 안 꺼낸 쪽 60%에서 뽑기
+  const pick=cand[Math.floor(Math.random()*cand.length)];
+  showToast('🎲 오랜만에 이 책 어때요?');
+  openDetail(pick.id);
+}
+/* ---------- 이번 주 돌아보기 ---------- */
+function weekRange(){
+  const end=new Date(); end.setHours(23,59,59,999);
+  const start=new Date(); start.setDate(start.getDate()-6); start.setHours(0,0,0,0);
+  return {start, end};
+}
+function renderWeekBody(){
+  const {start,end}=weekRange();
+  const inR=t=>t>=start.getTime()&&t<=end.getTime();
+  const doneW=books.filter(b=>b.status==='done'&&b.date&&/^\d{4}-\d{2}-\d{2}/.test(b.date)&&inR(Date.parse(b.date+'T12:00:00')));
+  const addedW=books.filter(b=>b.createdAt&&inR(b.createdAt));
+  const touchedW=books.filter(b=>(b.updatedAt||b.createdAt)&&inR(b.updatedAt||b.createdAt)).sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
+  const fmt=d=>`${d.getMonth()+1}월 ${d.getDate()}일`;
+  let h=`<div class="rv-hero"><div class="big">${doneW.length}</div><div class="cap">${fmt(start)} ~ ${fmt(end)} 완독한 책</div></div>`;
+  h+=`<div class="rv-chips"><div class="rv-chip"><b>${addedW.length}</b><span>새로 담은 책</span></div><div class="rv-chip"><b>${touchedW.length}</b><span>기록한 책</span></div></div>`;
+  if(touchedW.length){
+    h+=`<div class="rv-sec"><h3>이번 주 손이 간 책</h3><div class="rv-books">`;
+    touchedW.slice(0,8).forEach(b=>{
+      const cov=b.coverUrl?`<div class="cv" style="--cc:${catHex(b.cat)}"><img src="${esc(b.coverUrl)}" alt="" onerror="this.remove()"></div>`:`<div class="cv ph" style="--cc:${catHex(b.cat)}"><span>${esc(b.title||'')}</span></div>`;
+      h+=`<div class="rv-bk" data-bid="${b.id}">${cov}<div class="bt">${esc(b.title||'')}</div></div>`;
+    });
+    h+=`</div></div>`;
+    const loved=lovedPassages(books);
+    if(loved.length){
+      const p=loved[Math.floor(Math.random()*loved.length)];
+      h+=`<div class="rv-sec"><h3>이번 주에 다시 만나는 문장</h3><div class="rv-quotes"><div class="rv-q" data-bid="${p.id}"><div class="qt">“${esc(p.text)}”</div><div class="qs">『${esc(p.title)||'제목 없음'}』${p.author?' · '+esc(p.author):''}</div></div></div></div>`;
+    }
+  } else {
+    h+=`<div class="rv-empty">이번 주엔 아직 기록이 없어요.<br>한 줄이라도 남겨볼까요? ✏️</div>`;
+  }
+  const body=document.getElementById('weekBody');
+  body.innerHTML=h;
+  body.querySelectorAll('[data-bid]').forEach(el=>el.onclick=()=>{ close('weekOverlay'); openDetail(el.dataset.bid); });
+}
+function openWeek(){ renderWeekBody(); open('weekOverlay'); }
 
 /* ---------- filtering ---------- */
 function matches(b){
@@ -940,6 +1317,7 @@ function renderLibrary(){
   const bandVisible = !filterActive && reading.length>0;
   renderNowReading(bandVisible ? reading : null);
   renderDaily(!filterActive);
+  renderOnThisDay(!filterActive);
 
   let list = books.filter(matches);
   if(bandVisible) list = list.filter(b=>b.status!=='reading');
@@ -1096,18 +1474,19 @@ async function addQuickPhotos(files){
   if(!arr.length) return;
   const hint=document.getElementById('qcPhotoHint'); hint.textContent='사진 처리 중…';
   let failed=0;
-  for(const f of arr){ try{ const img=await compressImage(f); const shot={img,text:''}; state.quickPhotos.push(shot); renderQuickPhotos(); runShotOCR(shot, renderQuickPhotos); }catch(e){ failed++; } }
+  for(const f of arr){ try{ const img=await compressImage(f); const shot={id:uid(),img,text:'',path:''}; state.quickPhotos.push(shot); renderQuickPhotos(); runShotOCR(shot, renderQuickPhotos); }catch(e){ failed++; } }
   hint.textContent = failed? `${failed}장은 형식 문제로 추가하지 못했습니다.` : '페이지를 찍어 함께 보관하세요.';
 }
-function saveQuick(){
+async function saveQuick(){
   const b=books.find(x=>x.id===state.quickId); if(!b){ closeQuick(); return; }
   const txt=document.getElementById('qcText').value.trim();
   if(!txt && state.quickPhotos.length===0){ closeQuick(); return; }
   if(txt) b.quote = b.quote ? (b.quote+'\n'+txt) : txt;
   if(state.quickPhotos.length) b.quoteShots = (b.quoteShots||[]).concat(state.quickPhotos);
   b.updatedAt=Date.now();
-  const ok=save(); closeQuick(); render();
-  showToast((ok||memoryOnly)?'저장했어요 · 책장에 반영됨':'저장 공간 부족 — 사진을 줄여 주세요');
+  closeQuick(); render();
+  try{ await cloudSaveBook(b); showToast('저장했어요 · 책장에 반영됨'); }
+  catch(e){ console.warn(e); showToast('저장 실패 — 인터넷 연결을 확인하세요'); }
 }
 function directCapture(id){ state.directCaptureId=id; document.getElementById('directPhotoInput').click(); }
 async function handleDirectPhotos(files){
@@ -1116,8 +1495,13 @@ async function handleDirectPhotos(files){
   if(!arr.length) return;
   showToast('사진 저장 중…');
   const fresh=[];
-  for(const f of arr){ try{ const img=await compressImage(f); const shot={img,text:''}; b.quoteShots=(b.quoteShots||[]); b.quoteShots.push(shot); fresh.push(shot); }catch(e){} }
-  if(fresh.length){ b.updatedAt=Date.now(); const ok=save(); render(); showToast((ok||memoryOnly)?`사진 ${fresh.length}장 저장됨 · 글자 읽는 중…`:'저장 공간 부족 — 사진을 줄여 주세요'); fresh.forEach(s=>runShotOCR(s,null)); }
+  for(const f of arr){ try{ const img=await compressImage(f); const shot={id:uid(),img,text:'',path:''}; b.quoteShots=(b.quoteShots||[]); b.quoteShots.push(shot); fresh.push(shot); }catch(e){} }
+  if(fresh.length){
+    b.updatedAt=Date.now(); render();
+    try{ await cloudSaveBook(b); showToast(`사진 ${fresh.length}장 저장됨 · 글자 읽는 중…`); }
+    catch(e){ console.warn(e); showToast('사진 저장 실패 — 인터넷 연결을 확인하세요'); }
+    fresh.forEach(s=>runShotOCR(s,null,b));
+  }
   else showToast('사진을 추가하지 못했습니다');
 }
 let toastTimer;
@@ -1278,7 +1662,7 @@ async function addPhotos(files){
   hint.textContent='사진 처리 중…';
   let failed=0;
   for(const f of arr){
-    try{ const img=await compressImage(f); const shot={img,text:''}; state.photos.push(shot); renderPhotoGrid(); runShotOCR(shot, renderPhotoGrid); }
+    try{ const img=await compressImage(f); const shot={id:uid(),img,text:'',path:''}; state.photos.push(shot); renderPhotoGrid(); runShotOCR(shot, renderPhotoGrid); }
     catch(e){ failed++; }
   }
   hint.textContent = failed? `${failed}장은 형식 문제로 추가하지 못했습니다.` : base;
@@ -1316,13 +1700,14 @@ async function ocrImage(dataUrl){
   const { data:{ text } }=await w.recognize(dataUrl);
   return (text||'').replace(/[ \t]+\n/g,'\n').replace(/\n{3,}/g,'\n\n').trim();
 }
-async function runShotOCR(shot, reRender){
+async function runShotOCR(shot, reRender, ownerBook){
   ocrBusy.add(shot); if(reRender) reRender();
   let ok=true, txt='';
   try{ txt=await ocrImage(shot.img); shot.text=txt; }
   catch(e){ ok=false; }
   ocrBusy.delete(shot); if(reRender) reRender();
-  save(); render();
+  if(ownerBook){ try{ await cloudSaveBook(ownerBook); }catch(e){ console.warn(e); } }
+  render();
   if(!ok) showToast('글자 인식 실패 — 인터넷 연결을 확인하세요');
   else if(!txt) showToast('글자를 찾지 못했어요 — 직접 입력해 주세요');
 }
@@ -1377,7 +1762,7 @@ function openEdit(id){
   document.getElementById('fNote').value=b?.note||'';
   document.getElementById('fTags').value=(b?.tags||[]).join(', ');
   state.rate=b?.rate||0; renderRateEdit(); updateCvThumb();
-  state.photos=(b?.quoteShots||[]).map(s=>({img:s.img,text:s.text||''})); renderPhotoGrid();
+  state.photos=(b?.quoteShots||[]).map(s=>({id:s.id||uid(),img:s.img,text:s.text||'',path:s.path||''})); renderPhotoGrid();
   open('editOverlay');
 }
 function collectForm(){
@@ -1400,20 +1785,24 @@ function collectForm(){
     rate:state.rate
   };
 }
-function saveBook(){
+async function saveBook(){
   const data=collectForm();
   if(!data.title){ alert('제목을 입력하세요.'); return; }
-  if(state.editId){ const b=books.find(x=>x.id===state.editId); Object.assign(b,data,{updatedAt:Date.now()}); }
-  else { books.push(Object.assign({id:uid(),createdAt:Date.now(),updatedAt:Date.now()},data)); }
-  const ok=save();
-  if(!ok && !memoryOnly){ alert('브라우저 저장 공간이 가득 찼습니다. 첨부한 사진 용량이 큰 것 같아요.\n사진을 일부 삭제한 뒤 다시 저장해 주세요.\n(변경 내용은 화면엔 보이지만 아직 영구 저장되지 않았습니다.)'); }
+  let target;
+  if(state.editId){ target=books.find(x=>x.id===state.editId); Object.assign(target,data,{updatedAt:Date.now()}); }
+  else { target=Object.assign({id:uid(),createdAt:Date.now(),updatedAt:Date.now()},data); books.push(target); }
   close('editOverlay'); render();
+  try{ await cloudSaveBook(target); showToast('저장했어요'); }
+  catch(e){ console.warn(e); showToast('저장 실패 — 인터넷 연결을 확인하세요'); }
 }
-function deleteBook(){
+async function deleteBook(){
   if(!state.editId) return;
   if(!confirm('이 책 기록을 삭제할까요?')) return;
-  books=books.filter(x=>x.id!==state.editId);
-  save(); close('editOverlay'); render();
+  const id=state.editId;
+  books=books.filter(x=>x.id!==id);
+  close('editOverlay'); render();
+  try{ await cloudDeleteBook(id); }
+  catch(e){ console.warn(e); showToast('삭제 반영 실패 — 인터넷 연결을 확인하세요'); }
 }
 
 /* ---------- AI summarize ---------- */
@@ -1455,23 +1844,49 @@ ${raw||title}`;
 }
 
 /* ---------- export / import ---------- */
-function exportData(){
+async function exportData(){
   if(books.length===0){ alert('내보낼 책이 없습니다.'); return; }
-  const blob=new Blob([JSON.stringify(books,null,2)],{type:'application/json'});
+  showToast('백업 준비 중…');
+  const out=JSON.parse(JSON.stringify(books));  // 깊은 복사
+  for(const b of out){
+    if(Array.isArray(b.quoteShots)){
+      for(const s of b.quoteShots){
+        if(s.path && s.img && s.img.indexOf('data:')!==0){
+          try{ s.img=await urlToDataUrl(s.img); }catch(e){ /* 실패 시 URL 유지 */ }
+        }
+        delete s.path;  // 경로는 다른 계정에서 의미 없으니 백업엔 미포함
+      }
+    }
+  }
+  const blob=new Blob([JSON.stringify(out,null,2)],{type:'application/json'});
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
   a.download=`책장_백업_${new Date().toISOString().slice(0,10)}.json`; a.click(); URL.revokeObjectURL(a.href);
+  showToast('백업 파일을 내려받았어요');
 }
 function importData(file){
   const r=new FileReader();
-  r.onload=()=>{
+  r.onload=async ()=>{
     try{
       const arr=JSON.parse(r.result); if(!Array.isArray(arr)) throw 0;
-      if(!confirm(`${arr.length}권을 불러옵니다.\n확인=기존 기록에 추가 / 취소=중단`)) return;
-      arr.forEach(b=>{ if(!b.id) b.id=uid(); if(!b.createdAt) b.createdAt=Date.now(); });
-      const ids=new Set(books.map(b=>b.id));
-      arr.forEach(b=>{ if(!ids.has(b.id)) books.push(b); });
-      const ok=save(); render();
-      alert((ok||memoryOnly)?'불러오기 완료.':'불러왔지만 저장 공간이 부족해 영구 저장되지 않았습니다. 사진 용량을 줄여 보세요.');
+      if(!confirm(`${arr.length}권을 불러옵니다.\n확인=내 책장에 추가 / 취소=중단`)) return;
+      const incoming=arr.map(b=>{
+        const nb=Object.assign({}, b);
+        if(!nb.id) nb.id=uid();
+        if(!nb.createdAt) nb.createdAt=Date.now();
+        if(!Array.isArray(nb.quoteShots)) nb.quoteShots=(nb.quotePhotos||[]).map(img=>({img,text:''}));
+        nb.quoteShots=nb.quoteShots.map(s=>({id:s.id||uid(), img:s.img, text:s.text||'', path:s.path||''}));
+        delete nb.quotePhotos;
+        return nb;
+      });
+      const existing=new Set(books.map(b=>b.id));
+      const toAdd=incoming.filter(b=>!existing.has(b.id));
+      toAdd.forEach(b=>books.push(b));
+      render();
+      showToast(`${toAdd.length}권 불러오는 중…`);
+      let fail=0;
+      for(const b of toAdd){ try{ await cloudSaveBook(b); }catch(e){ fail++; console.warn(e); } }
+      render();
+      alert(fail? `불러왔지만 ${fail}권은 저장에 실패했어요. 인터넷 확인 후 다시 시도해 주세요.` : '불러오기 완료 — 클라우드에 저장했어요.');
     }catch(e){ alert('JSON 파일을 읽을 수 없습니다.'); }
   };
   r.readAsText(file);
@@ -1510,14 +1925,16 @@ document.querySelectorAll('.viewtog button').forEach(b=>b.onclick=()=>{
 });
 document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>{ close('editOverlay'); close('detailOverlay'); });
 document.querySelectorAll('[data-rclose]').forEach(b=>b.onclick=()=>close('reviewOverlay'));
+document.querySelectorAll('[data-wclose]').forEach(b=>b.onclick=()=>close('weekOverlay'));
 document.getElementById('reviewCopy').onclick=copyReview;
+document.getElementById('reviewImage').onclick=exportReviewImage;
 document.querySelectorAll('[data-qclose]').forEach(b=>b.onclick=closeQuick);
 document.getElementById('qcSave').onclick=saveQuick;
 document.getElementById('qcPhotoBtn').onclick=()=>document.getElementById('qcPhotoInput').click();
 document.getElementById('qcPhotoInput').onchange=e=>{ addQuickPhotos(e.target.files); e.target.value=''; };
 document.getElementById('directPhotoInput').onchange=e=>{ handleDirectPhotos(e.target.files); e.target.value=''; };
 document.querySelectorAll('.overlay').forEach(o=>o.onclick=e=>{ if(e.target===o){ o.classList.remove('show'); document.body.style.overflow=''; if(o.id==='quickOverlay'){ state.quickId=null; state.quickPhotos=[]; } } });
-document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ if(document.getElementById('lightbox').classList.contains('show')){ closeLightbox(); return; } close('editOverlay'); close('detailOverlay'); close('reviewOverlay'); closeQuick(); } });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ if(document.getElementById('lightbox').classList.contains('show')){ closeLightbox(); return; } close('editOverlay'); close('detailOverlay'); close('reviewOverlay'); close('weekOverlay'); closeQuick(); } });
 
 /* ---------- init ---------- */
 load();
@@ -1533,22 +1950,40 @@ const SUPABASE_URL = 'https://uzmcnqzucwummvxixusj.supabase.co';   // ← Projec
 const SUPABASE_ANON_KEY = 'sb_publishable_JlBgnJ6ISWUyQesXUF6GUA_NfHpURfE';   // ← publishable(공개) 키
 /* ==================================================================== */
 
-const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-let authMode = 'login'; // 'login' | 'signup'
+sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+let authMode = 'login'; // 'login' | 'signup' | 'reset'
+let bootedUser = null;  // 데이터를 이미 불러온 사용자 id (중복 로드 방지)
+let recoveryMode = (location.hash.indexOf('type=recovery')!==-1);  // 재설정 링크로 들어왔는지
 
 function showGate(){ document.getElementById('authGate').style.display='flex'; }
 function hideGate(){ document.getElementById('authGate').style.display='none'; }
 function showAuthForm(){
   document.getElementById('authLoading').classList.add('hide');
+  document.getElementById('authNewPw').classList.add('hide');
   document.getElementById('authForm').classList.remove('hide');
 }
 function setAuthMode(m){
-  authMode=m; const login=(m==='login');
-  document.getElementById('authSubmit').textContent = login?'로그인':'회원가입';
-  document.getElementById('authToggleText').textContent = login?'계정이 없으신가요?':'이미 계정이 있으신가요?';
-  document.getElementById('authToggle').textContent = login?'회원가입':'로그인';
-  document.getElementById('authPassword').setAttribute('autocomplete', login?'current-password':'new-password');
+  authMode=m;
+  const pwField=document.getElementById('authPwField');
+  const forgot=document.getElementById('authForgotRow');
+  const submit=document.getElementById('authSubmit');
+  const toggleText=document.getElementById('authToggleText');
+  const toggle=document.getElementById('authToggle');
   authError('');
+  document.getElementById('authInfo').classList.add('hide');
+  if(m==='reset'){
+    pwField.classList.add('hide'); forgot.classList.add('hide');
+    submit.textContent='재설정 링크 받기';
+    toggleText.textContent='비밀번호가 기억나셨나요?'; toggle.textContent='로그인';
+  } else {
+    const login=(m==='login');
+    pwField.classList.remove('hide');
+    forgot.classList.toggle('hide', !login);
+    submit.textContent=login?'로그인':'회원가입';
+    toggleText.textContent=login?'계정이 없으신가요?':'이미 계정이 있으신가요?';
+    toggle.textContent=login?'회원가입':'로그인';
+    document.getElementById('authPassword').setAttribute('autocomplete', login?'current-password':'new-password');
+  }
 }
 function authError(msg){
   const e=document.getElementById('authErr');
@@ -1563,15 +1998,28 @@ function friendlyAuthError(err){
   if((m.includes('email')&&m.includes('confirm'))||m.includes('not confirmed')) return '이메일 확인이 필요합니다. 받은 메일의 링크를 눌러주세요.';
   if(m.includes('rate limit')||m.includes('too many')) return '요청이 많습니다. 잠시 후 다시 시도해 주세요.';
   if(m.includes('failed to fetch')||m.includes('networkerror')) return '네트워크 연결을 확인하세요. (또는 anon 키가 비어있는지 확인)';
+  if(m.includes('different from the old')||m.includes('should be different')) return '새 비밀번호가 기존과 같아요. 다른 비밀번호로 정해 주세요.';
+  if(m.includes('session')&&(m.includes('missing')||m.includes('expired')||m.includes('invalid'))) return '재설정 링크가 만료되었어요. 다시 요청해 주세요.';
   return (err&&err.message) ? err.message : '문제가 발생했습니다. 다시 시도해 주세요.';
 }
 async function submitAuth(){
   const email=document.getElementById('authEmail').value.trim();
-  const password=document.getElementById('authPassword').value;
-  if(!email || !password){ authError('이메일과 비밀번호를 입력하세요.'); return; }
-  const btn=document.getElementById('authSubmit'); const orig=btn.textContent;
-  btn.disabled=true; btn.textContent='처리 중…'; authError('');
+  if(!email){ authError('이메일을 입력하세요.'); return; }
+  const btn=document.getElementById('authSubmit');
+  btn.disabled=true; authError('');
   try{
+    if(authMode==='reset'){
+      btn.textContent='보내는 중…';
+      const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname });
+      if(error) throw error;
+      setAuthMode('login');
+      const info=document.getElementById('authInfo');
+      info.textContent='재설정 링크를 이메일로 보냈어요. 메일함(스팸함도)을 확인해 주세요.'; info.classList.remove('hide');
+      return;
+    }
+    const password=document.getElementById('authPassword').value;
+    if(!password){ authError('비밀번호를 입력하세요.'); return; }
+    btn.textContent='처리 중…';
     if(authMode==='signup'){
       const { data, error } = await sb.auth.signUp({ email, password });
       if(error) throw error;
@@ -1583,6 +2031,34 @@ async function submitAuth(){
       // 성공 시 onAuthStateChange 가 게이트를 닫음
     }
   }catch(err){ authError(friendlyAuthError(err)); }
+  finally{
+    btn.disabled=false;
+    btn.textContent = authMode==='reset'?'재설정 링크 받기':(authMode==='signup'?'회원가입':'로그인');
+  }
+}
+/* 새 비밀번호 설정 (재설정 링크로 들어왔을 때) */
+function newPwError(msg){ const e=document.getElementById('authNewErr'); if(!msg){ e.classList.add('hide'); e.textContent=''; return; } e.textContent=msg; e.classList.remove('hide'); }
+function showNewPasswordScreen(){
+  document.getElementById('authLoading').classList.add('hide');
+  document.getElementById('authForm').classList.add('hide');
+  document.getElementById('authNewPw').classList.remove('hide');
+  showGate();
+}
+async function submitNewPassword(){
+  const pw=document.getElementById('authNewPassword').value;
+  if(!pw || pw.length<6){ newPwError('비밀번호는 6자 이상이어야 합니다.'); return; }
+  const btn=document.getElementById('authNewSubmit'); const orig=btn.textContent;
+  btn.disabled=true; btn.textContent='변경 중…'; newPwError('');
+  try{
+    const { error } = await sb.auth.updateUser({ password: pw });
+    if(error) throw error;
+    recoveryMode=false;
+    showToast('비밀번호를 변경했어요');
+    document.getElementById('authNewPw').classList.add('hide');
+    document.getElementById('authNewPassword').value='';
+    const { data:{ session } } = await sb.auth.getSession();
+    enterApp(session);   // 변경 완료 → 정상 진입
+  }catch(err){ newPwError(friendlyAuthError(err)); }
   finally{ btn.disabled=false; btn.textContent=orig; }
 }
 async function doLogout(){
@@ -1590,25 +2066,48 @@ async function doLogout(){
   // onAuthStateChange 가 게이트를 다시 염
 }
 
-/* 로그인 상태가 바뀔 때마다 게이트 열고 닫기 (로그인/로그아웃/세션복원) */
+/* 로그인 상태에 따라: 로그인 → 클라우드 데이터 불러와 앱 열기 / 로그아웃 → 비우고 게이트 */
+function showLoadError(){
+  const ld=document.getElementById('authLoading');
+  document.getElementById('authForm').classList.add('hide');
+  ld.classList.remove('hide');
+  ld.innerHTML='데이터를 불러오지 못했어요.<div style="font-size:12px;color:var(--muted);margin-top:6px">인터넷 연결을 확인해 주세요.</div><button id="retryLoad" class="btn primary" style="margin-top:16px">다시 시도</button>';
+  document.getElementById('retryLoad').onclick=async ()=>{ ld.textContent='책장을 불러오는 중…'; const ok=await bootWithData(); if(ok) hideGate(); else showLoadError(); };
+  showGate();
+}
+async function enterApp(session){
+  if(session){
+    if(bootedUser===session.user.id){ hideGate(); return; }  // 이미 이 사용자로 진입함(토큰 갱신 등)
+    bootedUser=session.user.id; currentUserId=session.user.id;
+    document.getElementById('authForm').classList.add('hide');
+    const ld=document.getElementById('authLoading'); ld.classList.remove('hide'); ld.textContent='책장을 불러오는 중…';
+    showGate();
+    const ok=await bootWithData();
+    if(ok) hideGate(); else showLoadError();
+  } else {
+    bootedUser=null; currentUserId=null;
+    books=[]; reactions={}; goals={};
+    showAuthForm(); showGate();
+    render();
+  }
+}
 sb.auth.onAuthStateChange((event, session)=>{
-  if(session){ hideGate(); }
-  else { showAuthForm(); showGate(); }
+  if(event==='PASSWORD_RECOVERY') recoveryMode=true;
+  if(recoveryMode){                       // 새 비밀번호 설정 완료 전까지 앱 자동 진입 막기
+    if(session) showNewPasswordScreen();
+    return;
+  }
+  enterApp(session);
 });
-/* 최초 진입: 저장된 세션 확인 (있으면 바로 통과) */
-(async ()=>{
-  try{
-    const { data:{ session } } = await sb.auth.getSession();
-    if(session){ hideGate(); return; }
-  }catch(e){}
-  showAuthForm(); showGate();
-})();
 
 /* 폼 배선 */
 document.getElementById('authSubmit').onclick=submitAuth;
 document.getElementById('authToggle').onclick=()=>setAuthMode(authMode==='login'?'signup':'login');
-document.getElementById('authEmail').addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); document.getElementById('authPassword').focus(); } });
+document.getElementById('authForgot').onclick=()=>setAuthMode('reset');
+document.getElementById('authNewSubmit').onclick=submitNewPassword;
+document.getElementById('authEmail').addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); if(authMode==='reset') submitAuth(); else document.getElementById('authPassword').focus(); } });
 document.getElementById('authPassword').addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); submitAuth(); } });
+document.getElementById('authNewPassword').addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); submitNewPassword(); } });
 const _logoutBtn=document.getElementById('logoutBtn'); if(_logoutBtn) _logoutBtn.onclick=doLogout;
 </script>
 </body>

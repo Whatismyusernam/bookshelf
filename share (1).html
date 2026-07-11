@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="robots" content="index,follow">
+<title>책장 · 공유된 독서 기록</title>
+<meta property="og:title" content="책장 — 공유된 독서 기록">
+<meta property="og:description" content="한 권의 책에서 얻은 생각과 인사이트를 공유합니다.">
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --paper:#FFFFFF; --paper-2:#F3F6FB; --ink:#16243F; --ink-soft:#44516B;
+    --muted:#8B93A7; --line:#E2E7F0; --line-soft:#EEF1F7;
+    --seal:#1E4D8C; --seal-soft:#C5D6EC; --surface:#FFFFFF;
+    --serif:'Noto Serif KR',serif; --sans:'Noto Sans KR',sans-serif;
+    --c-invest:#2E7D5B; --c-biz:#3A5FA8; --c-lit:#8E4A67; --c-self:#B07B3E; --c-etc:#6B7280;
+    --shadow:0 2px 6px rgba(20,30,55,.14);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:var(--sans);background:var(--paper-2);color:var(--ink);-webkit-font-smoothing:antialiased;line-height:1.6}
+  a{color:inherit;text-decoration:none}
+  button{font-family:inherit;cursor:pointer;border:none;background:none}
+
+  .wrap{max-width:640px;margin:0 auto;padding:0 16px 60px}
+  header{padding:18px 0 14px;display:flex;align-items:center;justify-content:space-between}
+  .brand{display:flex;align-items:center;gap:9px}
+  .brand .seal{width:28px;height:28px;border-radius:7px;border:1.5px solid var(--seal);color:var(--seal);font-family:var(--serif);font-weight:700;font-size:15px;display:flex;align-items:center;justify-content:center;transform:rotate(-4deg)}
+  .brand b{font-family:var(--serif);font-size:17px;font-weight:600}
+  .brand small{color:var(--muted);font-size:11px;margin-left:2px}
+  .top-cta{font-size:12.5px;font-weight:600;color:var(--seal);border:1px solid var(--seal-soft);border-radius:999px;padding:7px 14px;background:var(--surface);transition:.15s}
+  .top-cta:hover{background:var(--seal);color:#fff}
+
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:18px;overflow:hidden;box-shadow:0 6px 24px rgba(20,30,55,.06)}
+  .spine{height:6px}
+  .head{display:flex;gap:18px;padding:24px 24px 6px}
+  .cover{width:96px;flex-shrink:0;aspect-ratio:2/3;border-radius:8px;overflow:hidden;background:var(--cc,var(--c-etc));box-shadow:var(--shadow);position:relative}
+  .cover img{width:100%;height:100%;object-fit:cover;display:block}
+  .cover.ph img{display:none}
+  .cover .ph-t{display:none}
+  .cover.ph .ph-t{display:flex;align-items:center;justify-content:center;height:100%;padding:8px;color:rgba(255,255,255,.95);font-family:var(--serif);font-size:12px;text-align:center;line-height:1.35}
+  .cat{font-size:11.5px;font-weight:700;letter-spacing:.05em}
+  h1{font-family:var(--serif);font-size:22px;font-weight:600;line-height:1.35;margin:4px 0 7px}
+  .meta{font-size:13px;color:var(--muted);display:flex;flex-wrap:wrap;gap:5px 12px;align-items:center}
+  .rate{color:#C9A227;letter-spacing:1px;font-size:13px}
+
+  .body{padding:14px 24px 24px}
+  .sec{margin-top:20px}
+  .sec h4{font-size:12px;font-weight:700;letter-spacing:.06em;color:var(--seal);margin-bottom:10px;display:flex;align-items:center;gap:9px}
+  .sec h4::after{content:"";flex:1;height:1px;background:var(--line)}
+  .sec p{font-size:14.5px;line-height:1.75;color:var(--ink-soft);white-space:pre-wrap}
+  .sec ul{list-style:none;display:flex;flex-direction:column;gap:9px}
+  .sec li{font-size:14.5px;line-height:1.6;color:var(--ink-soft);padding-left:20px;position:relative}
+  .sec li::before{content:"—";position:absolute;left:0;color:var(--seal)}
+  .quote{font-family:var(--serif);font-size:14.5px;line-height:1.8;color:var(--ink);background:var(--paper-2);border-left:3px solid var(--seal-soft);border-radius:0 10px 10px 0;padding:13px 16px;margin-bottom:10px}
+  .quote-src{font-size:11.5px;color:var(--muted);margin:-4px 0 14px;text-align:right}
+
+  .buy{margin-top:24px;padding-top:18px;border-top:1px solid var(--line-soft)}
+  .buy-lead{font-size:13px;color:var(--ink-soft);margin-bottom:10px}
+  .buy-btn{display:inline-block;padding:10px 18px;border-radius:10px;background:var(--ink);color:#fff;font-size:13.5px;font-weight:600;transition:.15s}
+  .buy-btn:hover{background:#0F1A30}
+  .buy-disc{font-size:11px;color:var(--muted);margin-top:9px;line-height:1.5}
+
+  .cta{margin-top:22px;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:22px 24px;text-align:center}
+  .cta p{font-size:13.5px;color:var(--ink-soft);line-height:1.7;margin-bottom:14px}
+  .cta a{display:inline-block;padding:11px 22px;border-radius:10px;border:1.5px solid var(--seal);color:var(--seal);font-size:14px;font-weight:600;transition:.15s}
+  .cta a:hover{background:var(--seal);color:#fff}
+
+  footer{margin-top:26px;text-align:center;font-size:11.5px;color:var(--muted);line-height:1.7}
+
+  .state{padding:70px 20px;text-align:center;color:var(--muted);font-size:14px}
+  .state .big{font-size:34px;margin-bottom:14px}
+  .hide{display:none}
+  @media (max-width:480px){
+    .head{padding:20px 18px 4px;gap:14px}
+    .cover{width:80px}
+    h1{font-size:19px}
+    .body{padding:12px 18px 20px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="brand" href="./">
+      <span class="seal">冊</span>
+      <b>책장</b><small>공유된 독서 기록</small>
+    </a>
+    <a class="top-cta" href="./">나도 만들기</a>
+  </header>
+
+  <div class="state" id="loading">기록을 불러오는 중…</div>
+
+  <div class="state hide" id="notfound">
+    <div class="big">📖</div>
+    공유된 기록을 찾을 수 없어요.<br>링크가 잘못되었거나 삭제된 기록입니다.
+  </div>
+
+  <div class="card hide" id="card">
+    <div class="spine" id="spine"></div>
+    <div class="head">
+      <div class="cover ph" id="cover"><img id="coverImg" alt=""><div class="ph-t" id="coverPh"></div></div>
+      <div style="min-width:0">
+        <div class="cat" id="cat"></div>
+        <h1 id="title"></h1>
+        <div class="meta" id="meta"></div>
+      </div>
+    </div>
+    <div class="body" id="body"></div>
+  </div>
+
+  <div class="cta hide" id="cta">
+    <p>이 기록은 <b>책장</b>으로 만들었어요.<br>읽은 책의 핵심과 인상 깊은 구절을 나만의 온라인 책장에 기록해보세요.</p>
+    <a href="./">무료로 내 책장 만들기 →</a>
+  </div>
+
+  <footer id="foot" class="hide">
+    이 페이지의 감상과 정리는 작성자의 창작물입니다. 책 구절은 출처를 밝힌 짧은 인용입니다.
+  </footer>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://uzmcnqzucwummvxixusj.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_JlBgnJ6ISWUyQesXUF6GUA_NfHpURfE';
+const AFFILIATE_DISCLOSURE = '위 링크는 제휴 링크일 수 있으며, 구매 시 작성자가 일정액의 수수료를 제공받을 수 있습니다.';
+
+const CAT_HEX={ '투자':'var(--c-invest)','경영':'var(--c-biz)','문학':'var(--c-lit)','자기계발':'var(--c-self)','기타':'var(--c-etc)' };
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const show=id=>document.getElementById(id).classList.remove('hide');
+const hide=id=>document.getElementById(id).classList.add('hide');
+
+function secP(t,v){ return `<div class="sec"><h4>${t}</h4><p>${esc(v)}</p></div>`; }
+function secList(t,v){
+  const items=String(v).split('\n').map(s=>s.trim()).filter(Boolean);
+  if(items.length<=1) return secP(t,v);
+  return `<div class="sec"><h4>${t}</h4><ul>${items.map(i=>`<li>${esc(i)}</li>`).join('')}</ul></div>`;
+}
+
+async function main(){
+  const id=new URLSearchParams(location.search).get('id');
+  if(!id){ hide('loading'); show('notfound'); return; }
+  let row=null;
+  try{
+    const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+    const { data, error }=await sb.from('shares').select('payload,created_at').eq('id',id).maybeSingle();
+    if(error) throw error;
+    row=data;
+  }catch(e){ hide('loading'); show('notfound'); return; }
+  if(!row||!row.payload){ hide('loading'); show('notfound'); return; }
+  const p=row.payload;
+
+  document.title=(p.title||'책')+' — 책장 독서 기록';
+  const hex=CAT_HEX[p.cat]||CAT_HEX['기타'];
+  document.getElementById('spine').style.background=hex;
+  const cover=document.getElementById('cover');
+  cover.style.setProperty('--cc',hex);
+  if(p.cover){ cover.classList.remove('ph'); const im=document.getElementById('coverImg'); im.src=p.cover; im.onerror=()=>cover.classList.add('ph'); }
+  document.getElementById('coverPh').textContent=p.title||'';
+  const catEl=document.getElementById('cat'); catEl.textContent=p.cat||'기타'; catEl.style.color=hex;
+  document.getElementById('title').textContent=p.title||'(제목 없음)';
+
+  const meta=[];
+  if(p.author) meta.push(`<span>${esc(p.author)}</span>`);
+  if(p.rate) meta.push(`<span class="rate">${'★'.repeat(p.rate)}${'☆'.repeat(5-p.rate)}</span>`);
+  const pub=[p.publisher,p.year].filter(Boolean).join(' · ');
+  if(pub) meta.push(`<span>${esc(pub)}</span>`);
+  document.getElementById('meta').innerHTML=meta.join('');
+
+  const sec=[];
+  if(p.oneliner) sec.push(secP('한 줄 소개',p.oneliner));
+  if(p.key) sec.push(secList('핵심 내용',p.key));
+  if(p.insight) sec.push(secList('주요 인사이트',p.insight));
+  if(p.quotes&&p.quotes.length){
+    const src=`— 『${esc(p.title)}』${p.author?', '+esc(p.author):''}`;
+    sec.push(`<div class="sec"><h4>인상 깊은 구절</h4>${
+      p.quotes.map(q=>`<div class="quote">${esc(q)}</div>`).join('')
+    }<div class="quote-src">${src}</div></div>`);
+  }
+  if(p.note) sec.push(secP('생각 · 적용점',p.note));
+
+  // 구매 링크: 제휴 링크가 있으면 그 책 페이지로, 없으면 알라딘 검색으로 (부제 뗀 핵심 제목만)
+  const mainTitle=((p.title||'').split(/\s+[-–—:|]\s+|\s*\(/)[0]||p.title||'').trim();
+  const buyUrl=p.buyLink||('https://www.aladin.co.kr/search/wsearchresult.aspx?SearchTarget=Book&SearchWord='+encodeURIComponent(mainTitle));
+  sec.push(`<div class="buy">
+    <div class="buy-lead">이 책의 전체 내용이 궁금하다면</div>
+    <a class="buy-btn" href="${esc(buyUrl)}" target="_blank" rel="noopener sponsored">알라딘에서 보기 ↗</a>
+    <div class="buy-disc">${AFFILIATE_DISCLOSURE}</div>
+  </div>`);
+
+  document.getElementById('body').innerHTML=sec.join('');
+  hide('loading'); show('card'); show('cta'); show('foot');
+}
+main();
+</script>
+</body>
+</html>

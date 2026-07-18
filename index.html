@@ -250,6 +250,9 @@
   @keyframes spin{to{transform:rotate(360deg)}}
   .ocr-read{font-size:11.5px;font-weight:600;color:var(--seal);border:1px solid var(--seal-soft);border-radius:7px;padding:3px 9px;transition:.13s}
   .ocr-read:hover{background:var(--seal);color:var(--on-accent)}
+  .shot-fav{font-size:11.5px;font-weight:600;color:#B4232A;border:1px solid #F0C4C6;border-radius:7px;padding:3px 9px;transition:.13s}
+  .shot-fav:hover{background:#FDECEC}
+  .shot-fav.on{background:#B4232A;border-color:#B4232A;color:#fff}
   .shot-del{width:24px;height:24px;border-radius:7px;color:var(--muted);font-size:16px;line-height:1;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:.13s}
   .shot-del:hover{background:var(--paper-2);color:var(--seal)}
   /* detail: photographed quote */
@@ -883,6 +886,10 @@ function load(){
 
 /* ---------- cloud data layer (Supabase) ---------- */
 const BUCKET='quote-shots';   // 사진 파일 창고 (비공개 버킷)
+/* 안전장치: 클라우드 로드가 완전히 성공한 세션에서만 '삭제 동기화'를 허용.
+   로드가 실패/부분 성공한 상태에서 저장하면 메모리에 없는 사진을 삭제된 것으로
+   오인해 DB·Storage에서 영구 삭제할 수 있기 때문. (2026-07-18 추가) */
+let cloudLoadedOK=false;
 /* 앱(camelCase) ↔ DB(snake_case) 변환기: 경계에서만 이름을 바꿔 나머지 코드는 DB를 모름 */
 function toRow(b){
   return {
@@ -930,7 +937,7 @@ async function signShots(allShots){
   const withPath=allShots.filter(s=>s.path);
   if(!withPath.length) return;
   const { data, error } = await sb.storage.from(BUCKET).createSignedUrls(withPath.map(s=>s.path), 60*60*24*7);
-  if(error){ console.warn('sign failed', error); return; }
+  if(error){ console.warn('sign failed', error); showToast('사진을 불러오지 못했어요 (사진이 삭제된 건 아니에요) — 새로고침 해주세요'); return; }
   (data||[]).forEach((d,i)=>{ if(d && d.signedUrl) withPath[i].img=d.signedUrl; });
 }
 async function cloudLoad(){
@@ -971,6 +978,7 @@ async function cloudLoad(){
       updatedAt:r.updated_at?Date.parse(r.updated_at):Date.now(),
       title:r.title||'', body:r.body||'', tags:r.tags||[], shots:byIdea[r.id]||[] }));
   }catch(e){ console.warn('ideas load skipped', e); }   // 테이블 미생성 시에도 앱은 정상 동작
+  cloudLoadedOK=true;   // 핵심 데이터(책·구절 사진) 로드가 성공한 세션에서만 삭제 동기화 허용
 }
 /* 책의 사진을 Storage/DB와 맞추기: 새 사진 업로드 → 삭제된 사진 정리 → 행 upsert */
 async function syncShots(b){
@@ -986,14 +994,17 @@ async function syncShots(b){
     }
   }
   // 2) DB엔 있는데 지금 목록엔 없는 사진 = 삭제된 것 → 파일+행 제거
-  const { data:existing, error:le } = await sb.from('quote_shots').select('id,img_url').eq('book_id', b.id);
-  if(le) throw le;
-  const keep=new Set(shots.map(s=>s.id));
-  const gone=(existing||[]).filter(r=>!keep.has(r.id));
-  if(gone.length){
-    const paths=gone.map(r=>r.img_url).filter(Boolean);
-    if(paths.length) await sb.storage.from(BUCKET).remove(paths);
-    await sb.from('quote_shots').delete().in('id', gone.map(r=>r.id));
+  //    단, 클라우드 로드가 완전히 성공한 세션에서만 수행 (로드 실패 상태에서의 영구 삭제 방지)
+  if(cloudLoadedOK){
+    const { data:existing, error:le } = await sb.from('quote_shots').select('id,img_url').eq('book_id', b.id);
+    if(le) throw le;
+    const keep=new Set(shots.map(s=>s.id));
+    const gone=(existing||[]).filter(r=>!keep.has(r.id));
+    if(gone.length){
+      const paths=gone.map(r=>r.img_url).filter(Boolean);
+      if(paths.length) await sb.storage.from(BUCKET).remove(paths);
+      await sb.from('quote_shots').delete().in('id', gone.map(r=>r.id));
+    }
   }
   // 3) 현재 사진 행 upsert (Storage 사진은 base64 비움 / 옛 base64는 유지)
   if(shots.length){
@@ -1029,7 +1040,12 @@ async function cloudSaveReaction(bookId, hash, value){
 }
 async function bootWithData(){
   try{ await cloudLoad(); render(); return true; }
-  catch(e){ console.warn('cloud load failed', e); render(); return false; }
+  catch(e){
+    console.warn('cloud load failed', e);
+    render();
+    showToast('데이터를 불러오지 못했어요 — 데이터가 사라진 게 아니니 인터넷 연결 확인 후 새로고침 해주세요');
+    return false;
+  }
 }
 function saveView(){ try{ localStorage.setItem(VIEW_KEY,state.view); }catch(e){} }
 function saveMode(){ try{ localStorage.setItem(MODE_KEY,state.mode); }catch(e){} }
@@ -1047,6 +1063,16 @@ function hashStr(s){ let h=0; s=s||''; for(let i=0;i<s.length;i++){ h=(h*31+s.ch
 function passKey(p){ return p.id+'|'+hashStr(p.text); }
 function reactionOf(p){ return reactions[passKey(p)]||0; }
 function setReaction(p,val){ const k=passKey(p); if(val===0) delete reactions[k]; else reactions[k]=val; cloudSaveReaction(p.id, hashStr(p.text), val); }
+/* 사진 좋아요(♥): reactions 테이블 재사용 — passage_hash 자리에 hash('shot:'+사진id)를 저장.
+   ♥한 사진만 발췌집·책 상세에 노출되고, 전체 사진은 수정 화면에서 관리. (2026-07-18) */
+function shotFavHash(sid){ return hashStr('shot:'+sid); }
+function shotFav(bookId, sid){ return reactions[bookId+'|'+shotFavHash(sid)]===1; }
+function toggleShotFav(bookId, sid){
+  const k=bookId+'|'+shotFavHash(sid);
+  const nv=reactions[k]===1?0:1;
+  if(nv===0) delete reactions[k]; else reactions[k]=1;
+  cloudSaveReaction(bookId, shotFavHash(sid), nv);
+}
 function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
 function esc(s){ return (s||'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m])); }
 function catColor(c){ return CATS[c]||'var(--c-etc)'; }
@@ -1626,7 +1652,7 @@ function excerptPool(){
     const base={id:b.id,title:b.title,author:b.author,cat:b.cat,tags:(b.tags||[]),bump:(b.updatedAt||b.createdAt||0)};
     (b.quote||'').split('\n').map(s=>s.trim()).filter(Boolean).forEach(t=>pool.push({...base,text:t,type:'구절'}));
     (b.insight||'').split('\n').map(s=>s.trim()).filter(Boolean).forEach(t=>pool.push({...base,text:t,type:'인사이트'}));
-    (b.quoteShots||[]).forEach(s=>pool.push({...base,text:(s.text||'').trim(),type:'사진',img:s.img}));
+    (b.quoteShots||[]).forEach(s=>{ if(shotFav(b.id, s.id)) pool.push({...base,text:(s.text||'').trim(),type:'사진',img:s.img}); });   // ♥한 사진만 발췌집에
   });
   return pool;
 }
@@ -1660,7 +1686,7 @@ function renderExcerpts(){
   if(total===0){
     cont.innerHTML=''; empty.classList.remove('hide');
     empty.querySelector('h2').textContent='아직 모은 문장이 없어요';
-    empty.querySelector('p').textContent='책에 구절·인사이트를 적거나 페이지를 찍어보세요. 여기에 모입니다.';
+    empty.querySelector('p').textContent='책에 구절·인사이트를 적어보세요. 사진은 수정 화면에서 ♥를 누른 것만 여기에 모입니다.';
     return;
   }
   if(arr.length===0){
@@ -1857,7 +1883,11 @@ function openDetail(id){
   if(b.oneliner) sec.push(secP('한 줄 소개',b.oneliner));
   if(b.key) sec.push(secList('핵심 내용',b.key));
   if(b.insight) sec.push(secList('주요 인사이트',b.insight));
-  if(b.quote || (b.quoteShots&&b.quoteShots.length)) sec.push(secQuote('인상 깊은 구절',b.quote,b.quoteShots));
+  // 상세에는 ♥한 사진만 표시 — 전체 사진은 수정 화면에서 관리
+  const allShots=(b.quoteShots||[]);
+  const favShots=allShots.filter(s=>shotFav(b.id, s.id));
+  if(b.quote || favShots.length) sec.push(secQuote('인상 깊은 구절',b.quote,favShots,allShots.length-favShots.length));
+  else if(allShots.length) sec.push(`<div class="d-sec"><h4>인상 깊은 구절</h4><p style="color:var(--muted)">보관 중인 사진 ${allShots.length}장 — 수정에서 ♥를 누르면 여기와 발췌집에 표시됩니다.</p></div>`);
   if(b.note) sec.push(secP('적용점 · 메모',b.note));
   if(b.tags&&b.tags.length) sec.push(`<div class="d-sec"><h4>태그</h4><div class="tags">${b.tags.map(t=>`<span data-t="${esc(t)}">#${esc(t)}</span>`).join('')}</div></div>`);
   if(sec.length===0) sec.push(`<div class="d-sec"><p style="color:var(--muted)">아직 요약 내용이 없습니다. 수정에서 채워보세요.</p></div>`);
@@ -1881,13 +1911,14 @@ function openDetail(id){
 }
 function secP(t,v){ return `<div class="d-sec"><h4>${t}</h4><p>${esc(v)}</p></div>`; }
 function secList(t,v){ const items=v.split('\n').map(s=>s.trim()).filter(Boolean); if(items.length<=1) return secP(t,v); return `<div class="d-sec"><h4>${t}</h4><ul>${items.map(i=>`<li>${esc(i)}</li>`).join('')}</ul></div>`; }
-function secQuote(t,v,shots){
+function secQuote(t,v,shots,hiddenCount){
   const items=(v||'').split('\n').map(s=>s.trim()).filter(Boolean);
   let h=`<div class="d-sec"><h4>${t}</h4>`;
   h+=items.map(i=>`<div class="quote">${esc(i)}</div>`).join('');
   if(shots&&shots.length){
     h+=shots.map(s=>`<div class="shot-view"><img src="${s.img}" alt="구절 사진" loading="lazy">${(s.text||'').trim()?`<div class="shot-cap">${esc(s.text)}</div>`:''}</div>`).join('');
   }
+  if(hiddenCount>0) h+=`<p style="color:var(--muted);font-size:12px;margin-top:8px">♥ 표시하지 않은 사진 ${hiddenCount}장은 수정 화면에서 볼 수 있어요.</p>`;
   return h+`</div>`;
 }
 
@@ -1922,7 +1953,7 @@ function compressImage(file,maxDim=1280,quality=0.72){
 const MAX_SHOTS_PER_BOOK = 10;
 function shotLimitMsg(){ return `사진은 책 한 권당 최대 ${MAX_SHOTS_PER_BOOK}장까지 보관할 수 있어요`; }
 
-function renderPhotoGrid(){ renderShots(document.getElementById('photoGrid'), state.photos, renderPhotoGrid); }
+function renderPhotoGrid(){ renderShots(document.getElementById('photoGrid'), state.photos, renderPhotoGrid, state.editId); }
 async function addPhotos(files){
   let arr=Array.from(files||[]).filter(f=>f.type.startsWith('image/'));
   if(!arr.length) return;
@@ -2035,25 +2066,29 @@ async function runShotOCR(shot, reRender, ownerBook){
 }
 
 /* ---------- shot rows (photo + editable OCR text), shared by editor & quick sheet ---------- */
-function shotRowHTML(s,i){
+function shotRowHTML(s,i,favBookId){
   const busy=ocrBusy.has(s);
   const status=busy?'<span class="ocr-status">글자 읽는 중…</span>':'';
   const readBtn=(!busy && !(s.text||'').trim())?`<button type="button" class="ocr-read" data-i="${i}">🔠 글자 변환</button>`:'';
+  // ♥ 버튼: 책 수정 화면에서만 (♥한 사진만 상세·발췌집에 노출)
+  const fav=favBookId?shotFav(favBookId, s.id):false;
+  const favBtn=favBookId?`<button type="button" class="shot-fav ${fav?'on':''}" data-i="${i}" title="♥한 사진만 책 상세와 발췌집에 나타납니다">${fav?'♥ 표시 중':'♡ 표시하기'}</button>`:'';
   return `<div class="shot">
     <div class="shot-thumb"><img src="${s.img}" data-i="${i}" alt=""></div>
     <div class="shot-main">
       <textarea class="shot-text" data-i="${i}" placeholder="${busy?'글자 읽는 중…':'사진 속 글자 — 아래 글자 변환 버튼으로 인식'}">${esc(s.text||'')}</textarea>
-      <div class="shot-meta">${status}${readBtn}</div>
+      <div class="shot-meta">${status}${readBtn}${favBtn}</div>
     </div>
     <button type="button" class="shot-del" data-i="${i}">×</button>
   </div>`;
 }
-function renderShots(container, arr, selfRender){
-  container.innerHTML=arr.map((s,i)=>shotRowHTML(s,i)).join('');
+function renderShots(container, arr, selfRender, favBookId){
+  container.innerHTML=arr.map((s,i)=>shotRowHTML(s,i,favBookId)).join('');
   container.querySelectorAll('.shot-del').forEach(b=>b.onclick=()=>{ arr.splice(+b.dataset.i,1); selfRender(); });
   container.querySelectorAll('.shot-thumb img').forEach(im=>im.onclick=()=>openLightbox(im.src));
   container.querySelectorAll('.shot-text').forEach(t=>t.oninput=()=>{ arr[+t.dataset.i].text=t.value; });
   container.querySelectorAll('.ocr-read').forEach(b=>b.onclick=()=>{ runShotOCR(arr[+b.dataset.i], selfRender); });
+  if(favBookId) container.querySelectorAll('.shot-fav').forEach(b=>b.onclick=()=>{ const s=arr[+b.dataset.i]; if(!s.id) s.id=uid(); toggleShotFav(favBookId, s.id); selfRender(); });
 }
 function renderRateEdit(){
   const w=document.getElementById('rateEdit');
@@ -2319,14 +2354,17 @@ async function cloudSaveIdea(n){
       s.path=path;
     }
   }
-  const { data:existing, error:le } = await sb.from('idea_shots').select('id,img_url').eq('idea_id', n.id);
-  if(le) throw le;
-  const keep=new Set(shots.map(s=>s.id));
-  const gone=(existing||[]).filter(r=>!keep.has(r.id));
-  if(gone.length){
-    const paths=gone.map(r=>r.img_url).filter(Boolean);
-    if(paths.length) await sb.storage.from(BUCKET).remove(paths);
-    await sb.from('idea_shots').delete().in('id', gone.map(r=>r.id));
+  // 삭제 동기화는 클라우드 로드가 완전히 성공한 세션에서만 (영구 삭제 사고 방지)
+  if(cloudLoadedOK){
+    const { data:existing, error:le } = await sb.from('idea_shots').select('id,img_url').eq('idea_id', n.id);
+    if(le) throw le;
+    const keep=new Set(shots.map(s=>s.id));
+    const gone=(existing||[]).filter(r=>!keep.has(r.id));
+    if(gone.length){
+      const paths=gone.map(r=>r.img_url).filter(Boolean);
+      if(paths.length) await sb.storage.from(BUCKET).remove(paths);
+      await sb.from('idea_shots').delete().in('id', gone.map(r=>r.id));
+    }
   }
   if(shots.length){
     const rows=shots.map(s=>({ id:s.id, idea_id:n.id, user_id:currentUserId, img: s.path ? null : (s.img||null), img_url: s.path||null, ocr_text:s.text||'' }));

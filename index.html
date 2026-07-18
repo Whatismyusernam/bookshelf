@@ -300,7 +300,8 @@
   .idea-thumbs{display:flex;gap:6px;margin-top:10px}
   .idea-thumbs img{width:52px;height:52px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
   .idea-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
-  .idea-tags span{font-size:11.5px;color:var(--seal);background:var(--paper-2);border:1px solid var(--seal-soft);border-radius:999px;padding:2px 9px}
+  .idea-tags span{font-size:11.5px;color:var(--seal);background:var(--paper-2);border:1px solid var(--seal-soft);border-radius:999px;padding:2px 9px;cursor:pointer}
+  .idea-tags span:hover{background:var(--seal);color:#fff}
 
   /* daily quote card */
   .daily{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:clamp(22px,4vw,30px) clamp(20px,4vw,32px) clamp(20px,3.5vw,26px);margin-bottom:22px;overflow:hidden}
@@ -1152,7 +1153,9 @@ function renderChips(){
 }
 function tagCounts(){
   const m={};
-  books.forEach(b=>(b.tags||[]).forEach(t=>{ m[t]=(m[t]||0)+1; }));
+  // 아이디어 탭에서는 아이디어 태그를, 그 외에는 책 태그를 집계
+  if(state.mode==='ideas') ideas.forEach(n=>(n.tags||[]).forEach(t=>{ m[t]=(m[t]||0)+1; }));
+  else books.forEach(b=>(b.tags||[]).forEach(t=>{ m[t]=(m[t]||0)+1; }));
   return m;
 }
 function renderTagFilters(){
@@ -1164,7 +1167,7 @@ function renderTagCloud(){
   const counts=tagCounts();
   const tags=Object.keys(counts).sort((a,b)=>counts[b]-counts[a]||a.localeCompare(b,'ko'));
   const inner=document.getElementById('tagCloudInner');
-  if(tags.length===0){ inner.innerHTML='<span class="tc-empty">아직 태그가 없습니다. 책에 태그를 달면 여기에 모입니다.</span>'; return; }
+  if(tags.length===0){ inner.innerHTML='<span class="tc-empty">'+(state.mode==='ideas'?'아직 태그가 없습니다. 아이디어에 태그를 달면 여기에 모입니다.':'아직 태그가 없습니다. 책에 태그를 달면 여기에 모입니다.')+'</span>'; return; }
   const max=Math.max(...tags.map(t=>counts[t])), min=Math.min(...tags.map(t=>counts[t]));
   inner.innerHTML=tags.map(t=>{
     const sz=max===min?14:13+Math.round((counts[t]-min)/(max-min)*7);
@@ -1607,6 +1610,7 @@ function applyMode(){
   document.getElementById('exSort').classList.toggle('hide', m!=='excerpts');
   document.getElementById('stats').classList.toggle('hide', m!=='library');
   const cc=document.getElementById('catChips'); if(cc) cc.classList.toggle('hide', m==='ideas');
+  const qEl=document.getElementById('q'); if(qEl) qEl.placeholder = m==='ideas' ? '아이디어 검색 · 제목 · 내용 · 태그 · 사진 글자…' : '제목 · 저자 · 요약 · 구절 검색…';
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on', t.dataset.mode===m));
 }
 function updateTabCounts(){
@@ -2202,7 +2206,7 @@ function syncIdeaMonthSel(){
 function ideaCardHTML(n){
   const preview=esc((n.body||'').trim()||((n.shots||[]).map(s=>(s.text||'').trim()).find(Boolean)||''));
   const thumbs=(n.shots||[]).filter(s=>s.img).slice(0,3).map(s=>`<img src="${s.img}" alt="" loading="lazy">`).join('');
-  const tags=(n.tags||[]).slice(0,4).map(t=>`<span>#${esc(t)}</span>`).join('');
+  const tags=(n.tags||[]).slice(0,4).map(t=>`<span data-t="${esc(t)}">#${esc(t)}</span>`).join('');
   const t=new Date(ideaWhen(n));
   const time=String(t.getHours()).padStart(2,'0')+':'+String(t.getMinutes()).padStart(2,'0');
   const edited=(n.updatedAt&&n.createdAt&&(n.updatedAt-n.createdAt>60000))?' · 수정됨':'';
@@ -2219,6 +2223,7 @@ function renderIdeas(){
   const addBtn=document.getElementById('ideaEmptyAdd');
   syncIdeaMonthSel();
   let list=ideas.filter(ideaMatches);
+  if(state.tags.length) list=list.filter(n=>state.tags.every(t=>(n.tags||[]).includes(t)));
   if(ideaView.month) list=list.filter(n=>ideaMonthKey(ideaWhen(n))===ideaView.month);
   list=list.slice().sort((a,b)=>ideaView.sort==='asc'?(ideaWhen(a)-ideaWhen(b)):(ideaWhen(b)-ideaWhen(a)));
   if(ideas.length===0){
@@ -2230,7 +2235,7 @@ function renderIdeas(){
   if(list.length===0){
     grid.innerHTML=''; empty.classList.remove('hide'); addBtn.classList.add('hide');
     document.getElementById('ideaEmptyTitle').textContent='검색 결과가 없습니다';
-    document.getElementById('ideaEmptyMsg').textContent=ideaView.month?'이 달에는 기록이 없어요. 다른 달을 선택해보세요.':'다른 키워드로 찾아보세요.';
+    document.getElementById('ideaEmptyMsg').textContent=state.tags.length?'선택한 태그가 달린 아이디어가 없어요. 위의 태그 칩을 눌러 해제해보세요.':(ideaView.month?'이 달에는 기록이 없어요. 다른 달을 선택해보세요.':'다른 키워드로 찾아보세요.');
     return;
   }
   empty.classList.add('hide');
@@ -2250,6 +2255,8 @@ function renderIdeas(){
     </section>`;
   }).join('');
   grid.querySelectorAll('.idea-card').forEach(c=>c.onclick=()=>openIdea(c.dataset.id));
+  // 카드의 태그를 누르면 (카드 열기 대신) 그 태그로 바로 필터
+  grid.querySelectorAll('.idea-tags span').forEach(s=>s.onclick=(e)=>{ e.stopPropagation(); toggleTag(s.dataset.t); });
 }
 function renderIaPhotos(){ renderShots(document.getElementById('iaPhotoGrid'), ideaEdit.photos, renderIaPhotos); }
 async function addIdeaPhotos(files){

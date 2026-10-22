@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="robots" content="index,follow">
-<title>책장 · 공유된 독서 기록</title>
-<meta property="og:title" content="책장 — 공유된 독서 기록">
+<title>오버북 · 공유된 독서 기록</title>
+<meta property="og:title" content="오버북 — 공유된 독서 기록">
 <meta property="og:description" content="한 권의 책에서 얻은 생각과 인사이트를 공유합니다.">
 <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -88,7 +88,7 @@
   <header>
     <a class="brand" href="./">
       <span class="seal">冊</span>
-      <b>책장</b><small>공유된 독서 기록</small>
+      <b>오버북</b><small>공유된 독서 기록</small>
     </a>
     <a class="top-cta" href="./">나도 만들기</a>
   </header>
@@ -114,7 +114,7 @@
   </div>
 
   <div class="cta hide" id="cta">
-    <p>이 기록은 <b>책장</b>으로 만들었어요.<br>읽은 책의 핵심과 인상 깊은 구절을 나만의 온라인 책장에 기록해보세요.</p>
+    <p>이 기록은 <b>오버북</b>으로 만들었어요.<br>읽은 책의 핵심과 인상 깊은 구절을 나만의 온라인 책장에 기록해보세요.</p>
     <a href="./">무료로 내 책장 만들기 →</a>
   </div>
 
@@ -153,7 +153,7 @@ async function main(){
   if(!row||!row.payload){ hide('loading'); show('notfound'); return; }
   const p=row.payload;
 
-  document.title=(p.title||'책')+' — 책장 독서 기록';
+  document.title=(p.title||'책')+' — 오버북 독서 기록';
   const hex=CAT_HEX[p.cat]||CAT_HEX['기타'];
   document.getElementById('spine').style.background=hex;
   const cover=document.getElementById('cover');

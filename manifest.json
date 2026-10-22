@@ -1,6 +1,6 @@
 {
-  "name": "책장 · 나의 독서 기록",
-  "short_name": "책장",
+  "name": "오버북 · 책을 기록하다",
+  "short_name": "오버북",
   "description": "읽은 책을 쉽게 모으고, 잊지 않고 다시 만나는 독서 기록",
   "lang": "ko",
   "start_url": "./",

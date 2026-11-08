@@ -12,6 +12,23 @@
 <link rel="apple-touch-icon" href="./apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
 <title>오버북 · 책을 기록하다</title>
+<meta name="description" content="읽은 책을 쉽게 모으고, 잊지 않고 다시 만나는 무료 독서 기록 서비스. 책 검색으로 표지까지 한 번에 등록하고, 밑줄 그은 구절은 사진으로 남기고, 분야별 나무 선반에 꽂아 보세요.">
+<link rel="canonical" href="https://overbook.co.kr/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="오버북">
+<meta property="og:locale" content="ko_KR">
+<meta property="og:url" content="https://overbook.co.kr/">
+<meta property="og:title" content="오버북 · 책을 기록하다">
+<meta property="og:description" content="읽은 책을 쉽게 모으고, 잊지 않고 다시 만나는 독서 기록">
+<meta property="og:image" content="https://overbook.co.kr/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="오버북 — 나무 선반에 꽂힌 책들">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="오버북 · 책을 기록하다">
+<meta name="twitter:description" content="읽은 책을 쉽게 모으고, 잊지 않고 다시 만나는 독서 기록">
+<meta name="twitter:image" content="https://overbook.co.kr/og-image.png">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"오버북","alternateName":"오버북 · 책을 기록하다","url":"https://overbook.co.kr/","description":"읽은 책을 쉽게 모으고, 잊지 않고 다시 만나는 독서 기록","applicationCategory":"LifestyleApplication","operatingSystem":"Web","inLanguage":"ko","offers":{"@type":"Offer","price":"0","priceCurrency":"KRW"}}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
@@ -714,6 +731,11 @@
   .auth-brand .seal{width:44px;height:44px;border-radius:10px;border:1.5px solid var(--seal);color:var(--seal);font-family:var(--serif);font-weight:700;font-size:23px;display:flex;align-items:center;justify-content:center;transform:rotate(-4deg)}
   .auth-brand h1{font-family:var(--serif);font-size:25px;font-weight:600;line-height:1.1}
   .auth-brand small{color:var(--muted);font-size:12px}
+  .auth-intro{text-align:center;margin:-14px 0 26px}
+  .auth-intro p{font-family:var(--serif);font-size:15px;color:var(--ink);line-height:1.6;margin-bottom:12px}
+  .auth-intro ul{list-style:none;display:inline-flex;flex-direction:column;gap:5px;text-align:left;font-size:12.5px;color:var(--muted)}
+  .auth-intro li:before{content:'·';color:var(--seal);font-weight:700;margin-right:7px}
+  @media (max-height:640px){.auth-intro ul{display:none}.auth-intro{margin-bottom:18px}}
   .auth-loading{text-align:center;color:var(--muted);font-size:14px;padding:24px 0}
   .auth-field{margin-bottom:14px}
   .auth-field label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px;letter-spacing:.01em}
@@ -1296,6 +1318,14 @@ body.dark .cv-memo{background:rgba(15,20,29,.9);color:#E6EBF3}
 <div class="auth-gate" id="authGate">
   <div class="auth-card">
     <div class="auth-brand"><span class="seal">冊</span><div><h1>오버북</h1><small>책을 기록하다</small></div></div>
+    <div class="auth-intro">
+      <p>읽은 책을 쉽게 모으고,<br>잊지 않고 다시 만나는 독서 기록</p>
+      <ul>
+        <li>제목만 검색하면 표지·저자까지 한 번에</li>
+        <li>밑줄 그은 구절은 사진 찍어 글자로</li>
+        <li>분야별 나무 선반에 꽂아 보는 내 책장</li>
+      </ul>
+    </div>
     <div class="auth-loading" id="authLoading">불러오는 중…</div>
     <div id="authForm" class="hide">
       <div class="auth-info hide" id="authInfo"></div>

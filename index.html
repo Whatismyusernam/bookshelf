@@ -444,6 +444,42 @@
   .nr-info .t{font-family:var(--serif);font-size:14px;font-weight:600;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
   .nr-info .a{font-size:11.5px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .nr-actions{display:flex;gap:7px}
+  .nr-head .nr-title{display:flex;align-items:center;gap:8px}
+  .nr-head{justify-content:space-between;flex-wrap:wrap;row-gap:8px}
+  .nr-prog{font-size:11.5px;color:var(--seal);margin-top:4px;font-weight:500}
+  .nr-read{width:100%;padding:9px 6px;border:1px solid var(--seal);border-radius:9px;background:var(--seal);color:var(--on-accent);font-size:13px;font-weight:600;transition:.14s}
+  .nr-read:hover{filter:brightness(1.08)}
+  .nr-read.on{background:var(--surface);color:var(--seal);font-weight:500}
+  .nr-head .hb-chip span{background:none;color:inherit;padding:0;border-radius:0;font-size:inherit;font-weight:inherit}
+  .hb-chip{display:inline-flex;align-items:center;gap:8px;padding:5px 11px 5px 9px;border:1px solid var(--line);border-radius:999px;background:var(--surface);font-family:var(--sans);font-size:11.5px;font-weight:600;color:var(--ink-soft);cursor:pointer;transition:.14s}
+  .hb-chip:hover{border-color:var(--seal)}
+  .hb-chip.done{border-color:var(--seal);color:var(--seal)}
+  .hb-dots{display:inline-flex;gap:3px}
+  .hb-dots i{width:7px;height:7px;border-radius:50%;background:var(--line);display:block}
+  .hb-dots i.on{background:var(--seal)}
+  .hb-dots i.today:not(.on){box-shadow:inset 0 0 0 1.5px var(--seal);background:transparent}
+  .nr-head .hb-chip .hb-seal,.hb-seal{border-radius:5px;font-size:10.5px;width:18px;height:18px;border:1.3px solid var(--seal);border-radius:5px;font-family:var(--serif);font-size:10.5px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;transform:rotate(-4deg);animation:hbStamp .35s ease-out}
+  @keyframes hbStamp{0%{transform:scale(1.6) rotate(-12deg);opacity:0}100%{transform:scale(1) rotate(-4deg);opacity:1}}
+  .hb-empty{font-size:13px;color:var(--muted);line-height:1.6}
+  .hb-empty b{color:var(--ink-soft)}
+  .rd-days{display:flex;gap:7px}
+  .rd-days button{flex:1;padding:9px 0;border:1px solid var(--line);border-radius:9px;background:var(--surface);font-size:13.5px;color:var(--ink-soft)}
+  .rd-days button.on{border-color:var(--seal);background:var(--seal);color:var(--on-accent);font-weight:600}
+  .rd-row{display:flex;align-items:center;gap:8px}
+  .rd-row input{flex:1;min-width:0;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);font-size:15px}
+  .rd-row span{color:var(--muted);font-size:13px}
+  .rd-opt{font-weight:500;color:var(--muted);opacity:.8;margin-left:4px}
+  .rd-hint{font-size:12px;color:var(--muted);margin-top:7px;line-height:1.5}
+  .hb-week{display:flex;justify-content:space-between;gap:6px}
+  .hbw{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;font-size:11.5px;color:var(--muted)}
+  .hbw i{width:34px;height:34px;border-radius:9px;border:1.3px dashed var(--line);display:flex;align-items:center;justify-content:center;font-style:normal;font-family:var(--serif);font-weight:700;font-size:16px;color:var(--seal)}
+  .hbw.on i{border:1.5px solid var(--seal);transform:rotate(-4deg)}
+  .hbw.today span{color:var(--seal);font-weight:700}
+  .hbw.future i{opacity:.5}
+  .hb-msg{margin-top:18px;font-size:14px;line-height:1.6;color:var(--ink)}
+  .hb-msg b{color:var(--seal)}
+  .hb-best{font-size:12px;color:var(--muted);margin-top:4px}
+  .d-prog{color:var(--seal)}
   .nr-actions button{flex:1;padding:8px 6px;border:1px solid var(--line);border-radius:9px;background:var(--surface);font-size:12.5px;font-weight:500;color:var(--ink-soft);transition:.14s;display:flex;align-items:center;justify-content:center;gap:5px}
   .nr-actions button:hover{border-color:var(--seal);color:var(--seal)}
   /* quick sheet + toast */
@@ -1811,6 +1847,61 @@ body.dark .cv-memo{background:rgba(15,20,29,.9);color:#E6EBF3}
   </div>
 </div>
 
+<!-- 독서 습관: 오늘 읽었어요 -->
+<div class="overlay" id="readOverlay">
+  <div class="modal quick" style="max-width:400px">
+    <div class="modal-head">
+      <h2 id="rdTitle">오늘 읽었어요</h2>
+      <button class="x" data-rdclose>×</button>
+    </div>
+    <div class="modal-body">
+      <div class="rd-days" id="rdDays" role="group" aria-label="읽은 날">
+        <button type="button" data-d="0" class="on">오늘</button><button type="button" data-d="-1">어제</button><button type="button" data-d="-2">그제</button>
+      </div>
+      <div class="field" style="margin:16px 0 0">
+        <label for="rdPage">몇 쪽까지 읽었어요? <span class="rd-opt">선택</span></label>
+        <div class="rd-row">
+          <input id="rdPage" type="number" inputmode="numeric" min="0" placeholder="예: 132">
+          <span>/</span>
+          <input id="rdTotal" type="number" inputmode="numeric" min="1" placeholder="전체 쪽수" aria-label="전체 쪽수">
+          <span>쪽</span>
+        </div>
+        <div class="rd-hint" id="rdHint"></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" data-rdclose>취소</button>
+      <button class="btn primary" id="rdSave">기록하기</button>
+    </div>
+  </div>
+</div>
+<!-- 독서 습관: 이번 주 독서 -->
+<div class="overlay" id="habitOverlay">
+  <div class="modal quick" style="max-width:400px">
+    <div class="modal-head">
+      <h2>이번 주 독서</h2>
+      <button class="x" data-hbclose>×</button>
+    </div>
+    <div class="modal-body">
+      <div class="hb-week" id="hbWeek"></div>
+      <p class="hb-msg" id="hbMsg"></p>
+      <p class="hb-best" id="hbBest"></p>
+      <div class="field" style="margin:18px 0 0">
+        <label for="hbTarget">주간 목표</label>
+        <select id="hbTarget" class="sortsel">
+          <option value="1">일주일에 1일</option><option value="2">일주일에 2일</option><option value="3">일주일에 3일</option><option value="4">일주일에 4일</option><option value="5">일주일에 5일</option><option value="6">일주일에 6일</option><option value="7">매일</option>
+        </select>
+        <div class="rd-hint" id="hbTargetNote"></div>
+      </div>
+      <p class="rd-hint" style="margin-top:14px">'오늘 읽었어요'뿐 아니라 구절·사진·메모를 남기거나, 새 책을 등록하거나, 다 읽음으로 바꾼 날도 기록한 날로 세요.</p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" data-hbclose>닫기</button>
+      <button class="btn primary" id="hbSave">저장</button>
+    </div>
+  </div>
+</div>
+
 <div class="overlay" id="retroOverlay">
   <div class="modal quick" style="max-width:440px">
     <div class="modal-head">
@@ -1952,6 +2043,7 @@ function toRow(b){
     quote:b.quote||'', note:b.note||'', tags:b.tags||[],
     isbn:b.isbn||'', buy_link:b.buyLink||'',
     goal_month:b.goalMonth||'', pinned_at:b.pinnedAt||null,
+    total_pages:b.totalPages||null, current_page:(b.currentPage===null||b.currentPage===undefined)?null:b.currentPage,
     is_public:(b.isPublic===true||b.isPublic===false)?b.isPublic:null
   };
 }
@@ -1974,6 +2066,7 @@ function fromRow(r, shots){
     quote:r.quote||'', note:r.note||'', tags:r.tags||[],
     isbn:r.isbn||'', buyLink:r.buy_link||'',
     goalMonth:r.goal_month||'', pinnedAt:r.pinned_at||null,
+    totalPages:r.total_pages||null, currentPage:(r.current_page===null||r.current_page===undefined)?null:r.current_page,
     isPublic:(r.is_public===true||r.is_public===false)?r.is_public:null,
     quoteShots:(shots||[]).map(s=>({id:s.id, img:s.img, text:s.text||'', path:s.path||''}))
   }));
@@ -2045,6 +2138,7 @@ async function cloudLoad(){
       updatedAt:r.updated_at?Date.parse(r.updated_at):Date.now(),
       title:r.title||'', body:r.body||'', tags:r.tags||[], bookId:r.book_id||null, pinned:!!r.pinned, status:r.status||'seed', retro:r.retro||'', shots:byIdea[r.id]||[] }));
   }catch(e){ console.warn('ideas load skipped', e); }   // 테이블 미생성 시에도 앱은 정상 동작
+  await loadHabit();
   cloudLoadedOK=true;   // 핵심 데이터(책·구절 사진) 로드가 성공한 세션에서만 삭제 동기화 허용
 }
 /* 책의 사진을 Storage/DB와 맞추기: 새 사진 업로드 → 삭제된 사진 정리 → 행 upsert */
@@ -2095,6 +2189,12 @@ async function cloudSaveBook(b){
     const { pinned_at, ...rest } = row;
     ({ error } = await sb.from('books').upsert(rest, { onConflict:'id' }));
     if(!error) console.warn('pinned_at 컬럼이 없어 앞에 두기는 저장되지 않았습니다. 분류·선반 SQL을 실행하세요.');
+  }
+  // 쪽수 칸(total_pages·current_page)을 아직 만들지 않은 경우: 그 칸만 빼고 저장해요(독서 습관 SQL 실행 전 대비).
+  if(error && /(total_pages|current_page)/.test(error.message||'')){
+    const { total_pages, current_page, ...rest } = row;
+    ({ error } = await sb.from('books').upsert(rest, { onConflict:'id' }));
+    if(!error) console.warn('쪽수 칸이 없어 쪽수는 저장되지 않았습니다. 독서 습관 SQL을 실행하세요.');
   }
   if(error) throw error;
   await syncShots(b);
@@ -3020,7 +3120,7 @@ function renderLibrary(){
   const layered = !filterActive;                       // 기본 화면: 읽는 중 → 읽을 책 → 분야별 선반
   const reading = books.filter(b=>b.status==='reading');
   const todo = books.filter(b=>b.status==='todo');
-  renderNowReading(layered && reading.length ? reading : null);
+  renderNowReading(layered ? reading : null);
   renderTodoShelf(layered && todo.length ? todo : null);
   renderDaily(!filterActive);
   renderOnThisDay(!filterActive);
@@ -3217,7 +3317,8 @@ function nrDays(b){
 function nrCard(b){
   const days=nrDays(b);
   return `<div class="nr-card" data-id="${b.id}">
-    <div class="nr-top" data-act="open">${nrCover(b)}<div class="nr-info"><div class="t">${esc(b.title)||'(제목 없음)'}</div><div class="a">${esc(b.author)||'저자 미상'}</div>${days?`<div class="nr-days">${days}</div>`:''}</div></div>
+    <div class="nr-top" data-act="open">${nrCover(b)}<div class="nr-info"><div class="t">${esc(b.title)||'(제목 없음)'}</div><div class="a">${esc(b.author)||'저자 미상'}</div>${days?`<div class="nr-days">${days}</div>`:''}${progressLabel(b)?`<div class="nr-prog">${progressLabel(b)}</div>`:''}</div></div>
+    ${habitOn()?readBtnHTML(b):''}
     <div class="nr-actions"><button data-act="text">✏️ 한 줄</button><button data-act="photo">📷 사진</button></div>
   </div>`;
 }
@@ -3239,15 +3340,22 @@ function renderTodoShelf(todos){
 }
 function renderNowReading(reading){
   const wrap=document.getElementById('nowReading');
-  if(!reading || reading.length===0){ wrap.classList.add('hide'); wrap.innerHTML=''; return; }
+  const hb=habitOn() && books.length>0;
+  if(!reading || (reading.length===0 && !hb)){ wrap.classList.add('hide'); wrap.innerHTML=''; return; }
   const sorted=reading.slice().sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
   wrap.classList.remove('hide');
-  wrap.innerHTML=`<div class="nr-head">지금 읽는 중 <span>${sorted.length}</span></div><div class="nr-row">${sorted.map(nrCard).join('')}</div>`;
+  const head = sorted.length ? `지금 읽는 중 <span>${sorted.length}</span>` : '오늘의 독서';
+  const body = sorted.length
+    ? `<div class="nr-row">${sorted.map(nrCard).join('')}</div>`
+    : `<div class="hb-empty">읽고 있는 책을 <b>읽는 중</b>으로 바꾸면 여기서 바로 기록할 수 있어요.</div>`;
+  wrap.innerHTML=`<div class="nr-head"><div class="nr-title">${head}</div>${hb?habitChipHTML():''}</div>${body}`;
+  if(hb) wrap.querySelector('#hbChip').onclick=openHabit;
   wrap.querySelectorAll('.nr-card').forEach(card=>{
     const id=card.dataset.id;
     card.querySelector('[data-act="open"]').onclick=()=>openDetail(id);
     card.querySelector('[data-act="text"]').onclick=e=>{ e.stopPropagation(); openQuick(id); };
     card.querySelector('[data-act="photo"]').onclick=e=>{ e.stopPropagation(); directCapture(id); };
+    const rb=card.querySelector('[data-act="read"]'); if(rb) rb.onclick=e=>{ e.stopPropagation(); openRead(id); };
   });
 }
 function openQuick(id){
@@ -3283,7 +3391,7 @@ async function saveQuick(){
   if(txt) b.quote = b.quote ? (b.quote+'\n'+txt) : txt;
   if(state.quickPhotos.length) b.quoteShots = (b.quoteShots||[]).concat(state.quickPhotos);
   b.updatedAt=Date.now();
-  closeQuick(); render();
+  closeQuick(); logActivity('quote', b.id); render();
   try{ await cloudSaveBook(b); showToast('저장했어요 · 책장에 반영됨'); }
   catch(e){ console.warn(e); showToast('저장 실패 — 인터넷 연결을 확인하세요'); }
 }
@@ -3299,7 +3407,7 @@ async function handleDirectPhotos(files){
   const fresh=[];
   for(const f of arr){ try{ const shot=await makeShot(f); b.quoteShots=(b.quoteShots||[]); b.quoteShots.push(shot); fresh.push(shot); }catch(e){} }
   if(fresh.length){
-    b.updatedAt=Date.now(); render();
+    b.updatedAt=Date.now(); logActivity('quote', b.id); render();
     try{ await cloudSaveBook(b); showToast(`사진 ${fresh.length}장 저장됨 · 글자 변환은 수정 화면에서`); }
     catch(e){ console.warn(e); showToast('사진 저장 실패 — 인터넷 연결을 확인하세요'); }
   }
@@ -3310,6 +3418,176 @@ function showToast(msg){
   const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
   clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),2200);
 }
+
+/* ---------- 독서 습관 1단계: 하루 기록 · 주 단위 스트릭 (2026-11) ----------
+   설계: 프로젝트 문서 '오버북 독서 습관 시스템 설계'
+   - 기록한 날 = 그날 '오늘 읽었어요'·구절·사진·아이디어·완독·새 책 중 하나라도 한 날 (한국 시간, 하루 1일로 셈)
+   - 스트릭 = 주간 목표 일수(기본 3일)를 채운 주가 몇 주 연속인지. 이번 주는 일요일이 끝날 때까지 '진행 중'이라 깎지 않아요.
+   - 스트릭 숫자는 저장하지 않고 reading_logs의 day로 매번 계산해요.
+   - HABIT_START 전에는 꺼져 있어요(개인정보 처리방침 개정 시행일). 미리 보기: 주소 뒤에 ?habit=1 */
+const HABIT_START='2026-11-17';
+function habitOn(){
+  if(localDay()>=HABIT_START) return true;
+  try{
+    if(/[?&]habit=1\b/.test(location.search)) localStorage.setItem('ob_habit_preview','1');
+    return localStorage.getItem('ob_habit_preview')==='1';
+  }catch(e){ return false; }
+}
+let readLogs=[];                                   // {k, day:'YYYY-MM-DD', kind, bookId, page}
+let habit={ target:3, prev:3, from:'' };           // from: target이 적용되기 시작하는 주의 월요일
+function dayStr(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function addDays(day,n){ const d=new Date(day+'T12:00:00'); d.setDate(d.getDate()+n); return dayStr(d); }
+function weekStart(day){ const d=new Date(day+'T12:00:00'); d.setDate(d.getDate()-((d.getDay()+6)%7)); return dayStr(d); }   // 월요일
+function targetFor(ws){ return (habit.from && ws<habit.from) ? habit.prev : habit.target; }
+function habitStats(){
+  const today=localDay(), ws=weekStart(today);
+  const days=new Set(readLogs.map(l=>l.day));
+  const week=[0,1,2,3,4,5,6].map(i=>{ const d=addDays(ws,i); return { day:d, on:days.has(d) }; });
+  const byWeek={}; days.forEach(d=>{ const w=weekStart(d); byWeek[w]=(byWeek[w]||0)+1; });
+  const ok=w=>(byWeek[w]||0)>=targetFor(w);
+  const thisCount=byWeek[ws]||0, thisTarget=targetFor(ws), thisDone=thisCount>=thisTarget;
+  let prevRun=0; for(let w=addDays(ws,-7); ok(w); w=addDays(w,-7)) prevRun++;
+  const streak=prevRun+(thisDone?1:0);
+  let best=0;
+  const ks=Object.keys(byWeek).sort();
+  if(ks.length){ let cur=0; for(let w=ks[0]; w<=ws; w=addDays(w,7)){ if(ok(w)){ cur++; if(cur>best) best=cur; } else cur=0; } }
+  return { today, ws, week, thisCount, thisTarget, thisDone, prevRun, streak, best };
+}
+async function loadHabit(){
+  readLogs=[]; habit={ target:3, prev:3, from:'' };
+  if(!habitOn()) return;
+  try{
+    const { data, error } = await sb.from('reading_logs').select('k,day,kind,book_id,page')
+      .gte('day', addDays(localDay(),-400)).order('day',{ascending:false});
+    if(error) console.warn('reading_logs load skipped', error);   // 테이블 미생성 시에도 앱은 정상 동작
+    else readLogs=(data||[]).map(r=>({ k:r.k, day:String(r.day).slice(0,10), kind:r.kind, bookId:r.book_id||null, page:r.page }));
+    const { data:hs, error:he } = await sb.from('habit_settings').select('*').maybeSingle();
+    if(!he && hs) habit={ target:hs.week_target||3, prev:hs.prev_target||hs.week_target||3, from:hs.target_from?String(hs.target_from).slice(0,10):'' };
+  }catch(e){ console.warn('habit load skipped', e); }
+}
+/* 기록 한 건 남기기. 같은 날·같은 종류·같은 책은 한 줄로 합쳐요(쪽수만 갱신). */
+async function logActivity(kind, bookId, opts){
+  if(!habitOn()) return null;
+  opts=opts||{};
+  const day=opts.day||localDay();
+  const before=habitStats();
+  const k=day+'|'+kind+'|'+(bookId||'');
+  let l=readLogs.find(x=>x.k===k);
+  if(!l){ l={ k, day, kind, bookId:bookId||null, page:null }; readLogs.push(l); }
+  if(opts.page!==undefined && opts.page!==null) l.page=opts.page;
+  const after=habitStats();
+  try{
+    if(sb && currentUserId){
+      const { error } = await sb.from('reading_logs').upsert({ user_id:currentUserId, k, day, kind, book_id:bookId||null, page:l.page }, { onConflict:'user_id,k' });
+      if(error) console.warn('reading log skipped', error);
+    }
+  }catch(e){ console.warn('reading log skipped', e); }
+  if(!before.thisDone && after.thisDone && !opts.quiet) setTimeout(()=>showToast(`이번 주 목표 달성 · ${after.streak}주 연속`), 2300);
+  return after;
+}
+function progressLabel(b){
+  const p=b.currentPage, t=b.totalPages;
+  if(p===null || p===undefined || p==='') return '';
+  if(t>0) return `${p} / ${t}쪽 · ${Math.min(100,Math.round(p/t*100))}%`;
+  return `${p}쪽까지`;
+}
+function readTodayLog(b){ const t=localDay(); return readLogs.find(l=>l.day===t && l.kind==='read' && l.bookId===b.id); }
+function readBtnHTML(b){
+  const l=readTodayLog(b);
+  return l
+    ? `<button type="button" class="nr-read on" data-act="read">✓ 오늘 기록${l.page!==null&&l.page!==undefined?` · ${l.page}쪽까지`:''}</button>`
+    : `<button type="button" class="nr-read" data-act="read">📖 오늘 읽었어요</button>`;
+}
+function habitChipHTML(){
+  const s=habitStats();
+  const dots=s.week.map(x=>`<i class="${x.on?'on':''}${x.day===s.today?' today':''}"></i>`).join('');
+  let lab;
+  if(s.thisDone) lab=`${s.streak}주 연속`;
+  else if(s.prevRun>0) lab=`${s.thisCount}/${s.thisTarget}일 · ${s.prevRun}주 연속`;
+  else lab=`이번 주 ${s.thisCount}/${s.thisTarget}일`;
+  return `<button type="button" class="hb-chip${s.thisDone?' done':''}" id="hbChip" aria-label="이번 주 독서 기록 보기">${s.thisDone?'<span class="hb-seal">冊</span>':''}<span class="hb-dots">${dots}</span><span class="hb-lab">${lab}</span></button>`;
+}
+/* '오늘 읽었어요' 시트: 날짜(오늘·어제·그제) + 쪽수(선택) */
+function openRead(id){
+  const b=books.find(x=>x.id===id); if(!b) return;
+  state.readId=id; state.readOff=0;
+  document.getElementById('rdTitle').textContent=`『${b.title||'제목 없음'}』`;
+  const l=readTodayLog(b);
+  document.getElementById('rdPage').value=(l&&l.page!==null&&l.page!==undefined)?l.page:(b.currentPage!==null&&b.currentPage!==undefined?b.currentPage:'');
+  document.getElementById('rdTotal').value=b.totalPages||'';
+  document.getElementById('rdHint').textContent=b.totalPages?'':'전체 쪽수를 넣으면 진행률(%)도 보여드려요.';
+  syncReadDays();
+  open('readOverlay');
+}
+function syncReadDays(){
+  document.querySelectorAll('#rdDays button').forEach(x=>x.classList.toggle('on', +x.dataset.d===state.readOff));
+}
+async function saveRead(){
+  const b=books.find(x=>x.id===state.readId); if(!b){ close('readOverlay'); return; }
+  const pv=document.getElementById('rdPage').value.trim(), tv=document.getElementById('rdTotal').value.trim();
+  const p=pv===''?null:Math.max(0,parseInt(pv,10)), t=tv===''?null:Math.max(1,parseInt(tv,10));
+  const day=addDays(localDay(), state.readOff||0);
+  let changed=false;
+  if(t!==null && !isNaN(t) && t!==b.totalPages){ b.totalPages=t; changed=true; }
+  if(tv==='' && b.totalPages){ b.totalPages=null; changed=true; }
+  // 지난날 기록이면 '지금 쪽수'는 더 큰 값일 때만 바꿔요(오늘 132쪽을 적은 뒤 어제 80쪽을 적어도 132 유지).
+  if(p!==null && !isNaN(p) && p!==b.currentPage && (state.readOff===0 || !(b.currentPage>p))){ b.currentPage=p; changed=true; }
+  close('readOverlay');
+  const after=await logActivity('read', b.id, { day, page:(p===null||isNaN(p))?null:p, quiet:true });
+  track('habit_read', { off:state.readOff||0, page:p!==null });
+  render();
+  if(after) showToast(after.thisDone && after.thisCount===after.thisTarget && day>=after.ws
+    ? `이번 주 목표 달성 · ${after.streak}주 연속`
+    : `기록했어요 · 이번 주 ${after.thisCount}/${after.thisTarget}일`);
+  if(changed){
+    b.updatedAt=Date.now();
+    try{ await cloudSaveBook(b); }catch(e){ console.warn(e); showToast('쪽수 저장 실패 — 인터넷 연결을 확인하세요'); }
+  }
+}
+/* 이번 주 독서 시트: 7일 점 · 스트릭 · 주간 목표 일수 */
+function openHabit(){
+  const s=habitStats();
+  const names=['월','화','수','목','금','토','일'];
+  document.getElementById('hbWeek').innerHTML=s.week.map((x,i)=>`<div class="hbw${x.on?' on':''}${x.day===s.today?' today':''}${x.day>s.today?' future':''}"><i>${x.on?'冊':''}</i><span>${names[i]}</span></div>`).join('');
+  let msg;
+  if(s.thisDone) msg=`이번 주 목표를 채웠어요. <b>${s.streak}주 연속</b>이에요.`;
+  else if(s.prevRun>0) msg=`<b>${s.prevRun}주 연속</b> 이어가는 중 · 이번 주 ${s.thisTarget-s.thisCount}일 더 기록하면 ${s.prevRun+1}주가 돼요.`;
+  else if(s.best>0) msg=`이번 주부터 다시 쌓아요. 이번 주 ${s.thisCount}/${s.thisTarget}일.`;
+  else msg=`일주일에 ${s.thisTarget}일 기록하면 그 주는 달성이에요. 이번 주 ${s.thisCount}/${s.thisTarget}일.`;
+  document.getElementById('hbMsg').innerHTML=msg;
+  document.getElementById('hbBest').textContent=s.best>0?`최장 기록 ${s.best}주`:'';
+  const sel=document.getElementById('hbTarget');
+  const nextWs=addDays(s.ws,7);
+  const pending=habit.from && habit.from>s.ws;
+  sel.value=String(pending?habit.target:s.thisTarget);
+  document.getElementById('hbTargetNote').textContent=pending
+    ? `다음 주(${+nextWs.slice(5,7)}/${+nextWs.slice(8,10)})부터 주 ${habit.target}일로 바뀌어요.`
+    : '바꾼 목표는 다음 주부터 적용돼요.';
+  open('habitOverlay');
+}
+async function saveHabitTarget(){
+  const n=Math.min(7,Math.max(1,parseInt(document.getElementById('hbTarget').value,10)||3));
+  const s=habitStats();
+  const cur=s.thisTarget;
+  if(n===habit.target && (!habit.from || habit.from<=s.ws) && n===cur){ close('habitOverlay'); return; }
+  habit={ target:n, prev:cur, from:addDays(s.ws,7) };
+  close('habitOverlay'); render();
+  showToast(`다음 주부터 주 ${n}일 목표예요`);
+  track('habit_target', { n });
+  try{
+    const { error } = await sb.from('habit_settings').upsert({ user_id:currentUserId, week_target:n, prev_target:cur, target_from:habit.from, updated_at:new Date().toISOString() }, { onConflict:'user_id' });
+    if(error) throw error;
+  }catch(e){ console.warn(e); showToast('목표 저장 실패 — 인터넷 연결을 확인하세요'); }
+}
+(function wireHabit(){
+  const ro=document.getElementById('readOverlay'), ho=document.getElementById('habitOverlay');
+  if(!ro || !ho) return;
+  ro.querySelectorAll('[data-rdclose]').forEach(x=>x.onclick=()=>close('readOverlay'));
+  ro.querySelectorAll('#rdDays button').forEach(x=>x.onclick=()=>{ state.readOff=+x.dataset.d; syncReadDays(); });
+  document.getElementById('rdSave').onclick=saveRead;
+  ho.querySelectorAll('[data-hbclose]').forEach(x=>x.onclick=()=>close('habitOverlay'));
+  document.getElementById('hbSave').onclick=saveHabitTarget;
+})();
 
 /* ---------- daily quote ("오늘 다시 보는 문장") ---------- */
 function passagePool(){
@@ -3401,7 +3679,8 @@ function openDetail(id){
   document.getElementById('dMeta').innerHTML=
     `<span>${esc(b.author)||'저자 미상'}</span>${sealRate(b.rate)}`+
     `<span class="status ${b.status}" style="position:static">${STATUS_LABEL[b.status]||''}</span>`+
-    (readPeriodLabel(b)?`<span>${readPeriodLabel(b)}</span>`:'');
+    (readPeriodLabel(b)?`<span>${readPeriodLabel(b)}</span>`:'')+
+    (progressLabel(b)?`<span class="d-prog">${progressLabel(b)}</span>`:'');
   const pub=[b.publisher,b.year].filter(Boolean).join(' · ');
   document.getElementById('dPub').textContent=pub?`${pub} 발행`:'';
 
@@ -3693,9 +3972,13 @@ async function saveBook(){
   // 읽은 기간 정리: 시작만 있으면 다 읽은 날로 옮기고, 시작>종료면 서로 맞바꿈
   if(data.dateStart && !data.date){ data.date=data.dateStart; data.dateStart=''; }
   if(data.dateStart && data.date && data.dateStart>data.date){ const t=data.dateStart; data.dateStart=data.date; data.date=t; }
-  let target;
-  if(state.editId){ target=books.find(x=>x.id===state.editId); Object.assign(target,data,{updatedAt:Date.now()}); }
+  let target, prevStatus=null, prevQuote='', isNew=!state.editId;
+  if(state.editId){ target=books.find(x=>x.id===state.editId); prevStatus=target.status; prevQuote=target.quote||''; Object.assign(target,data,{updatedAt:Date.now()}); }
   else { target=Object.assign({id:uid(),createdAt:Date.now(),updatedAt:Date.now()},data); books.push(target); }
+  // 독서 습관: 새 책 등록 · 완독 처리 · 구절 추가도 '기록한 날'로 인정
+  if(isNew) logActivity('add', target.id);
+  if(target.status==='done' && prevStatus!=='done') logActivity('done', target.id);
+  if(!isNew && (target.quote||'').trim().length>prevQuote.trim().length) logActivity('quote', target.id);
   close('editOverlay'); render();
   try{ await cloudSaveBook(target); showToast('저장했어요'); }
   catch(e){ console.warn(e); showToast('저장 실패 — 인터넷 연결을 확인하세요'); }
@@ -4006,7 +4289,7 @@ async function saveIdea(){
   if(!title && !body && ideaEdit.photos.length===0){ showToast('제목·내용·사진 중 하나는 있어야 해요'); return; }
   let n;
   if(ideaEdit.id){ n=ideas.find(x=>x.id===ideaEdit.id); if(!n) return; }
-  else{ n={ id:uid(), createdAt:Date.now(), shots:[] }; ideas.push(n); }
+  else{ n={ id:uid(), createdAt:Date.now(), shots:[] }; ideas.push(n); logActivity('idea', bookId); }
   n.title=title; n.body=body; n.tags=tags; n.bookId=bookId; n.status=status; n.retro=retro; n.updatedAt=Date.now(); n.shots=ideaEdit.photos;
   close('ideaOverlay'); render(); showToast('아이디어 저장됨');
   // 책 상세를 열어둔 채 아이디어를 저장했다면 상세의 연결 목록도 갱신

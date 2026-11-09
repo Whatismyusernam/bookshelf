@@ -444,6 +444,17 @@
   .nr-info .t{font-family:var(--serif);font-size:14px;font-weight:600;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
   .nr-info .a{font-size:11.5px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .nr-actions{display:flex;gap:7px}
+  .rc-modal{max-width:440px}
+  .rc-frame{margin-top:14px;background:var(--paper-2);border-radius:14px;padding:14px;display:flex;justify-content:center}
+  .rc-frame img{max-width:100%;max-height:58vh;border-radius:10px;box-shadow:0 8px 24px rgba(16,24,42,.18);transition:opacity .2s}
+  .rc-frame img.loading{opacity:.35}
+  .ye-banner{display:flex;align-items:center;gap:13px;margin-bottom:18px;padding:14px 14px 14px 16px;border-radius:16px;background:var(--paper-2);border:1px solid var(--seal-soft)}
+  .ye-seal{width:38px;height:38px;flex-shrink:0;border:1.5px solid var(--seal);border-radius:9px;color:var(--seal);font-family:var(--serif);font-weight:700;font-size:20px;display:flex;align-items:center;justify-content:center;transform:rotate(-4deg)}
+  .ye-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+  .ye-txt b{font-family:var(--serif);font-size:14.5px;font-weight:600;color:var(--ink)}
+  .ye-txt span{font-size:12px;color:var(--muted)}
+  .ye-go{flex-shrink:0;padding:9px 13px;border-radius:10px;border:0;background:var(--seal);color:var(--on-accent);font-size:13px;font-weight:600}
+  .ye-x{flex-shrink:0;border:0;background:none;color:var(--muted);font-size:20px;padding:0 2px;line-height:1}
   .nr-head .nr-title{display:flex;align-items:center;gap:8px}
   .nr-head{justify-content:space-between;flex-wrap:wrap;row-gap:8px}
   .nr-prog{font-size:11.5px;color:var(--seal);margin-top:4px;font-weight:500}
@@ -1769,7 +1780,7 @@ body.dark .cv-memo{background:rgba(15,20,29,.9);color:#E6EBF3}
     </div>
     <div class="review-body" id="reviewBody"></div>
     <div class="modal-foot">
-      <button class="btn" id="reviewImage">🖼️ 이미지 저장</button>
+      <button class="btn" id="reviewImage">🖼️ 결산 카드</button>
       <button class="btn" id="reviewCopy">요약 복사</button>
       <button class="btn primary" data-rclose>닫기</button>
     </div>
@@ -1898,6 +1909,27 @@ body.dark .cv-memo{background:rgba(15,20,29,.9);color:#E6EBF3}
     <div class="modal-foot">
       <button class="btn" data-hbclose>닫기</button>
       <button class="btn primary" id="hbSave">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- 연말 결산 카드 미리보기 -->
+<div class="overlay" id="reviewCardOverlay">
+  <div class="modal quick rc-modal">
+    <div class="modal-head">
+      <h2 id="rcTitle">결산 카드</h2>
+      <button class="x" data-rcclose>×</button>
+    </div>
+    <div class="modal-body">
+      <div class="rd-days" id="rcFmt" role="group" aria-label="카드 크기">
+        <button type="button" data-f="story" class="on">스토리 9:16</button><button type="button" data-f="feed">피드 4:5</button>
+      </div>
+      <div class="rc-frame"><img id="rcImg" alt="결산 카드 미리보기"></div>
+      <p class="rd-hint" style="text-align:center">인스타그램 스토리·카카오톡 프로필에 올리기 좋은 크기예요.</p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" data-rcclose>닫기</button>
+      <button class="btn primary" id="rcShare">공유하기</button>
     </div>
   </div>
 </div>
@@ -2256,6 +2288,9 @@ function toggleShotFav(bookId, sid){
 }
 function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
 function esc(s){ return (s||'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m])); }
+/* 화면에 보일 때만 AI 요약이 남긴 마크다운 흔적(**굵게**, 앞의 '9. '·'- ' 번호)을 지워요.
+   저장된 원문은 그대로 둬요 — 좋아요/그만 반응이 원문 기준으로 저장돼 있어서예요. */
+function plainText(s){ return (s||'').replace(/\*\*(.+?)\*\*/g,'$1').replace(/__(.+?)__/g,'$1').replace(/^\s*(?:\d{1,2}[.)]|[-•*·])\s+/,'').trim(); }
 function catColor(c){ return CATS[normCat(c)]; }
 function catHex(c){ return CAT_HEX[normCat(c)]; }
 
@@ -2617,7 +2652,7 @@ function renderReview(){
   }
   if(d.loved.length){
     h+=`<div class="rv-sec"><h3>올해 아낀 문장</h3><div class="rv-quotes">`;
-    d.loved.slice(0,6).forEach(p=>{ h+=`<div class="rv-q" data-bid="${p.id}"><div class="qt">“${esc(p.text)}”</div><div class="qs">『${esc(p.title)||'제목 없음'}』${p.author?' · '+esc(p.author):''}</div></div>`; });
+    d.loved.slice(0,6).forEach(p=>{ h+=`<div class="rv-q" data-bid="${p.id}"><div class="qt">“${esc(plainText(p.text))}”</div><div class="qs">『${esc(p.title)||'제목 없음'}』${p.author?' · '+esc(p.author):''}</div></div>`; });
     h+=`</div></div>`;
   }
   h+=milestonesHTML();
@@ -2770,6 +2805,215 @@ async function exportReviewImage(){
     showToast('결산 이미지를 저장했어요');
   }, 'image/png');
 }
+
+/* ---------- 연말 결산 카드 v2 (2026-11) ----------
+   올해 완독한 책을 월넛 선반 위 '책등'으로 그려요(표지 이미지는 CORS 때문에 쓰지 않아요).
+   스토리(1080×1920)·피드(1080×1350) 두 크기. 만든 뒤 미리보기 창에서 '공유하기'를 눌러야
+   아이폰에서도 공유 시트가 떠요(공유는 사용자가 막 누른 직후에만 허용돼서예요). */
+const CARD_SIZES={ story:{W:1080,H:1920,label:'스토리'}, feed:{W:1080,H:1350,label:'피드'} };
+function cardPalette(){
+  const dark=document.body.classList.contains('dark');
+  return dark
+    ? { bg:'#0F141D', paper2:'#182030', ink:'#E6EBF3', soft:'#A7B2C4', muted:'#7B8597', seal:'#6BA6E6', wood1:'#6A4A33', wood2:'#4A3222', line:'#2A3446' }
+    : { bg:'#FBF8F2', paper2:'#F1ECE2', ink:'#16243F', soft:'#44516B', muted:'#8B93A7', seal:'#1E4D8C', wood1:'#7A5236', wood2:'#5B3A24', line:'#E4DDD0' };
+}
+function strHash(s){ let h=0; for(const ch of (s||'')) h=(h*31+ch.charCodeAt(0))|0; return Math.abs(h); }
+function cardDoneBooks(Y){
+  return books.filter(b=>b.status==='done' && bookYear(b)===Y)
+    .sort((a,b)=>((a.date||'')<(b.date||'')?-1:1));
+}
+function cardRecordDays(Y){
+  if(typeof readLogs==='undefined' || !readLogs.length) return 0;
+  return new Set(readLogs.filter(l=>+String(l.day).slice(0,4)===Y).map(l=>l.day)).size;
+}
+/* 책등 한 줄: 선반 판자 위에 서 있는 책들 */
+function drawShelfRow(ctx, list, x0, baseY, maxW, P, opts){
+  const gap=7; let x=x0; let drawn=0;
+  for(const b of list){
+    const w=42+(strHash(b.id)%4)*5;                 // 42~57px
+    if(x+w>x0+maxW) break;
+    const h=opts.minH+(strHash(b.title||b.id)%5)*opts.step;
+    const tilt=(drawn===list.length-1 && list.length>3 && strHash(b.id)%3===0);
+    ctx.save();
+    if(tilt){ ctx.translate(x, baseY); ctx.rotate(0.13); ctx.translate(-x, -baseY); }
+    ctx.fillStyle=catHex(b.cat);
+    _rr(ctx, x, baseY-h, w, h, 5); ctx.fill();
+    ctx.fillStyle='rgba(0,0,0,.13)'; ctx.fillRect(x+w-6, baseY-h+4, 5, h-6);    // 책등 그림자
+    ctx.fillStyle='rgba(255,255,255,.35)'; ctx.fillRect(x+7, baseY-h+16, w-14, 2); ctx.fillRect(x+7, baseY-30, w-14, 2);
+    // 세로 제목
+    ctx.fillStyle='rgba(255,255,255,.95)'; ctx.font='600 25px "Noto Serif KR", serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    const chars=[...(b.title||'').replace(/\s+/g,' ').trim()];
+    const room=Math.floor((h-70)/28);
+    const show=chars.length>room ? chars.slice(0,Math.max(1,room-1)).concat(['…']) : chars;
+    show.forEach((ch,i)=>{ if(ch!==' ') ctx.fillText(ch, x+w/2-2, baseY-h+38+i*28); });
+    if((strHash(b.id)%4)===1){ ctx.fillStyle='#B8322E'; ctx.beginPath(); ctx.moveTo(x+w*0.55, baseY-h); ctx.lineTo(x+w*0.55+11, baseY-h); ctx.lineTo(x+w*0.55+11, baseY-h+44); ctx.lineTo(x+w*0.55+5.5, baseY-h+36); ctx.lineTo(x+w*0.55, baseY-h+44); ctx.fill(); }
+    ctx.restore();
+    x+=w+gap+(tilt?14:0); drawn++;
+  }
+  // 판자
+  const g=ctx.createLinearGradient(0,baseY,0,baseY+24); g.addColorStop(0,P.wood1); g.addColorStop(1,P.wood2);
+  ctx.fillStyle=g; _rr(ctx, x0-24, baseY, maxW+48, 24, 4); ctx.fill();
+  ctx.fillStyle='rgba(60,35,15,.16)'; ctx.fillRect(x0-14, baseY+24, maxW+28, 8);
+  return drawn;
+}
+async function buildReviewCanvas(Y, fmt){
+  const {W,H}=CARD_SIZES[fmt]||CARD_SIZES.story, story=fmt!=='feed';
+  const d=reviewData(Y), P=cardPalette(), list=cardDoneBooks(Y);
+  try{
+    if(document.fonts){
+      const sample=list.map(b=>b.title||'').join('')+'0123456789권 완독 결산 독서 문장 기록한 날 최다 분류 목표 달성 冊 오버북';
+      await Promise.all(['700 80px "Noto Serif KR"','600 25px "Noto Serif KR"','italic 400 40px "Noto Serif KR"','500 30px "Noto Sans KR"','700 30px "Noto Sans KR"','400 26px "Noto Sans KR"']
+        .map(f=>document.fonts.load(f, sample).catch(()=>{})));
+    }
+  }catch(e){}
+  const cv=document.createElement('canvas'); cv.width=W; cv.height=H;
+  const ctx=cv.getContext('2d');
+  ctx.fillStyle=P.bg; ctx.fillRect(0,0,W,H);
+  ctx.textAlign='left'; ctx.textBaseline='alphabetic';
+  const L=96;
+  // 머리: 도장 + 연도
+  const top=story?150:96;
+  ctx.save(); ctx.translate(L+38, top+38); ctx.rotate(-0.07);
+  ctx.strokeStyle=P.seal; ctx.lineWidth=4; _rr(ctx,-38,-38,76,76,14); ctx.stroke();
+  ctx.fillStyle=P.seal; ctx.font='700 42px "Noto Serif KR", serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('冊',0,2);
+  ctx.restore();
+  ctx.fillStyle=P.soft; ctx.font='500 32px "Noto Sans KR", sans-serif'; ctx.textBaseline='middle';
+  ctx.fillText(`${Y} 나의 독서`, L+104, top+38);
+  // 큰 숫자
+  let y=top+(story?250:236);
+  ctx.textBaseline='alphabetic'; ctx.fillStyle=P.ink; ctx.font=`700 ${story?190:160}px "Noto Serif KR", serif`;
+  const num=String(d.doneCount); ctx.fillText(num, L-6, y);
+  const nw=ctx.measureText(num).width;
+  ctx.font='600 54px "Noto Serif KR", serif'; ctx.fillText('권', L+nw+10, y);
+  ctx.fillStyle=P.soft; ctx.font='500 34px "Noto Sans KR", sans-serif';
+  const goal=(typeof goals!=='undefined' && goals[Y])||0;
+  const sub = goal ? (d.doneCount>=goal ? `올해 목표 ${goal}권 달성` : `올해 목표 ${goal}권 중 ${d.doneCount}권`) : '올해 끝까지 읽은 책';
+  ctx.fillText(sub, L, y+64);
+  if(goal && d.doneCount>=goal){
+    const sw=ctx.measureText(sub).width;
+    ctx.save(); ctx.translate(L+sw+46, y+52); ctx.rotate(-0.12);
+    ctx.strokeStyle='#B8322E'; ctx.lineWidth=3; _rr(ctx,-30,-22,60,44,8); ctx.stroke();
+    ctx.fillStyle='#B8322E'; ctx.font='700 24px "Noto Sans KR", sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('달성',0,1);
+    ctx.restore();
+  }
+  // 선반
+  y+= story?200:150;
+  const shelfW=W-L*2;
+  let rest=list.slice(), shown=0;
+  const rows=story?2:1, base0=y+(story?300:250);
+  let rowsUsed=0;
+  for(let r=0;r<rows && rest.length;r++){
+    const baseY=base0+r*330; rowsUsed++;
+    const n=drawShelfRow(ctx, rest, L, baseY, shelfW, P, {minH:story?250:205, step:12});
+    shown+=n; rest=rest.slice(n);
+    y=baseY;
+  }
+  if(!list.length){
+    ctx.fillStyle=P.muted; ctx.font='400 30px "Noto Sans KR", sans-serif'; ctx.fillText('올해의 선반은 아직 비어 있어요', L, y+200);
+    y+=260; drawShelfRow(ctx, [], L, y, shelfW, P, {minH:250, step:12});
+  }
+  if(rest.length){ ctx.fillStyle=P.muted; ctx.font='500 26px "Noto Sans KR", sans-serif'; ctx.textAlign='right'; ctx.fillText(`+${rest.length}권 더`, W-L, y+68); ctx.textAlign='left'; }
+  // 숫자 세 칸
+  y+=story?140:104;
+  const days=cardRecordDays(Y);
+  const stats=[[String(d.passageCount),'모은 문장'], days?[String(days),'기록한 날']:(d.avg?['★'+d.avg.toFixed(1),'평균 별점']:null), d.topCat?[d.topCat,'가장 많이 읽은 분야']:null].filter(Boolean);
+  const colW=shelfW/stats.length;
+  stats.forEach(([v,k],i)=>{
+    const cx=L+i*colW;
+    ctx.fillStyle=P.ink; ctx.font=`700 ${v.length>4?40:50}px "Noto Serif KR", serif`; ctx.fillText(v, cx, y+10);
+    ctx.fillStyle=P.muted; ctx.font='400 25px "Noto Sans KR", sans-serif'; ctx.fillText(k, cx, y+56);
+    if(i>0){ ctx.fillStyle=P.line; ctx.fillRect(cx-24, y-34, 2, 96); }
+  });
+  // 월별 막대 (스토리만)
+  if(story && rowsUsed<2 && Math.max(...d.months)>0){
+    y+=150; const mx=Math.max(...d.months), bw=(shelfW-11*14)/12, bh=110;
+    d.months.forEach((v,i)=>{
+      const bx=L+i*(bw+14), h=v?Math.max(10,Math.round(v/mx*bh)):4;
+      ctx.fillStyle=v?P.seal:P.line; ctx.globalAlpha=v?0.25+0.75*(v/mx):1; _rr(ctx,bx,y+bh-h,bw,h,5); ctx.fill(); ctx.globalAlpha=1;
+      ctx.fillStyle=P.muted; ctx.font='400 20px "Noto Sans KR", sans-serif'; ctx.textAlign='center'; ctx.fillText(String(i+1), bx+bw/2, y+bh+30); ctx.textAlign='left';
+    });
+    y+=bh+40;
+  }
+  // 올해의 문장
+  const q=d.loved[0];
+  const footTop=H-170;
+  if(q){
+    y+=story?150:136;
+    const avail=footTop-y-60;
+    const lines=Math.max(1,Math.min(story?4:2, Math.floor((avail-50)/56)));
+    if(avail>110){
+      ctx.fillStyle=P.seal; ctx.fillRect(L, y-34, 5, lines*56+48);
+      ctx.fillStyle=P.ink; ctx.font='italic 400 40px "Noto Serif KR", serif';
+      _wrap(ctx, '“'+plainText(q.text)+'”', L+34, y, shelfW-40, 56, lines);
+      ctx.fillStyle=P.muted; ctx.font='400 26px "Noto Sans KR", sans-serif'; ctx.fillText('— 『'+(q.title||'제목 없음')+'』', L+34, y+lines*56+4);
+    }
+  }
+  drawPromoFooter(ctx, W, H, P.muted, P.seal);
+  return cv;
+}
+/* 미리보기 창 */
+let cardState={ Y:null, fmt:'story', blob:null, url:'' };
+async function openReviewCard(Y){
+  cardState.Y=Y||state.reviewYear||new Date().getFullYear();
+  document.getElementById('rcTitle').textContent=`${cardState.Y} 결산 카드`;
+  open('reviewCardOverlay');
+  await renderReviewCard();
+  track('review_card_open',{ y:cardState.Y });
+}
+async function renderReviewCard(){
+  document.querySelectorAll('#rcFmt button').forEach(b=>b.classList.toggle('on', b.dataset.f===cardState.fmt));
+  const img=document.getElementById('rcImg'); img.classList.add('loading');
+  document.getElementById('rcShare').disabled=true;
+  const cv=await buildReviewCanvas(cardState.Y, cardState.fmt);
+  await new Promise(res=>cv.toBlob(b=>{ cardState.blob=b; res(); }, 'image/png'));
+  if(cardState.url) URL.revokeObjectURL(cardState.url);
+  cardState.url=cardState.blob?URL.createObjectURL(cardState.blob):'';
+  img.src=cardState.url; img.classList.remove('loading');
+  document.getElementById('rcShare').disabled=!cardState.blob;
+  const canShare=!!(cardState.blob && navigator.canShare && navigator.canShare({files:[new File([cardState.blob],'a.png',{type:'image/png'})]}));
+  document.getElementById('rcShare').textContent=canShare?'공유하기':'이미지 저장';
+}
+async function shareReviewCard(){
+  if(!cardState.blob) return;
+  const name=`오버북_${cardState.Y}_결산_${CARD_SIZES[cardState.fmt].label}.png`;
+  const file=new File([cardState.blob], name, {type:'image/png'});
+  track('review_card_share',{ y:cardState.Y, fmt:cardState.fmt });
+  if(navigator.canShare && navigator.canShare({files:[file]})){
+    try{ await navigator.share({files:[file]}); return; }
+    catch(e){ if(e && e.name==='AbortError') return; }
+  }
+  const a=document.createElement('a'); a.href=cardState.url; a.download=name; a.click();
+  showToast('결산 카드를 저장했어요');
+}
+/* 12월 1일 ~ 1월 15일: 첫 화면에 '결산 카드 만들기' 띠 (해마다 한 번 닫으면 그 해엔 안 보여요) */
+function yearEndCardYear(){
+  const now=new Date(), m=now.getMonth()+1, d=now.getDate();
+  if(m===12) return now.getFullYear();
+  if(m===1 && d<=15) return now.getFullYear()-1;
+  try{ if(/[?&]yearend=1\b/.test(location.search)) return now.getFullYear(); }catch(e){}
+  return null;
+}
+function renderYearEndBanner(show){
+  let el=document.getElementById('yearEndBanner');
+  if(!el){
+    el=document.createElement('section'); el.id='yearEndBanner'; el.className='ye-banner hide';
+    const host=document.getElementById('libraryView'); host.insertBefore(el, host.firstChild);
+  }
+  const Y=yearEndCardYear();
+  let closed=false; try{ closed=localStorage.getItem('ob_ye_closed')===String(Y); }catch(e){}
+  const n=Y?books.filter(b=>b.status==='done'&&bookYear(b)===Y).length:0;
+  if(!show || !Y || closed || n===0){ el.classList.add('hide'); el.innerHTML=''; return; }
+  el.classList.remove('hide');
+  el.innerHTML=`<div class="ye-seal">冊</div><div class="ye-txt"><b>${Y}년, ${n}권을 끝까지 읽었어요</b><span>한 장짜리 결산 카드로 남겨보세요</span></div><button type="button" class="ye-go">카드 만들기</button><button type="button" class="ye-x" aria-label="닫기">×</button>`;
+  el.querySelector('.ye-go').onclick=()=>openReviewCard(Y);
+  el.querySelector('.ye-x').onclick=()=>{ try{ localStorage.setItem('ob_ye_closed', String(Y)); }catch(e){} el.classList.add('hide'); };
+}
+(function wireReviewCard(){
+  const o=document.getElementById('reviewCardOverlay'); if(!o) return;
+  o.querySelectorAll('[data-rcclose]').forEach(x=>x.onclick=()=>close('reviewCardOverlay'));
+  o.querySelectorAll('#rcFmt button').forEach(b=>b.onclick=()=>{ if(cardState.fmt===b.dataset.f) return; cardState.fmt=b.dataset.f; renderReviewCard(); });
+  document.getElementById('rcShare').onclick=shareReviewCard;
+})();
 
 /* ---------- 문장 이미지 카드 (발췌집 → PNG 저장/공유) ---------- */
 function _wrapLines(ctx,text,maxW){
@@ -2978,7 +3222,7 @@ function renderWeekBody(){
     const loved=lovedPassages(books);
     if(loved.length){
       const p=loved[Math.floor(Math.random()*loved.length)];
-      h+=`<div class="rv-sec"><h3>이번 주에 다시 만나는 문장</h3><div class="rv-quotes"><div class="rv-q" data-bid="${p.id}"><div class="qt">“${esc(p.text)}”</div><div class="qs">『${esc(p.title)||'제목 없음'}』${p.author?' · '+esc(p.author):''}</div></div></div></div>`;
+      h+=`<div class="rv-sec"><h3>이번 주에 다시 만나는 문장</h3><div class="rv-quotes"><div class="rv-q" data-bid="${p.id}"><div class="qt">“${esc(plainText(p.text))}”</div><div class="qs">『${esc(p.title)||'제목 없음'}』${p.author?' · '+esc(p.author):''}</div></div></div></div>`;
     }
   } else {
     h+=`<div class="rv-empty">이번 주엔 아직 기록이 없어요.<br>한 줄이라도 남겨볼까요? ✏️</div>`;
@@ -3125,6 +3369,7 @@ function renderLibrary(){
   renderDaily(!filterActive);
   renderOnThisDay(!filterActive);
   renderReport(!filterActive);
+  renderYearEndBanner(!filterActive);
   if(typeof renderHomeRecs==='function') renderHomeRecs();
 
   let list = sortBooks(books.filter(matches));
@@ -3230,7 +3475,7 @@ function seededShuffle(arr,seed){
 function exCardHTML(p){
   const typeLabel = p.type==='사진' ? '📷 사진' : p.type;
   const body = (p.text && p.text.trim())
-    ? `<div class="ex-text">${esc(p.text)}</div>`
+    ? `<div class="ex-text">${esc(plainText(p.text))}</div>`
     : (p.img ? `<img class="ex-img" src="${p.img}" alt="구절 사진" loading="lazy">` : `<div class="ex-text" style="color:var(--muted)">(내용 없음)</div>`);
   const shareBtn = (p.text && p.text.trim())
     ? `<div class="ex-acts"><button class="ex-share" data-copy title="구절 복사" aria-label="구절 복사">📋</button><button class="ex-share" data-share title="이미지 카드로 저장" aria-label="이미지 카드로 저장">🖼️</button></div>` : '';
@@ -3631,7 +3876,7 @@ function renderDaily(show){
     <div class="daily-eyebrow">오늘 다시 보는 ${p.type==='구절'?'문장':'인사이트'}
       <button class="daily-shuffle" id="dailyShuffle" title="다른 문장 보기">↻</button>
     </div>
-    <div class="daily-text">${esc(p.text)}</div>
+    <div class="daily-text">${esc(plainText(p.text))}</div>
     <div class="daily-src">${src}</div>
     <div class="daily-react">
       <button class="dr up ${r===1?'on':''}" data-r="up">👍 <span>좋아요</span></button>
@@ -3728,11 +3973,11 @@ function openDetail(id){
   open('detailOverlay');
 }
 function secP(t,v){ return `<div class="d-sec"><h4>${t}</h4><p>${esc(v)}</p></div>`; }
-function secList(t,v){ const items=v.split('\n').map(s=>s.trim()).filter(Boolean); if(items.length<=1) return secP(t,v); return `<div class="d-sec"><h4>${t}</h4><ul>${items.map(i=>`<li>${esc(i)}</li>`).join('')}</ul></div>`; }
+function secList(t,v){ const items=v.split('\n').map(s=>s.trim()).filter(Boolean); if(items.length<=1) return secP(t,v); return `<div class="d-sec"><h4>${t}</h4><ul>${items.map(i=>`<li>${esc(plainText(i))}</li>`).join('')}</ul></div>`; }
 function secQuote(t,v,shots,hiddenCount){
   const items=(v||'').split('\n').map(s=>s.trim()).filter(Boolean);
   let h=`<div class="d-sec"><h4>${t}</h4>`;
-  h+=items.map(i=>`<div class="quote">${esc(i)}</div>`).join('');
+  h+=items.map(i=>`<div class="quote">${esc(plainText(i))}</div>`).join('');
   if(shots&&shots.length){
     h+=shots.map(s=>`<div class="shot-view"><img src="${s.img}" alt="구절 사진" loading="lazy">${(s.text||'').trim()?`<div class="shot-cap">${esc(s.text)}</div>`:''}</div>`).join('');
   }
@@ -4640,7 +4885,7 @@ document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>{ close('edit
 document.querySelectorAll('[data-rclose]').forEach(b=>b.onclick=()=>close('reviewOverlay'));
 document.querySelectorAll('[data-wclose]').forEach(b=>b.onclick=()=>close('weekOverlay'));
 document.getElementById('reviewCopy').onclick=copyReview;
-document.getElementById('reviewImage').onclick=exportReviewImage;
+document.getElementById('reviewImage').onclick=()=>openReviewCard(state.reviewYear);
 document.querySelectorAll('[data-qclose]').forEach(b=>b.onclick=closeQuick);
 document.getElementById('qcSave').onclick=saveQuick;
 document.getElementById('qcPhotoBtn').onclick=()=>document.getElementById('qcPhotoInput').click();

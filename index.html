@@ -444,6 +444,25 @@
   .nr-info .t{font-family:var(--serif);font-size:14px;font-weight:600;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
   .nr-info .a{font-size:11.5px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .nr-actions{display:flex;gap:7px}
+  .rp-sub{font-size:12.5px;color:var(--muted);margin:-4px 0 10px}
+  .rp-scroll{height:min(46vh,420px);overflow-y:auto;border-radius:14px;background:linear-gradient(var(--paper-2),var(--paper));border:1px solid var(--line);position:relative;scrollbar-width:thin}
+  .rp-path{position:relative;width:100%}
+  .rp-st{position:absolute;width:92px;height:30px;border-radius:11px;background:var(--line);box-shadow:0 4px 0 rgba(20,35,65,.12);display:flex;align-items:center;justify-content:center;font-size:11.5px;color:var(--muted);font-weight:600}
+  .rp-st.ok{background:var(--seal);color:var(--on-accent);box-shadow:0 4px 0 rgba(20,35,65,.35)}
+  .rp-st.now{background:var(--surface);border:2px solid var(--seal);color:var(--seal)}
+  .rp-st.rest{background:#F1E3C6;color:#7A5236;box-shadow:0 4px 0 #D9C39A}
+  .rp-st.rest.ok{background:#E2C78F;color:#5B3A24}
+  .rp-lab{position:absolute;top:50%;transform:translateY(-50%);width:118px;font-size:12.5px;line-height:1.35;color:var(--ink);font-weight:500}
+  .rp-lab.r{left:calc(100% + 10px)}
+  .rp-lab.l{right:calc(100% + 10px);text-align:right}
+  .rp-lab.dim{color:var(--muted);font-weight:400}
+  .rp-lab small{display:block;font-size:11px;color:var(--muted);font-weight:400;margin-top:2px}
+  .rp-st.now .rp-lab{font-weight:700;color:var(--seal)}
+  .rp-zone{position:absolute;right:10px;font-size:10.5px;font-weight:700;letter-spacing:.04em;color:var(--seal);background:var(--surface);border:1px solid var(--seal-soft);border-radius:999px;padding:2px 9px}
+  .rp-dj{position:absolute;z-index:2;transition:left .3s ease, top .3s ease;pointer-events:none}
+  .rp-dj.bounce .dj{animation:djHop .34s ease-out}
+  @keyframes djHop{0%{transform:translateY(0)}45%{transform:translateY(-16px) rotate(-6deg)}100%{transform:translateY(0)}}
+  .hb-sec{font-family:var(--serif);font-size:14.5px;font-weight:600;margin:20px 0 10px;color:var(--ink)}
   .rc-modal{max-width:440px}
   .rc-frame{margin-top:14px;background:var(--paper-2);border-radius:14px;padding:14px;display:flex;justify-content:center}
   .rc-frame img{max-width:100%;max-height:58vh;border-radius:10px;box-shadow:0 8px 24px rgba(16,24,42,.18);transition:opacity .2s}
@@ -1890,10 +1909,13 @@ body.dark .cv-memo{background:rgba(15,20,29,.9);color:#E6EBF3}
 <div class="overlay" id="habitOverlay">
   <div class="modal quick" style="max-width:400px">
     <div class="modal-head">
-      <h2>이번 주 독서</h2>
+      <h2>나의 독서 길</h2>
       <button class="x" data-hbclose>×</button>
     </div>
     <div class="modal-body">
+      <p class="rp-sub" id="rpSub"></p>
+      <div class="rp-scroll" id="rpScroll"><div class="rp-path" id="rpPath"></div></div>
+      <div class="hb-sec">이번 주</div>
       <div class="hb-week" id="hbWeek"></div>
       <p class="hb-msg" id="hbMsg"></p>
       <p class="hb-best" id="hbBest"></p>
@@ -3750,7 +3772,7 @@ function habitChipHTML(){
   if(s.thisDone) lab=`${s.streak}주 연속`;
   else if(s.prevRun>0) lab=`${s.thisCount}/${s.thisTarget}일 · ${s.prevRun}주 연속`;
   else lab=`이번 주 ${s.thisCount}/${s.thisTarget}일`;
-  return `<button type="button" class="hb-chip${s.thisDone?' done':''}" id="hbChip" aria-label="이번 주 독서 기록 보기">${s.thisDone?'<span class="hb-seal">冊</span>':''}<span class="hb-dots">${dots}</span><span class="hb-lab">${lab}</span></button>`;
+  return `<button type="button" class="hb-chip${s.thisDone?' done':''}" id="hbChip" aria-label="나의 독서 길 보기">${dojangSVG(pathModel().ribbon,18)}${s.thisDone?'<span class="hb-seal">冊</span>':''}<span class="hb-dots">${dots}</span><span class="hb-lab">${lab}</span></button>`;
 }
 /* '오늘 읽었어요' 시트: 날짜(오늘·어제·그제) + 쪽수(선택) */
 function openRead(id){
@@ -3809,6 +3831,7 @@ function openHabit(){
     ? `다음 주(${+nextWs.slice(5,7)}/${+nextWs.slice(8,10)})부터 주 ${habit.target}일로 바뀌어요.`
     : '바꾼 목표는 다음 주부터 적용돼요.';
   open('habitOverlay');
+  renderPath();
 }
 async function saveHabitTarget(){
   const n=Math.min(7,Math.max(1,parseInt(document.getElementById('hbTarget').value,10)||3));
@@ -3833,6 +3856,114 @@ async function saveHabitTarget(){
   ho.querySelectorAll('[data-hbclose]').forEach(x=>x.onclick=()=>close('habitOverlay'));
   document.getElementById('hbSave').onclick=saveHabitTarget;
 })();
+
+/* ---------- 나의 독서 길: 도장이가 디딤돌을 오르는 화면 (2026-11) ----------
+   아래 미션 10칸 → 첫 봉우리(쉼터) → 주간 계단(주간 목표를 채운 주마다 1칸, 4칸마다 쉼터).
+   - 미션 달성은 이미 있는 데이터로 판단해요(새 DB 없음). 한 번 달성한 칸은 이 기기에 기억해서, 책을 지워도 내려가지 않아요.
+   - 주간 계단은 기능이 시작된 주(PATH_WEEKS_FROM)부터 세요.
+   - 도장이는 '아직 안 한 미션 중 가장 아래 칸'에 서 있어요. 미션을 다 하면 주간 계단 맨 위 칸에 서요. */
+const PATH_WEEKS_FROM='2026-11-16';
+const PATH_MISSIONS=[
+  { id:'add',     label:'첫 책 등록',              how:'＋ 책 추가로 읽은 책이나 읽을 책을 넣어보세요.',          done:()=>books.length>0 },
+  { id:'reading', label:'읽는 중인 책 정하기',      how:'지금 읽는 책의 상태를 \'읽는 중\'으로 바꿔보세요.',      done:()=>books.some(b=>b.status==='reading'||b.status==='done') },
+  { id:'read',    label:'첫 \'오늘 읽었어요\'',     how:'지금 읽는 중 카드의 📖 오늘 읽었어요를 눌러보세요.',     done:()=>readLogs.some(l=>l.kind==='read') },
+  { id:'quote',   label:'첫 구절 남기기',           how:'카드의 ✏️ 한 줄이나 📷 사진으로 구절을 남겨보세요.',     done:()=>books.some(b=>(b.quote||'').trim()||(b.quoteShots||[]).length) },
+  { id:'pages',   label:'전체 쪽수 넣기',           how:'오늘 읽었어요 창에서 전체 쪽수를 넣으면 진행률이 보여요.', done:()=>books.some(b=>b.totalPages>0) },
+  { id:'week',    label:'한 주 목표 채우기',        how:'이번 주에 정한 일수만큼 기록해보세요.',                  done:()=>pathWeeks(true).length>0 },
+  { id:'goal',    label:'올해 목표 정하기',         how:'첫 화면의 목표 버튼에서 올해 읽을 권수를 정해보세요.',   done:()=>!!(goals && goals[new Date().getFullYear()]) },
+  { id:'finish',  label:'첫 완독',                  how:'끝까지 읽은 책을 \'다 읽음\'으로 바꿔보세요.',           done:()=>books.some(b=>b.status==='done') },
+  { id:'oneliner',label:'한 줄 소개 쓰기',          how:'다 읽은 책의 수정 화면에서 한 줄 소개를 써보세요.',      done:()=>books.some(b=>(b.oneliner||'').trim()) },
+  { id:'idea',    label:'아이디어 하나',            how:'아이디어 탭에서 책에서 얻은 생각을 하나 적어보세요.',    done:()=>ideas.length>0 },
+];
+const PATH_RIBBONS=['#B8322E','#C9A227','#3F7D5C','#3C7DBF','#7A4FA3','#D0663A','#16243F'];
+const PATH_REST_EVERY=4;
+/* 주간 목표를 채운 주의 월요일 목록. all=true면 기간 제한 없이(미션 6번 판정용) */
+function pathWeeks(all){
+  const byWeek={};
+  new Set(readLogs.map(l=>l.day)).forEach(d=>{ const w=weekStart(d); byWeek[w]=(byWeek[w]||0)+1; });
+  return Object.keys(byWeek).filter(w=>(all||w>=PATH_WEEKS_FROM) && byWeek[w]>=targetFor(w)).sort();
+}
+function pathMissionState(){
+  let sticky={}; try{ sticky=JSON.parse(localStorage.getItem('ob_path_done')||'{}')||{}; }catch(e){}
+  const res=PATH_MISSIONS.map(m=>{ let ok=false; try{ ok=!!m.done(); }catch(e){} if(ok) sticky[m.id]=1; return { ...m, ok:ok||!!sticky[m.id] }; });
+  try{ localStorage.setItem('ob_path_done', JSON.stringify(sticky)); }catch(e){}
+  return res;
+}
+/* 길 전체를 칸 목록으로: {kind:'mission'|'rest'|'week', label, ok} — 아래(0)부터 위로 */
+function pathModel(){
+  const ms=pathMissionState();
+  const weeks=pathWeeks(false);
+  const stones=ms.map((m,i)=>({ kind:'mission', label:m.label, how:m.how, ok:m.ok, n:i+1 }));
+  const allMissions=ms.every(m=>m.ok);
+  stones.push({ kind:'rest', label:'첫 봉우리', ok:allMissions, rest:0 });
+  const showWeeks=Math.max(weeks.length+3, 4);
+  let restNo=0;
+  for(let i=1;i<=showWeeks;i++){
+    stones.push({ kind:'week', label:i<=weeks.length?`${i}주 달성`:`${i}주째`, ok:allMissions && i<=weeks.length, n:i });
+    if(i%PATH_REST_EVERY===0){ restNo++; stones.push({ kind:'rest', label:`쉼터 ${restNo}`, ok:allMissions && i<=weeks.length, rest:restNo }); }
+  }
+  // 도장이 위치: 미션이 남았으면 가장 아래 미완료 미션, 다 했으면 마지막으로 오른 칸의 다음 칸
+  let at;
+  if(!allMissions) at=ms.findIndex(m=>!m.ok);
+  else{ let last=10; stones.forEach((s,i)=>{ if(s.ok) last=i; }); at=Math.min(last+1, stones.length-1); }
+  const restsReached=stones.filter(s=>s.kind==='rest'&&s.ok).length;
+  const ribbon=PATH_RIBBONS[Math.min(restsReached, PATH_RIBBONS.length-1)];
+  const climbed=stones.filter(s=>s.ok).length;
+  return { stones, at, allMissions, weeks:weeks.length, ribbon, climbed, missionsDone:ms.filter(m=>m.ok).length };
+}
+function dojangSVG(ribbon, size){
+  const s=size||46;
+  return `<svg class="dj" width="${s}" height="${Math.round(s*48/44)}" viewBox="0 0 44 48" aria-hidden="true">
+<path d="M28 2 L36 2 L36 16 L32 12 L28 16 Z" fill="${ribbon}"/>
+<rect x="4" y="8" width="34" height="32" rx="9" fill="#1E4D8C" transform="rotate(-4 21 24)"/>
+<circle cx="15" cy="23" r="3" fill="#fff"/><circle cx="27" cy="22" r="3" fill="#fff"/>
+<circle cx="15.6" cy="23.5" r="1.4" fill="#16243F"/><circle cx="27.6" cy="22.5" r="1.4" fill="#16243F"/>
+<path d="M17 30 Q21 33 25 30" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/>
+<rect x="11" y="39" width="6" height="7" rx="3" fill="#143766"/><rect x="25" y="39" width="6" height="7" rx="3" fill="#143766"/></svg>`;
+}
+const PATH_STEP=70, PATH_X=[6,36,64,36];   // 칸 사이 높이(px), 지그재그 가로 위치(%)
+function pathStoneXY(i, total){ return { left:PATH_X[i%PATH_X.length], top:(total-1-i)*PATH_STEP+70 }; }
+function renderPath(){
+  const box=document.getElementById('rpPath'), sc=document.getElementById('rpScroll'); if(!box) return;
+  const M=pathModel(), total=M.stones.length;
+  box.style.height=(total*PATH_STEP+110)+'px';
+  let h='';
+  M.stones.forEach((s,i)=>{
+    const {left,top}=pathStoneXY(i,total);
+    const cls=['rp-st', s.kind, s.ok?'ok':'', i===M.at?'now':''].join(' ');
+    const face = s.ok ? (s.kind==='rest'?'⛰':'✓') : (i===M.at?'지금':(s.kind==='rest'?'⛰':(s.kind==='mission'?s.n:'')));
+    const lab = `<div class="rp-lab ${left>50?'l':'r'}${s.ok||i===M.at?'':' dim'}">${esc(s.label)}${i===M.at&&s.how?`<small>${esc(s.how)}</small>`:''}</div>`;
+    h+=`<div class="${cls}" style="left:${left}%;top:${top}px"><span>${face}</span>${lab}</div>`;
+  });
+  // 구역 표시
+  h+=`<div class="rp-dj" id="rpDj">${dojangSVG(M.ribbon,40)}</div>`;
+  box.innerHTML=h;
+  const sub=document.getElementById('rpSub');
+  sub.textContent = M.allMissions
+    ? `주간 계단 ${M.weeks}칸 · 다음 칸: 이번 주 목표 채우기`
+    : `미션 ${M.missionsDone} / 10 · 다음: ${M.stones[M.at].label}`;
+  // 지난번 본 위치에서 지금 위치까지 한 칸씩 올라가요
+  let from=M.at; try{ const v=localStorage.getItem('ob_path_at'); from = v===null ? 0 : Math.min(+v, M.at); }catch(e){}   // 처음 열면 맨 아래에서부터 올라가요
+  if(isNaN(from)||from<0) from=M.at;
+  placeDj(from, total, false);
+  sc.scrollTop=Math.max(0, pathStoneXY(from,total).top-sc.clientHeight/2);
+  try{ localStorage.setItem('ob_path_at', String(M.at)); }catch(e){}
+  if(from<M.at){
+    const steps=M.at-from;
+    if(steps>=3) setTimeout(()=>showToast(`도장이가 ${steps}칸을 올라가요!`), 250);
+    let i=from;
+    const hop=()=>{ i++; placeDj(i,total,true); const t=pathStoneXY(i,total).top; sc.scrollTo({top:Math.max(0,t-sc.clientHeight/2), behavior:'smooth'}); if(i<M.at) setTimeout(hop, steps>6?220:380); };
+    setTimeout(hop, 450);
+    track('path_climb',{ from, to:M.at });
+  }
+}
+function placeDj(i,total,anim){
+  const dj=document.getElementById('rpDj'); if(!dj) return;
+  const {left,top}=pathStoneXY(i,total);
+  dj.classList.toggle('hop', !!anim);
+  dj.style.left=`calc(${left}% + 26px)`; dj.style.top=(top-43)+'px';
+  if(anim){ dj.classList.remove('bounce'); void dj.offsetWidth; dj.classList.add('bounce'); }
+}
 
 /* ---------- daily quote ("오늘 다시 보는 문장") ---------- */
 function passagePool(){

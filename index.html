@@ -2980,6 +2980,7 @@ async function openReviewCard(Y){
   document.getElementById('rcTitle').textContent=`${cardState.Y} 결산 카드`;
   open('reviewCardOverlay');
   await renderReviewCard();
+  trackNew('review_card_open',{ y:cardState.Y });
 }
 async function renderReviewCard(){
   document.querySelectorAll('#rcFmt button').forEach(b=>b.classList.toggle('on', b.dataset.f===cardState.fmt));
@@ -2998,6 +2999,7 @@ async function shareReviewCard(){
   if(!cardState.blob) return;
   const name=`오버북_${cardState.Y}_결산_${CARD_SIZES[cardState.fmt].label}.png`;
   const file=new File([cardState.blob], name, {type:'image/png'});
+  trackNew('review_card_share',{ y:cardState.Y, fmt:cardState.fmt });
   if(navigator.canShare && navigator.canShare({files:[file]})){
     try{ await navigator.share({files:[file]}); return; }
     catch(e){ if(e && e.name==='AbortError') return; }
@@ -3799,6 +3801,7 @@ async function saveRead(){
   if(p!==null && !isNaN(p) && p!==b.currentPage && (state.readOff===0 || !(b.currentPage>p))){ b.currentPage=p; changed=true; }
   close('readOverlay');
   const after=await logActivity('read', b.id, { day, page:(p===null||isNaN(p))?null:p, quiet:true });
+  trackNew('habit_read', { off:state.readOff||0, page:p!==null });
   render();
   if(after) showToast(after.thisDone && after.thisCount===after.thisTarget && day>=after.ws
     ? `이번 주 목표 달성 · ${after.streak}주 연속`
@@ -3950,6 +3953,7 @@ function renderPath(){
     let i=from;
     const hop=()=>{ i++; placeDj(i,total,true); const t=pathStoneXY(i,total).top; sc.scrollTo({top:Math.max(0,t-sc.clientHeight/2), behavior:'smooth'}); if(i<M.at) setTimeout(hop, steps>6?220:380); };
     setTimeout(hop, 450);
+    trackNew('path_climb',{ from, to:M.at });
   }
 }
 function placeDj(i,total,anim){
@@ -6046,6 +6050,22 @@ function track(name, props){
     Promise.resolve(sb.from('events').insert(row)).then(function(){},function(){});  // fire-and-forget
   }catch(e){}
 }
+/* 처리방침 개정 시행일(HABIT_START, 11/17)부터만 기록하는 이벤트: 새 기능 이용 · 이용 시간 */
+function trackNew(name, props){ try{ if(localDay()>=HABIT_START) track(name, props); }catch(e){} }
+/* 이용 시간: 화면이 보이는 동안의 시간을 모아 두었다가, 화면을 떠날 때(다른 앱·탭으로 전환, 닫기) 한 번에 기록해요.
+   로그인한 사람만, 5초 미만은 버리고, 5분 넘게 아무 조작이 없으면 그 뒤 시간은 세지 않아요. */
+(function usageTimer(){
+  const IDLE=5*60*1000;
+  let since=document.visibilityState==='visible'?Date.now():0, lastAct=Date.now(), acc=0;
+  ['pointerdown','keydown','scroll','touchstart'].forEach(ev=>window.addEventListener(ev,()=>{ lastAct=Date.now(); },{passive:true,capture:true}));
+  function flush(){
+    if(since){ const end=Math.min(Date.now(), Math.max(lastAct,since)+IDLE); if(end>since) acc+=end-since; since=0; }
+    const sec=Math.round(acc/1000);
+    if(sec>=5 && currentUserId){ trackNew('usage_time',{ sec:Math.min(sec,3*3600) }); acc=0; }
+  }
+  document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='hidden') flush(); else { since=Date.now(); lastAct=Date.now(); } });
+  window.addEventListener('pagehide', flush);
+})();
 /* ---- 로그인 전 소개(랜딩) 화면 ---- */
 let landingDismissed=false, landingInited=false;
 function hideLanding(){ const el=document.getElementById('lp'); if(el) el.classList.remove('show'); }

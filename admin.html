@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>오버북 관리자</title>
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --bg:#F6F7FA; --surface:#FFFFFF; --ink:#16243F; --soft:#44516B; --muted:#7B8597; --line:#E3E7EE; --grid:#EEF1F5;
+    --seal:#1E4D8C; --seal-soft:#C5D6EC; --up:#2E7D4F; --down:#B4232A;
+    --sans:"Noto Sans KR",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo",sans-serif;
+    --serif:"Noto Serif KR","Apple SD Gothic Neo",serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0F141D; --surface:#182030; --ink:#E6EBF3; --soft:#A7B2C4; --muted:#7B8597; --line:#2A3446; --grid:#222C3C;
+      --seal:#6BA6E6; --seal-soft:#33486A; --up:#6CC08E; --down:#F0A6AA;
+    }
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:var(--sans);background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;line-height:1.5}
+  .wrap{max-width:1080px;margin:0 auto;padding:22px 16px 60px}
+  header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+  .seal{width:34px;height:34px;border:1.5px solid var(--seal);border-radius:8px;color:var(--seal);font-family:var(--serif);font-weight:700;font-size:18px;display:flex;align-items:center;justify-content:center;transform:rotate(-4deg)}
+  h1{font-family:var(--serif);font-size:20px;font-weight:700}
+  .when{font-size:12px;color:var(--muted)}
+  .spacer{flex:1}
+  button{font-family:inherit;cursor:pointer}
+  .btn{padding:7px 13px;border-radius:9px;border:1px solid var(--line);background:var(--surface);color:var(--soft);font-size:13px}
+  .btn:hover{border-color:var(--seal);color:var(--seal)}
+  .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:14px}
+  .tile{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+  .tile .k{font-size:12px;color:var(--muted)}
+  .tile .v{font-family:var(--serif);font-size:28px;font-weight:700;margin-top:2px;font-variant-numeric:tabular-nums}
+  .tile .v small{font-family:var(--sans);font-size:13px;font-weight:500;color:var(--muted);margin-left:2px}
+  .tile .d{font-size:12px;margin-top:2px;color:var(--muted)}
+  .tile .d .up{color:var(--up);font-weight:600} .tile .d .down{color:var(--down);font-weight:600}
+  .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,480px),1fr));gap:12px}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 16px 12px;min-width:0}
+  .card h2{font-size:14px;font-weight:700}
+  .card .sub{font-size:12px;color:var(--muted);margin:2px 0 8px}
+  .chart{position:relative;width:100%}
+  .chart svg{display:block;width:100%;height:auto;overflow:visible}
+  .tip{position:absolute;pointer-events:none;background:var(--ink);color:var(--surface);font-size:12px;padding:6px 9px;border-radius:8px;white-space:nowrap;transform:translate(-50%,-100%);margin-top:-8px;opacity:0;transition:opacity .1s;z-index:3}
+  .tip b{font-weight:700}
+  .empty{font-size:13px;color:var(--muted);padding:34px 0;text-align:center}
+  .funnel .row{display:grid;grid-template-columns:92px 1fr 64px;align-items:center;gap:10px;margin:7px 0;font-size:13px}
+  .funnel .bar{height:22px;border-radius:0 4px 4px 0;background:var(--seal)}
+  .funnel .track{background:var(--grid);border-radius:0 4px 4px 0}
+  .funnel .num{text-align:right;font-variant-numeric:tabular-nums;color:var(--soft)}
+  .funnel .drop{font-size:11.5px;color:var(--muted);margin-left:102px;margin-top:-3px}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numeric:tabular-nums}
+  th,td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+  th:first-child,td:first-child{text-align:left}
+  th{color:var(--muted);font-weight:600;font-size:11.5px}
+  .tablewrap{overflow-x:auto}
+  .gate{max-width:420px;margin:80px auto;text-align:center;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:28px 22px}
+  .gate p{font-size:14px;color:var(--soft);margin-top:10px}
+  .gate a{color:var(--seal);font-weight:600}
+  .note{font-size:11.5px;color:var(--muted);margin-top:14px}
+  .hide{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="seal">冊</div>
+    <h1>오버북 관리자</h1>
+    <span class="when" id="when"></span>
+    <span class="spacer"></span>
+    <button class="btn" id="reload">새로고침</button>
+  </header>
+
+  <div class="gate hide" id="gate">
+    <div class="seal" style="margin:0 auto">冊</div>
+    <p id="gateMsg"></p>
+  </div>
+
+  <main id="main" class="hide">
+    <section class="tiles" id="tiles"></section>
+    <div class="grid2">
+      <div class="card"><h2>주별 기록한 사람</h2><div class="sub">책 등록·구절·아이디어·'오늘 읽었어요' 중 하나라도 남긴 사람</div><div class="chart" id="cRecorders"></div></div>
+      <div class="card"><h2>그중 주 2일 이상 기록한 비율</h2><div class="sub">습관 기능의 핵심 지표 · 기능 시작 11/17</div><div class="chart" id="cRec2"></div></div>
+      <div class="card"><h2>일별 방문자</h2><div class="sub">브라우저 기준(같은 사람도 기기가 다르면 따로 셈) · 11/9부터 기록</div><div class="chart" id="cVisitors"></div></div>
+      <div class="card"><h2>일별 1인당 이용 시간</h2><div class="sub">화면을 보고 있던 시간(분) · 11/17부터 기록</div><div class="chart" id="cUsage"></div></div>
+      <div class="card"><h2>주별 가입</h2><div class="sub">새로 가입한 계정 수</div><div class="chart" id="cSignups"></div></div>
+      <div class="card"><h2>최근 30일 가입 흐름</h2><div class="sub">소개 화면 → 시작하기 → 가입 → 첫 책 등록</div><div class="funnel" id="funnel"></div></div>
+    </div>
+    <div class="card" style="margin-top:12px"><h2>새 기능 사용 (최근 30일)</h2><div class="sub">11/17부터 기록</div><div class="tablewrap" id="features"></div></div>
+    <div class="card" style="margin-top:12px"><h2>주별 표</h2><div class="sub">차트의 숫자를 표로</div><div class="tablewrap" id="weekTable"></div></div>
+    <p class="note">운영자 본인 계정은 모든 숫자에서 빠져 있어요. 숫자는 모두 집계값이며, 개인별 기록은 이 화면에 나오지 않아요.</p>
+  </main>
+</div>
+<script>
+/* index.html과 같은 공개 키(publishable)예요. 비밀 키가 아니라 노출돼도 괜찮아요.
+   통계는 admin_stats() 함수가 '관리자로 등록된 계정'에게만 돌려줘요. */
+const SUPABASE_URL = 'https://uzmcnqzucwummvxixusj.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_JlBgnJ6ISWUyQesXUF6GUA_NfHpURfE';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+const $ = id => document.getElementById(id);
+const fmt = n => (n===null||n===undefined||isNaN(n)) ? '–' : Number(n).toLocaleString('ko-KR');
+const md = s => { const d=new Date(s+'T12:00:00'); return (d.getMonth()+1)+'/'+d.getDate(); };
+
+function gate(msg){ $('main').classList.add('hide'); $('gate').classList.remove('hide'); $('gateMsg').innerHTML=msg; }
+
+async function load(){
+  $('when').textContent='불러오는 중…';
+  const { data:{ session } } = await sb.auth.getSession();
+  if(!session){ gate('오버북에 로그인한 상태에서 열어주세요.<br><a href="./">overbook.co.kr에서 로그인하기 →</a>'); $('when').textContent=''; return; }
+  const { data, error } = await sb.rpc('admin_stats');
+  if(error){
+    gate(/not allowed|42501/i.test(error.message||'') ? '관리자로 등록된 계정이 아니에요.' : '통계를 불러오지 못했어요.<br><small>'+(error.message||'')+'</small>');
+    $('when').textContent=''; return;
+  }
+  $('gate').classList.add('hide'); $('main').classList.remove('hide');
+  render(data);
+  const t=new Date(data.generated_at); $('when').textContent=`${t.getMonth()+1}/${t.getDate()} ${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')} 기준`;
+}
+
+function render(D){
+  const W=D.weekly||[], Dl=D.daily||[];
+  const cur=W[W.length-1]||{}, prev=W[W.length-2]||{};
+  const pct=w=>w&&w.recorders? Math.round(w.rec2/w.recorders*100):null;
+  const usageMin=w=>w&&w.usage_users? Math.round(w.usage_sec/w.usage_users/60):null;
+  const delta=(a,b,unit)=>{ if(a===null||b===null||a===undefined||b===undefined) return ''; const d=a-b; if(d===0) return '지난주와 같음'; return `지난주보다 <span class="${d>0?'up':'down'}">${d>0?'▲':'▼'} ${Math.abs(d)}${unit||''}</span>`; };
+  const tiles=[
+    ['전체 가입자', fmt(D.totals.users), '명', `이번 주 새로 ${fmt(cur.signups)}명`],
+    ['이번 주 기록한 사람', fmt(cur.recorders), '명', delta(cur.recorders, prev.recorders,'명')],
+    ['주 2일 이상 비율', pct(cur)===null?'–':pct(cur), pct(cur)===null?'':'%', delta(pct(cur), pct(prev),'%p')],
+    ['이번 주 방문자', fmt(cur.visitors), '명', delta(cur.visitors, prev.visitors,'명')],
+    ['1인당 주간 이용 시간', usageMin(cur)===null?'–':usageMin(cur), usageMin(cur)===null?'':'분', usageMin(cur)===null?'11/17부터 기록':delta(usageMin(cur), usageMin(prev),'분')],
+    ['쌓인 기록', fmt(D.totals.books), '권', `구절 사진 ${fmt(D.totals.quotes)} · 아이디어 ${fmt(D.totals.ideas)}`],
+  ];
+  $('tiles').innerHTML=tiles.map(([k,v,u,d])=>`<div class="tile"><div class="k">${k}</div><div class="v">${v}<small>${u}</small></div><div class="d">${d||'&nbsp;'}</div></div>`).join('');
+
+  const wkLabel=w=>md(w.wk)+' 주';
+  barChart($('cRecorders'), W.map(w=>({x:md(w.wk), v:w.recorders, tip:`<b>${wkLabel(w)}</b> · ${fmt(w.recorders)}명`})), {unit:'명'});
+  barChart($('cRec2'), W.map(w=>({x:md(w.wk), v:pct(w), tip:`<b>${wkLabel(w)}</b> · ${pct(w)===null?'기록 없음':pct(w)+'% ('+w.rec2+'/'+w.recorders+'명)'}`})), {unit:'%', max:100});
+  const vis=Dl.filter(d=>d.visitors>0);
+  lineChart($('cVisitors'), vis.length? Dl.slice(Dl.findIndex(d=>d.visitors>0)).map(d=>({x:md(d.d), v:d.visitors, tip:`<b>${md(d.d)}</b> · ${fmt(d.visitors)}명`})) : [], {unit:'명', empty:'아직 방문 기록이 없어요'});
+  const us=Dl.filter(d=>d.usage_users>0);
+  lineChart($('cUsage'), us.length? Dl.slice(Dl.findIndex(d=>d.usage_users>0)).map(d=>{ const m=d.usage_users?Math.round(d.usage_sec/d.usage_users/60*10)/10:null; return {x:md(d.d), v:m, tip:`<b>${md(d.d)}</b> · ${m===null?'기록 없음':m+'분 ('+d.usage_users+'명)'}`}; }) : [], {unit:'분', empty:'11/17부터 쌓여요'});
+  barChart($('cSignups'), W.map(w=>({x:md(w.wk), v:w.signups, tip:`<b>${wkLabel(w)}</b> · ${fmt(w.signups)}명`})), {unit:'명'});
+
+  const F=D.funnel||{};
+  const steps=[['소개 화면',F.landing],['시작하기',F.start],['가입',F.signup],['첫 책 등록',F.first_book]];
+  const top=Math.max(1,...steps.map(s=>s[1]||0));
+  $('funnel').innerHTML = (F.landing||F.signup) ? steps.map(([k,v],i)=>{
+    const w=Math.round((v||0)/top*100);
+    const prevV=i?steps[i-1][1]:null;
+    const drop=(i && prevV)? `<div class="drop">앞 단계의 ${Math.round((v||0)/prevV*100)}%</div>`:'';
+    return `<div class="row"><span>${k}</span><div class="track"><div class="bar" style="width:${Math.max(w,v?2:0)}%"></div></div><span class="num">${fmt(v)}</span></div>${drop}`;
+  }).join('') : '<div class="empty">11/9부터 기록이 쌓이고 있어요</div>';
+
+  const names={habit_read:"'오늘 읽었어요'",review_card_open:'결산 카드 열기',review_card_share:'결산 카드 공유·저장',path_climb:'독서 길 오르기'};
+  const fe=D.features||{};
+  $('features').innerHTML=`<table><thead><tr><th>기능</th><th>횟수</th><th>쓴 사람</th></tr></thead><tbody>${Object.keys(names).map(k=>`<tr><td>${names[k]}</td><td>${fmt((fe[k]||{}).n||0)}</td><td>${fmt((fe[k]||{}).users||0)}명</td></tr>`).join('')}</tbody></table>`;
+
+  $('weekTable').innerHTML=`<table><thead><tr><th>주 시작</th><th>가입</th><th>방문자</th><th>앱 연 사람</th><th>기록한 사람</th><th>2일 이상</th><th>3일 이상</th><th>2일+ 비율</th><th>1인당 이용(분)</th></tr></thead><tbody>${W.slice().reverse().map(w=>`<tr><td>${w.wk}</td><td>${fmt(w.signups)}</td><td>${fmt(w.visitors)}</td><td>${fmt(w.openers)}</td><td>${fmt(w.recorders)}</td><td>${fmt(w.rec2)}</td><td>${fmt(w.rec3)}</td><td>${pct(w)===null?'–':pct(w)+'%'}</td><td>${usageMin(w)===null?'–':usageMin(w)}</td></tr>`).join('')}</tbody></table>`;
+}
+
+/* ---- 차트: 한 가지 색(seal), 가는 막대·2px 선, 마우스를 올리면 값 ---- */
+const CH={w:520,h:200,l:34,r:8,t:12,b:26};
+/* 눈금 4칸이 깔끔한 숫자가 되도록: 칸 간격을 1·2·5·10 단위로 고르고, 사람 수처럼 정수인 값은 최소 1 */
+function niceMax(m,int){ if(m<=0) return int?4:1; const raw=m/4, p=Math.pow(10,Math.floor(Math.log10(raw))), n=raw/p; let step=(n<=1?1:n<=2?2:n<=5?5:10)*p; if(int) step=Math.max(1,Math.ceil(step)); return step*4; }
+function axes(max,unit){
+  let g=''; const ih=CH.h-CH.t-CH.b;
+  for(let i=0;i<=4;i++){ const v=max*i/4, y=CH.t+ih-ih*i/4;
+    g+=`<line x1="${CH.l}" x2="${CH.w-CH.r}" y1="${y}" y2="${y}" stroke="var(--grid)" stroke-width="1"/>`;
+    g+=`<text x="${CH.l-6}" y="${y+4}" text-anchor="end" font-size="10.5" fill="var(--muted)">${Math.round(v*10)/10}</text>`; }
+  return g;
+}
+function tipLayer(el){ let t=el.querySelector('.tip'); if(!t){ t=document.createElement('div'); t.className='tip'; el.appendChild(t);} return t; }
+function showTip(el,html,xPct,yPct){ const t=tipLayer(el); t.innerHTML=html; t.style.left=xPct+'%'; t.style.top=yPct+'%'; t.style.opacity=1; }
+function hideTip(el){ const t=el.querySelector('.tip'); if(t) t.style.opacity=0; }
+function labelEvery(n){ return n>16?Math.ceil(n/8):n>8?2:1; }
+function barChart(el, pts, o){
+  if(!pts.length || pts.every(p=>!p.v)){ el.innerHTML=`<div class="empty">${o.empty||'아직 데이터가 없어요'}</div>`; return; }
+  const max=o.max||niceMax(Math.max(...pts.map(p=>p.v||0)), o.unit!=='분');
+  const iw=CH.w-CH.l-CH.r, ih=CH.h-CH.t-CH.b, slot=iw/pts.length, bw=Math.min(28, slot*0.6), le=labelEvery(pts.length);
+  let s=`<svg viewBox="0 0 ${CH.w} ${CH.h}" role="img">${axes(max,o.unit)}`;
+  pts.forEach((p,i)=>{
+    const x=CH.l+slot*i+(slot-bw)/2, h=p.v?Math.max(2,ih*p.v/max):0, y=CH.t+ih-h;
+    if(h) s+=`<path d="M${x},${CH.t+ih} V${y+Math.min(4,h)} Q${x},${y} ${x+Math.min(4,bw/2)},${y} H${x+bw-Math.min(4,bw/2)} Q${x+bw},${y} ${x+bw},${y+Math.min(4,h)} V${CH.t+ih} Z" fill="var(--seal)"/>`;
+    s+=`<rect class="hit" data-i="${i}" x="${CH.l+slot*i}" y="${CH.t}" width="${slot}" height="${ih}" fill="transparent"/>`;
+    if(i%le===0) s+=`<text x="${CH.l+slot*i+slot/2}" y="${CH.h-8}" text-anchor="middle" font-size="10.5" fill="var(--muted)">${p.x}</text>`;
+  });
+  s+=`<line x1="${CH.l}" x2="${CH.w-CH.r}" y1="${CH.t+ih}" y2="${CH.t+ih}" stroke="var(--line)"/></svg>`;
+  el.innerHTML=s;
+  el.querySelectorAll('.hit').forEach(r=>{
+    const i=+r.dataset.i, p=pts[i], h=p.v?ih*p.v/max:0;
+    r.addEventListener('mouseenter',()=>showTip(el,p.tip,(CH.l+slot*i+slot/2)/CH.w*100,(CH.t+ih-h)/CH.h*100));
+    r.addEventListener('mouseleave',()=>hideTip(el));
+    r.addEventListener('touchstart',()=>showTip(el,p.tip,(CH.l+slot*i+slot/2)/CH.w*100,(CH.t+ih-h)/CH.h*100),{passive:true});
+  });
+}
+function lineChart(el, pts, o){
+  if(!pts.length){ el.innerHTML=`<div class="empty">${o.empty||'아직 데이터가 없어요'}</div>`; return; }
+  const max=niceMax(Math.max(...pts.map(p=>p.v||0)), o.unit!=='분');
+  const iw=CH.w-CH.l-CH.r, ih=CH.h-CH.t-CH.b, step=pts.length>1?iw/(pts.length-1):0, le=labelEvery(pts.length);
+  const X=i=>CH.l+(pts.length>1?step*i:iw/2), Y=v=>CH.t+ih-ih*(v||0)/max;
+  let s=`<svg viewBox="0 0 ${CH.w} ${CH.h}" role="img">${axes(max,o.unit)}`;
+  let d=''; pts.forEach((p,i)=>{ if(p.v===null) return; d+=(d?'L':'M')+X(i)+','+Y(p.v); });
+  s+=`<path d="${d}" fill="none" stroke="var(--seal)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+  if(pts.length<=2) pts.forEach((p,i)=>{ s+=`<circle cx="${X(i)}" cy="${Y(p.v)}" r="4" fill="var(--seal)" stroke="var(--surface)" stroke-width="2"/>`; });
+  pts.forEach((p,i)=>{ if(i%le===0) s+=`<text x="${X(i)}" y="${CH.h-8}" text-anchor="middle" font-size="10.5" fill="var(--muted)">${p.x}</text>`; });
+  s+=`<line class="xh" x1="0" x2="0" y1="${CH.t}" y2="${CH.t+ih}" stroke="var(--muted)" stroke-dasharray="3 3" opacity="0"/><circle class="dot" r="4.5" fill="var(--seal)" stroke="var(--surface)" stroke-width="2" opacity="0"/>`;
+  s+=`<rect class="hit" x="${CH.l}" y="${CH.t}" width="${iw}" height="${ih}" fill="transparent"/>`;
+  s+=`<line x1="${CH.l}" x2="${CH.w-CH.r}" y1="${CH.t+ih}" y2="${CH.t+ih}" stroke="var(--line)"/></svg>`;
+  el.innerHTML=s;
+  const svg=el.querySelector('svg'), hit=el.querySelector('.hit'), xh=el.querySelector('.xh'), dot=el.querySelector('.dot');
+  const move=cx=>{ const r=svg.getBoundingClientRect(); const sx=(cx-r.left)/r.width*CH.w; const i=Math.max(0,Math.min(pts.length-1,Math.round((sx-CH.l)/(step||1)))); const p=pts[i];
+    xh.setAttribute('x1',X(i)); xh.setAttribute('x2',X(i)); xh.setAttribute('opacity',1);
+    if(p.v!==null){ dot.setAttribute('cx',X(i)); dot.setAttribute('cy',Y(p.v)); dot.setAttribute('opacity',1); } else dot.setAttribute('opacity',0);
+    showTip(el,p.tip,X(i)/CH.w*100,(p.v===null?CH.t:Y(p.v))/CH.h*100); };
+  hit.addEventListener('mousemove',e=>move(e.clientX));
+  hit.addEventListener('touchmove',e=>move(e.touches[0].clientX),{passive:true});
+  hit.addEventListener('touchstart',e=>move(e.touches[0].clientX),{passive:true});
+  hit.addEventListener('mouseleave',()=>{ hideTip(el); xh.setAttribute('opacity',0); dot.setAttribute('opacity',0); });
+}
+$('reload').onclick=load;
+load();
+</script>
+</body>
+</html>

@@ -483,6 +483,15 @@
   .rp-tip .okmark{display:inline-block;margin-top:8px;font-size:12px;font-weight:700;color:var(--seal)}
   @keyframes rpTip{from{opacity:0;transform:translateY(-4px) scale(.97)}to{opacity:1;transform:none}}
   @media (prefers-reduced-motion:reduce){ .rp-tip{animation:none} }
+  .dj-closet{display:flex;gap:8px;overflow-x:auto;margin:0 -12px;padding:4px 12px 8px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .dj-closet::-webkit-scrollbar{display:none}
+  .djc{flex:none;width:66px;min-height:74px;padding:8px 2px 6px;border-radius:12px;border:1.5px solid var(--line);background:var(--surface);display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;font-family:var(--sans);-webkit-tap-highlight-color:transparent}
+  .djc span{font-size:10.5px;line-height:1.2;color:var(--ink-soft);white-space:nowrap}
+  .djc.on{border-color:var(--seal);box-shadow:inset 0 0 0 1.5px var(--seal)}
+  .djc.on span{color:var(--seal);font-weight:700}
+  .djc.lock .dj{filter:grayscale(1);opacity:.38}
+  .djc.lock span{color:var(--muted)}
+  .djc-sep{flex:none;width:1px;margin:10px 2px;background:var(--line)}
   /* 첫 화면 '다음 칸' 한 줄 (미션 10칸을 마치면 사라져요) */
   .nx{display:flex;align-items:center;gap:4px;margin:-3px 0 12px;padding:6px 8px 6px 4px;border-radius:12px;background:var(--surface);border:1px dashed var(--seal-soft);font-family:var(--sans)}
   .nx .nx-t{flex:1;min-width:0;min-height:40px;display:flex;align-items:center;gap:8px;padding:0 4px 0 7px;border:0;background:none;font-family:var(--sans);font-size:12.5px;color:var(--ink);font-weight:400;text-align:left;cursor:pointer}
@@ -493,12 +502,12 @@
   .rp-dj{position:absolute;z-index:2;transition:left var(--dj-ms,.34s) ease, top var(--dj-ms,.34s) ease;pointer-events:none}
   /* 도장이: 표정 4가지(m-base 기본 · m-joy 기쁨 · m-wait 기다림 · m-sleepy 졸림)와 작은 몸짓 */
   .dj{overflow:visible;display:block;flex:none}
-  .dj-body{fill:var(--seal)}
-  .dj-spine{fill:#143766;fill:color-mix(in srgb,var(--seal) 74%,#000)}
+  .dj-body{fill:var(--dj-c,var(--seal))}
+  .dj-spine{fill:#143766;fill:color-mix(in srgb,var(--dj-c,var(--seal)) 74%,#000)}
   .dj-page{fill:#F6EEDC} .dj-pline{stroke:#C9B998;stroke-width:.7;fill:none}
-  .dj-limb{fill:#143766;fill:color-mix(in srgb,var(--seal) 70%,#000)}
+  .dj-limb{fill:#143766;fill:color-mix(in srgb,var(--dj-c,var(--seal)) 70%,#000)}
   .dj-pupil{fill:#16243F}
-  .dj-z{fill:none;stroke:var(--seal);stroke-linecap:round;stroke-linejoin:round}
+  .dj-z{fill:none;stroke:var(--dj-c,var(--seal));stroke-linecap:round;stroke-linejoin:round}
   .dj-rb,.dj-ft,.dj-arm,.dj-eyes,.dj-z{transform-box:fill-box}
   .dj-face{display:none}
   .dj.m-base .f-base,.dj.m-joy .f-joy,.dj.m-wait .f-wait,.dj.m-sleepy .f-sleepy{display:inline}
@@ -1978,6 +1987,8 @@ body.dark .cv-memo{background:rgba(15,20,29,.9);color:#E6EBF3}
     <div class="modal-body">
       <p class="rp-sub" id="rpSub"></p>
       <div class="rp-scroll" id="rpScroll"><div class="rp-path" id="rpPath"></div></div>
+      <div class="hb-sec">도장이 꾸미기</div>
+      <div class="dj-closet" id="djCloset"></div>
       <div class="hb-sec">이번 주</div>
       <div class="hb-week" id="hbWeek"></div>
       <p class="hb-msg" id="hbMsg"></p>
@@ -3947,33 +3958,99 @@ function pathWeeks(all){
   new Set(readLogs.map(l=>l.day)).forEach(d=>{ const w=weekStart(d); byWeek[w]=(byWeek[w]||0)+1; });
   return Object.keys(byWeek).filter(w=>(all||w>=PATH_WEEKS_FROM) && byWeek[w]>=targetFor(w)).sort();
 }
-function pathMissionState(){
+function pathMissionState(list){
   let sticky={}; try{ sticky=JSON.parse(localStorage.getItem('ob_path_done')||'{}')||{}; }catch(e){}
-  const res=PATH_MISSIONS.map(m=>{ let ok=false; try{ ok=!!m.done(); }catch(e){} if(ok) sticky[m.id]=1; return { ...m, ok:ok||!!sticky[m.id] }; });
+  const res=(list||PATH_MISSIONS).map(m=>{ let ok=false; try{ ok=!!m.done(); }catch(e){} if(ok) sticky[m.id]=1; return { ...m, ok:ok||!!sticky[m.id] }; });
   try{ localStorage.setItem('ob_path_done', JSON.stringify(sticky)); }catch(e){}
   return res;
 }
-/* 길 전체를 칸 목록으로: {kind:'mission'|'rest'|'week', label, ok} — 아래(0)부터 위로 */
+/* ----- 첫 봉우리 위: 주간 계단 사이사이에 끼는 미션(장마다 3칸). 판정은 모두 이미 있는 데이터로 해요. ----- */
+const pathQuoteCount=()=>books.reduce((n,b)=>n+(b.quote||'').split('\n').filter(x=>x.trim()).length+(b.quoteShots||[]).length,0);
+const pathDoneCount=()=>books.filter(b=>b.status==='done').length;
+const pathDayCount=()=>new Set(readLogs.map(l=>l.day)).size;
+function pathMk(k,n){
+  let m;
+  switch(k){
+    case 'q':     m={ label:`구절 ${n}개 모으기`, how:'마음에 남은 문장을 ✏️ 한 줄이나 📷 사진으로 모아보세요.', act:'quote', icon:'quote', prog:()=>[pathQuoteCount(),n] }; break;
+    case 'f':     m={ label:`완독 ${n}권`, how:'끝까지 읽은 책을 \'다 읽음\'으로 바꾸면 쌓여요.', act:'finish', icon:'finish', prog:()=>[pathDoneCount(),n] }; break;
+    case 'd':     m={ label:`기록한 날 ${n}일`, how:'읽은 날마다 기록을 하나씩 남겨보세요.', act:'read', icon:'week', prog:()=>[pathDayCount(),n] }; break;
+    case 'o':     m={ label:`한 줄 소개 ${n}권`, how:'다 읽은 책마다 한 줄 소개를 남겨보세요.', act:'oneliner', icon:'oneliner', prog:()=>[books.filter(b=>(b.oneliner||'').trim()).length,n] }; break;
+    case 's':     m={ label:`${n}주 연속 목표 달성`, how:`주간 목표를 ${n}주 이어서 채워보세요.`, act:'read', icon:'goal', prog:()=>[habitStats().best,n] }; break;
+    case 'i':     m={ label:`아이디어 ${n}개`, how:'책에서 얻은 생각을 아이디어 탭에 모아보세요.', act:'idea', icon:'idea', prog:()=>[ideas.length,n] }; break;
+    case 'link':  m={ label:'아이디어를 책과 잇기', how:'아이디어를 쓸 때 어느 책에서 얻었는지 골라보세요.', act:'idea', icon:'idea', prog:()=>[ideas.some(x=>x.bookId)?1:0,1] }; break;
+    case 'photo': m={ label:'사진으로 구절 남기기', how:'카드의 📷 사진으로 책 속 문장을 찍어보세요.', act:'quote', icon:'photo', prog:()=>[books.some(b=>(b.quoteShots||[]).length)?1:0,1] }; break;
+    case 'cat':   m={ label:`서로 다른 분야 ${n}개 완독`, how:'평소와 다른 분야의 책도 한 권 읽어보세요.', act:'none', icon:'pages', prog:()=>[new Set(books.filter(b=>b.status==='done'&&b.cat).map(b=>b.cat)).size,n] }; break;
+  }
+  m.id='x_'+k+n; m.done=()=>{ const p=m.prog(); return p[0]>=p[1]; };
+  return m;
+}
+const PATH_CHAPTERS=[null,
+  [['q',5],['link',1],['d',10]],
+  [['f',2],['photo',1],['o',2]],
+  [['q',15],['cat',3],['s',4]],
+  [['f',5],['i',5],['d',30]],
+  [['q',30],['o',5],['s',8]],
+];
+/* b번째 구간(주간 4칸)의 미션 3개. 준비한 장이 끝나면 숫자만 커지며 계속 이어져요. */
+function pathBlockMissions(b){
+  const t=PATH_CHAPTERS[b] || [['q',30+15*(b-5)],['f',5+3*(b-5)],['d',30+20*(b-5)]];
+  return t.map(x=>pathMk(x[0],x[1]));
+}
+/* 쉼터에 도착할 때마다 하나씩 열리는 꾸미기(첫 봉우리가 첫 번째). 고른 것은 이 기기에만 기억해요(ob_dj_look). */
+const PATH_LOOKS=[
+  { id:'glasses', type:'acc',   name:'동그란 안경' },
+  { id:'walnut',  type:'cover', name:'월넛 표지', c:'#7A5236' },
+  { id:'bowtie',  type:'acc',   name:'나비넥타이' },
+  { id:'forest',  type:'cover', name:'숲 표지',   c:'#2F6B4F' },
+  { id:'beret',   type:'acc',   name:'베레모' },
+  { id:'plum',    type:'cover', name:'자주 표지', c:'#7B3F6E' },
+  { id:'sprout',  type:'acc',   name:'새싹' },
+];
+function djLook(rests){
+  let L={ acc:'', cover:'', n:0 };
+  try{ const o=JSON.parse(localStorage.getItem('ob_dj_look')||'null'); if(o && typeof o==='object') L={ acc:String(o.acc||''), cover:String(o.cover||''), n:+o.n||0 }; }catch(e){}
+  const U=Math.min(rests||0, PATH_LOOKS.length);
+  if(U>L.n){                                         // 새로 열린 꾸미기는 바로 입혀줘요
+    for(let j=L.n;j<U;j++){ const it=PATH_LOOKS[j]; L[it.type]=it.id; }
+    L.n=U; try{ localStorage.setItem('ob_dj_look', JSON.stringify(L)); }catch(e){}
+  }
+  const open=id=>{ const j=PATH_LOOKS.findIndex(x=>x.id===id); return j>=0 && j<U; };
+  return { acc:open(L.acc)?L.acc:'', cover:open(L.cover)?L.cover:'', n:L.n };
+}
+function djSetLook(type,id){
+  let L={ acc:'', cover:'', n:0 };
+  try{ const o=JSON.parse(localStorage.getItem('ob_dj_look')||'null'); if(o && typeof o==='object') L={ acc:String(o.acc||''), cover:String(o.cover||''), n:+o.n||0 }; }catch(e){}
+  L[type]=id; try{ localStorage.setItem('ob_dj_look', JSON.stringify(L)); }catch(e){}
+}
+/* 길 전체를 칸 목록으로: {kind:'mission'|'rest'|'week', label, ok} — 아래(0)부터 위로
+   첫 봉우리까지는 미션 10칸. 그 위는 구간마다 [주·미션·주·미션·주·미션·주·쉼터].
+   주간 계단과 쉼터(리본 색·꾸미기)는 예전 규칙 그대로 '목표를 채운 주' 수로만 정해져요. */
 function pathModel(){
   const ms=pathMissionState();
   const weeks=pathWeeks(false);
   const stones=ms.map((m,i)=>({ kind:'mission', id:m.id, label:m.label, how:m.how, ok:m.ok, n:i+1 }));
   const allMissions=ms.every(m=>m.ok);
   stones.push({ kind:'rest', label:'첫 봉우리', ok:allMissions, rest:0 });
-  const showWeeks=Math.max(weeks.length+3, 4);
-  let restNo=0;
-  for(let i=1;i<=showWeeks;i++){
-    stones.push({ kind:'week', label:i<=weeks.length?`${i}주 달성`:`${i}주째`, ok:allMissions && i<=weeks.length, n:i });
-    if(i%PATH_REST_EVERY===0){ restNo++; stones.push({ kind:'rest', label:`쉼터 ${restNo}`, ok:allMissions && i<=weeks.length, rest:restNo }); }
+  const blocks=Math.floor(weeks.length/PATH_REST_EVERY)+1;
+  for(let b=1;b<=blocks;b++){
+    const xs=pathMissionState(pathBlockMissions(b));
+    for(let j=1;j<=PATH_REST_EVERY;j++){
+      const i=(b-1)*PATH_REST_EVERY+j;
+      stones.push({ kind:'week', label:i<=weeks.length?`${i}주 달성`:`${i}주째`, ok:allMissions && i<=weeks.length, n:i });
+      const x=xs[j-1];
+      if(x && j<PATH_REST_EVERY) stones.push({ kind:'mission', extra:true, id:x.id, label:x.label, how:x.how, act:x.act, icon:x.icon, prog:x.prog, ok:allMissions && x.ok });
+    }
+    stones.push({ kind:'rest', label:`쉼터 ${b}`, ok:allMissions && b*PATH_REST_EVERY<=weeks.length, rest:b });
   }
-  // 도장이 위치: 미션이 남았으면 가장 아래 미완료 미션, 다 했으면 마지막으로 오른 칸의 다음 칸
-  let at;
-  if(!allMissions) at=ms.findIndex(m=>!m.ok);
-  else{ let last=10; stones.forEach((s,i)=>{ if(s.ok) last=i; }); at=Math.min(last+1, stones.length-1); }
+  // 도장이 위치: 첫 봉우리 전에는 안 한 미션 중 가장 아래, 그 뒤로는 이번에 채울 주간 칸.
+  // (봉우리 위의 미션은 덤이라, 안 해도 도장이는 매주 올라가요. 안 한 칸은 회색으로 남아 있어요.)
+  const weekAt=stones.findIndex(s=>s.kind==='week'&&!s.ok);
+  let at = allMissions ? weekAt : stones.findIndex(s=>!s.ok); if(at<0) at=stones.length-1;
+  const todo=allMissions ? stones.find((s,i)=>s.extra&&!s.ok&&i<at) : null;
   const restsReached=stones.filter(s=>s.kind==='rest'&&s.ok).length;
   const ribbon=PATH_RIBBONS[Math.min(restsReached, PATH_RIBBONS.length-1)];
   const climbed=stones.filter(s=>s.ok).length;
-  return { stones, at, allMissions, weeks:weeks.length, ribbon, climbed, missionsDone:ms.filter(m=>m.ok).length };
+  return { stones, at, weekAt, todo, allMissions, weeks:weeks.length, ribbon, climbed, rests:restsReached, missionsDone:ms.filter(m=>m.ok).length };
 }
 /* 도장이의 평소 표정: 졸림(마지막 기록 뒤 2주 이상) · 기쁨(이번 주 목표 달성) · 기다림(이번 주 진행 중) · 기본 */
 function djMood(){
@@ -3987,9 +4064,18 @@ function djMood(){
   return 'base';
 }
 function djSetMood(wrap, mood){ const v=wrap&&wrap.querySelector('.dj'); if(v) v.setAttribute('class','dj m-'+mood); }
-function dojangSVG(ribbon, size, mood){
+function dojangSVG(ribbon, size, mood, look){
   const s=size||46;
-  return `<svg class="dj m-${mood||'base'}" width="${s}" height="${Math.round(s*48/44)}" viewBox="0 0 44 48" aria-hidden="true">
+  let lk=look; if(!lk){ try{ lk=djLook(pathModel().rests); }catch(e){ lk={acc:'',cover:''}; } }
+  const cv=PATH_LOOKS.find(x=>x.id===lk.cover&&x.type==='cover');
+  const ACC={
+    glasses:'<g fill="none" stroke="#EBCB6B" stroke-width="1.35"><circle cx="16.6" cy="21.4" r="4.7"/><circle cx="28.6" cy="20.4" r="4.7"/><path d="M21.2 20.9L24 20.7"/></g>',
+    bowtie:'<path d="M22.6 35.4l-5-2.7v5.6zM22.6 35.4l5-3.1v5.6z" fill="#EBCB6B"/><circle cx="22.6" cy="35.4" r="1.4" fill="#C9A227"/>',
+    beret:'<g transform="rotate(-9 14 7)"><ellipse cx="14" cy="6.6" rx="10" ry="4.4" fill="#B8322E"/><path d="M14 2.6v-2" stroke="#B8322E" stroke-width="1.5" stroke-linecap="round"/></g>',
+    sprout:'<path d="M13.5 8.5V3.6" stroke="#3F7D5C" stroke-width="1.5" stroke-linecap="round"/><path d="M13.5 4.4C10.4 4.6 8.2 3 7.6 0.6 10.8 0 13.2 1.6 13.5 4.4z" fill="#5BA37A"/><path d="M13.5 3.8C16 3.8 18 2.4 18.4 0.4 15.8 0 13.8 1.4 13.5 3.8z" fill="#7BC096"/>',
+  };
+  const acc=ACC[lk.acc]||'';
+  return `<svg class="dj m-${mood||'base'}"${cv?` style="--dj-c:${cv.c}"`:''} width="${s}" height="${Math.round(s*48/44)}" viewBox="0 0 44 48" aria-hidden="true">
 <path class="dj-rb" d="M26.5 1 L34 1 L34 17 L30.2 13.4 L26.5 17 Z" fill="${ribbon}"/>
 <rect class="dj-limb dj-arm l" x="0" y="25.5" width="6.5" height="10" rx="3.2"/><rect class="dj-limb dj-arm r" x="37.4" y="23.5" width="6.5" height="10" rx="3.2"/>
 <rect class="dj-limb dj-ft l" x="11" y="40" width="6" height="7" rx="3"/><rect class="dj-limb dj-ft r" x="26" y="40" width="6" height="7" rx="3"/>
@@ -3998,7 +4084,7 @@ function dojangSVG(ribbon, size, mood){
 <g class="dj-face f-joy"><path d="M12 24.2 Q15 19.8 18 24.2 M24 23.2 Q27 18.8 30 23.2" stroke="#fff" stroke-width="2.2" fill="none" stroke-linecap="round"/><path d="M16.6 28.8 Q21 35.6 25.4 28.2 Z" fill="#fff" stroke="#fff" stroke-width="1.2" stroke-linejoin="round"/><circle cx="10.8" cy="28" r="2" fill="#F4A9A0" fill-opacity=".85"/><circle cx="31.4" cy="26.8" r="2" fill="#F4A9A0" fill-opacity=".85"/></g>
 <g class="dj-face f-wait"><circle cx="15" cy="23" r="3" fill="#fff"/><circle cx="27" cy="22" r="3" fill="#fff"/><circle class="dj-pupil" cx="16" cy="21.8" r="1.4"/><circle class="dj-pupil" cx="28" cy="20.8" r="1.4"/><path d="M18.2 30.2 Q21 32 23.8 29.9" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/></g>
 <g class="dj-face f-sleepy"><path d="M12 22.6 Q15 25.6 18 22.6 M24 21.6 Q27 24.6 30 21.6" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="21" cy="30.6" r="1.7" fill="none" stroke="#fff" stroke-width="1.6"/><path class="dj-z" d="M1 6.5h4l-4 4.5h4" stroke-width="1.3"/><path class="dj-z b" d="M7.5 1.6h3l-3 3.4h3" stroke-width="1.1"/></g></g>
-<title>도장이</title></svg>`;
+${acc}<title>도장이</title></svg>`;
 }
 const PATH_STEP=92, PATH_X=[0,-38,-54,-38,0,38,54,38];   // 칸 사이 높이(px), 가운데에서 좌우로 굽는 정도(px)
 let pathW=334;
@@ -4013,6 +4099,7 @@ const PATH_ICONS={
   goal:'<path d="M6 20V5M6 5.5h10.5l-2.2 3.5 2.2 3.5H6"/>',
   finish:'<rect x="6" y="4" width="12" height="16" rx="2"/><path d="M10 4v7l2-1.6 2 1.6V4"/>',
   oneliner:'<path d="M5 19l1-4L16.5 4.5l3 3L9 18zM14.5 6.5l3 3"/>',
+  photo:'<rect x="4" y="7" width="16" height="12" rx="2"/><circle cx="12" cy="13" r="3.2"/><path d="M9 7l1.2-2h3.6L15 7"/>',
   idea:'<path d="M9.5 17.5h5M10.5 20.5h3M12 4a5.5 5.5 0 0 0-3.2 10c.5.4.7.9.7 1.5h5c0-.6.2-1.1.7-1.5A5.5 5.5 0 0 0 12 4z"/>',
 };
 /* 쉼터: 책 더미 위의 작은 스탠드 */
@@ -4039,7 +4126,7 @@ function renderPath(){
     const half=rest?48:33, side=off>0?'l':'r';
     if(rest) h+=`<button type="button" class="rp-rest${s.ok?' ok':''}${now?' now':''}" data-i="${i}" aria-label="${esc(s.label)}" style="left:${cx}px;top:${top-8}px">${PATH_REST_SVG}</button>`;
     else{
-      const face = s.kind==='mission' ? `<svg viewBox="0 0 24 24" aria-hidden="true">${PATH_ICONS[s.id]||''}</svg>` : (s.ok?'<span class="st">冊</span>':`<span>${s.n}</span>`);
+      const face = s.kind==='mission' ? `<svg viewBox="0 0 24 24" aria-hidden="true">${PATH_ICONS[s.icon||s.id]||''}</svg>` : (s.ok?'<span class="st">冊</span>':`<span>${s.n}</span>`);
       h+=`<button type="button" class="rp-nd ${s.kind}${s.ok?' ok':''}${now?' now':''}" data-i="${i}" aria-label="${esc(s.label)}" style="left:${cx}px;top:${top}px">${face}</button>`;
     }
     const pos = side==='r' ? `left:${cx+half+12}px;width:${Math.max(60,pathW-(cx+half+12)-8)}px` : `left:8px;width:${Math.max(60,cx-half-12-8)}px`;
@@ -4049,6 +4136,7 @@ function renderPath(){
   const mood=djMood();
   h+=`<div class="rp-dj" id="rpDj"><i class="rp-djsh"></i>${dojangSVG(M.ribbon,40,mood)}</div>`;
   box.innerHTML=h;
+  renderCloset(M);
   box.onclick=e=>{
     const go=e.target.closest('.rp-tip .go'); if(go){ pathGo(); return; }
     if(e.target.closest('.rp-tip')) return;
@@ -4057,7 +4145,7 @@ function renderPath(){
   };
   const sub=document.getElementById('rpSub');
   sub.textContent = M.allMissions
-    ? `주간 계단 ${M.weeks}칸 · 다음 칸: 이번 주 목표 채우기`
+    ? `주간 계단 ${M.weeks}칸 · ${M.todo?'남은 미션: '+M.todo.label:'다음 칸: 이번 주 목표 채우기'}`
     : `미션 ${M.missionsDone} / 10 · 다음: ${M.stones[M.at].label}`;
   // 지난번 본 위치에서 지금 위치까지 한 칸씩 올라가요
   let from=M.at; try{ const v=localStorage.getItem('ob_path_at'); from = v===null ? 0 : Math.min(+v, M.at); }catch(e){}   // 처음 열면 맨 아래에서부터 올라가요
@@ -4113,19 +4201,47 @@ function wirePathNext(wrap){
     if(act && act.run){ try{ act.run(); }catch(e){ console.warn(e); } } else openHabit();
   };
 }
+function renderCloset(M){
+  const box=document.getElementById('djCloset'); if(!box) return;
+  M=M||pathModel();
+  const U=Math.min(M.rests, PATH_LOOKS.length), L=djLook(M.rests);
+  const cell=(type,id,name,j)=>{
+    const open=j<0||j<U, on=open && (L[type]||'')===id;
+    const prev=dojangSVG(M.ribbon,34,'base', type==='acc'?{acc:id,cover:L.cover}:{acc:L.acc,cover:id});
+    const where=j===0?'첫 봉우리':`쉼터 ${j}`;
+    return `<button type="button" class="djc${on?' on':''}${open?'':' lock'}" data-type="${type}" data-id="${id}" data-where="${where}" aria-pressed="${on}" aria-label="${esc(name)}${open?'':' · '+where+'에서 열려요'}">${prev}<span>${open?esc(name):where}</span></button>`;
+  };
+  let h=cell('acc','','맨얼굴',-1);
+  PATH_LOOKS.forEach((it,j)=>{ if(it.type==='acc') h+=cell('acc',it.id,it.name,j); });
+  h+='<i class="djc-sep"></i>'+cell('cover','','남색 표지',-1);
+  PATH_LOOKS.forEach((it,j)=>{ if(it.type==='cover') h+=cell('cover',it.id,it.name,j); });
+  box.innerHTML=h;
+  box.onclick=e=>{
+    const b=e.target.closest('.djc'); if(!b) return;
+    if(b.classList.contains('lock')){ showToast(`${b.dataset.where}에 도착하면 열려요`); return; }
+    djSetLook(b.dataset.type, b.dataset.id);
+    const keep=box.scrollLeft;
+    renderCloset();
+    document.getElementById('djCloset').scrollLeft=keep;
+    const dj=document.getElementById('rpDj');           // 길 위의 도장이와 첫 화면 칩도 바로 갈아입혀요
+    if(dj){ const cur=dj.querySelector('.dj'), mood=(cur&&(cur.getAttribute('class')||'').match(/m-(\w+)/)||[])[1]||'base'; if(cur) cur.outerHTML=dojangSVG(M.ribbon,40,mood); }
+    try{ render(); }catch(e){}
+  };
+}
 let pathCelBase=null, pathCelTimer=null;
 function pathCelCheck(){
   if(!habitOn() || !cloudLoadedOK || !currentUserId) return;
   const M=pathModel();
-  if(pathCelBase===null || pathCelBase.u!==currentUserId){ pathCelBase={ u:currentUserId, c:M.climbed, at:M.at }; return; }
+  if(pathCelBase===null || pathCelBase.u!==currentUserId){ pathCelBase={ u:currentUserId, c:M.climbed, at:M.at, r:M.rests }; return; }
   if(M.climbed<=pathCelBase.c) return;
   const up=M.at-pathCelBase.at;
-  pathCelBase={ u:currentUserId, c:M.climbed, at:M.at };
+  const gift = M.rests>(pathCelBase.r||0) ? PATH_LOOKS[M.rests-1] : null;
+  pathCelBase={ u:currentUserId, c:M.climbed, at:M.at, r:M.rests };
   const ho=document.getElementById('habitOverlay');
   if(ho && ho.classList.contains('show')) return;      // 길 창이 열려 있으면 그 안에서 올라가는 장면이 나와요
   clearTimeout(pathCelTimer);
   pathCelTimer=setTimeout(()=>{
-    showToast(up>1 ? `도장이가 ${up}칸 올라갔어요` : (up===1 ? '도장이가 한 칸 올라갔어요' : '독서 길 한 칸을 채웠어요'));
+    showToast(gift ? `쉼터 도착 · 새 꾸미기 '${gift.name}'` : up>1 ? `도장이가 ${up}칸 올라갔어요` : (up===1 ? '도장이가 한 칸 올라갔어요' : '독서 길 한 칸을 채웠어요'));
     const chip=document.getElementById('hbChip'); if(!chip) return;
     djSetMood(chip,'joy'); chip.classList.remove('cel'); void chip.offsetWidth; chip.classList.add('cel');
     setTimeout(()=>{ const c=document.getElementById('hbChip'); if(c){ c.classList.remove('cel'); djSetMood(c, djMood()); } }, 1500);
@@ -4138,7 +4254,7 @@ function pathAction(s){
   const reading=books.find(b=>b.status==='reading'), done=books.find(b=>b.status==='done'), todo=books.filter(b=>b.status==='todo');
   const needReading='먼저 읽는 중인 책을 정하면 여기서 바로 갈 수 있어요.';
   if(s.kind==='week') return reading && fn('openRead') ? { label:'오늘 읽었어요 기록하기', run:()=>openRead(reading.id) } : { note:needReading };
-  switch(s.id){
+  switch(s.act||s.id){
     case 'add': return fn('openEdit') ? { label:'책 추가하기', run:()=>openEdit(null) } : null;
     case 'reading':
       if(!books.length) return fn('openEdit') ? { label:'책 추가하기', run:()=>openEdit(null) } : null;
@@ -4149,7 +4265,7 @@ function pathAction(s){
     case 'quote': { const b=reading||books[0]; return b && fn('openQuick') ? { label:'구절 남기기', run:()=>openQuick(b.id) } : { note:'먼저 책을 한 권 등록해주세요.' }; }
     case 'goal': return fn('setGoal') ? { label:'올해 목표 정하기', run:()=>setGoal() } : null;
     case 'finish': return reading && fn('openEdit') ? { label:'이 책 상태 바꾸기', note:`다 읽었다면 『${reading.title||'제목 없음'}』을 '다 읽음'으로 바꿔보세요.`, run:()=>openEdit(reading.id) } : { note:needReading };
-    case 'oneliner': return done && fn('openEdit') ? { label:'한 줄 소개 쓰기', run:()=>openEdit(done.id) } : { note:'다 읽은 책이 생기면 여기서 바로 쓸 수 있어요.' };
+    case 'oneliner': { const d2=books.find(b=>b.status==='done'&&!(b.oneliner||'').trim())||done; return d2 && fn('openEdit') ? { label:'한 줄 소개 쓰기', run:()=>openEdit(d2.id) } : { note:'다 읽은 책이 생기면 여기서 바로 쓸 수 있어요.' }; }
     case 'idea': return fn('openIdea') ? { label:'아이디어 적기', run:()=>{ if(fn('setMode')) setMode('ideas'); openIdea(); } } : null;
   }
   return null;
@@ -4162,13 +4278,17 @@ function pathTip(i, M, total){
   const s=M.stones[i]; if(!s) return;
   let title=s.label, body='', act=null, okmark='';
   if(s.kind==='rest'){
-    body = s.ok ? '여기까지 올라왔어요. 도장이의 리본 색이 바뀌었어요.' : (s.rest===0 ? '미션 10칸을 모두 하면 도착하는 첫 쉼터예요.' : '주간 계단 4칸마다 있는 쉼터예요. 도착하면 도장이의 리본 색이 바뀌어요.');
+    const gift=PATH_LOOKS[s.rest];
+    body = s.ok ? '여기까지 올라왔어요. 도장이의 리본 색이 바뀌었어요.' : (s.rest===0 ? '미션 10칸을 모두 하면 도착하는 첫 쉼터예요.' : '목표를 채운 주가 4번 쌓일 때마다 나오는 쉼터예요. 도착하면 도장이의 리본 색이 바뀌어요.');
+    if(gift) body += s.ok ? ` 꾸미기 '${gift.name}'도 열렸어요.` : ` 꾸미기 '${gift.name}'도 열려요.`;
   }else if(s.ok){ okmark='冊 완료한 칸이에요'; body=s.kind==='week'?'주간 목표를 채운 주예요.':''; }
   else if(s.kind==='week'){
-    if(i===M.at){ const hs=habitStats(); title='이번 주 목표 채우기'; body=`이번 주 ${hs.thisCount}/${hs.thisTarget}일 기록했어요. 다 채우면 한 칸 올라가요.`; act=pathAction(s); }
+    if(i===M.weekAt && M.allMissions){ const hs=habitStats(); title='이번 주 목표 채우기'; body=`이번 주 ${hs.thisCount}/${hs.thisTarget}일 기록했어요. 다 채우면 한 칸 올라가요.`; act=pathAction(s); }
     else body = M.allMissions ? '아래 칸부터 한 주에 한 칸씩 올라가요.' : '미션 10칸을 마치면 열리는 주간 계단이에요.';
-  }else{ body=s.how||''; act=pathAction(s); }
+  }else if(s.extra && !M.allMissions){ body='첫 봉우리를 지나면 열리는 미션이에요.'; }
+  else{ body=s.how||''; act=pathAction(s); }
   if(act && act.note) body = act.run ? act.note : (body?body+' ':'')+act.note;
+  if(s.prog && !s.ok && !(s.extra && !M.allMissions)){ try{ const pr=s.prog(); if(pr[1]>1) body+=` (지금 ${Math.min(pr[0],pr[1])} / ${pr[1]})`; }catch(e){} }
   const tip=document.createElement('div'); tip.className='rp-tip'; tip.setAttribute('role','dialog');
   tip.innerHTML=`<b>${esc(title)}</b>${body?`<p>${esc(body)}</p>`:''}${okmark?`<span class="okmark">${okmark}</span>`:''}${act&&act.run?`<button type="button" class="go">${esc(act.label||'바로 하기')}</button>`:''}`;
   const P=pathStoneXY(i,total), w=Math.min(250, pathW-20);

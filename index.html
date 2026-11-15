@@ -492,6 +492,23 @@
   .djc.lock .dj{filter:grayscale(1);opacity:.38}
   .djc.lock span{color:var(--muted)}
   .djc-sep{flex:none;width:1px;margin:10px 2px;background:var(--line)}
+  .rr-top{display:flex;align-items:center;gap:14px}
+  .rr-t{font-family:var(--serif);font-size:18px;font-weight:700;color:var(--ink);line-height:1.3}
+  .rr-s{margin-top:3px;font-size:12px;color:var(--muted);line-height:1.4}
+  .rr-cal{margin-top:16px;padding:12px 12px 10px;border-radius:14px;background:var(--paper-2);border:1px solid var(--line)}
+  .rr-wk{display:grid;grid-template-columns:38px repeat(7,1fr);gap:5px;align-items:center;margin-top:5px}
+  .rr-wk span{font-size:10.5px;color:var(--muted)}
+  .rr-wk i{font-style:normal;aspect-ratio:1;max-height:34px;border-radius:8px;border:1px dashed var(--line);display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-size:13px;font-weight:700;color:transparent}
+  .rr-wk i.on{border:1.5px solid var(--seal);color:var(--seal);background:var(--surface);transform:rotate(-4deg)}
+  .rr-hd{margin-top:0} .rr-hd i{border:0;aspect-ratio:auto;font-family:var(--sans);font-size:10.5px;font-weight:400;color:var(--muted)}
+  .rr-tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+  .rr-tile{padding:11px 6px 9px;border-radius:12px;border:1px solid var(--line);background:var(--surface);text-align:center}
+  .rr-tile b{display:block;font-family:var(--serif);font-size:22px;color:var(--seal);line-height:1.1}
+  .rr-tile b small{font-family:var(--sans);font-size:11px;font-weight:500;margin-left:2px;color:var(--ink-soft)}
+  .rr-tile span{display:block;margin-top:4px;font-size:10.5px;color:var(--muted);white-space:nowrap}
+  .rr-line{margin:12px 0 0;font-size:13px;line-height:1.5;color:var(--ink-soft);word-break:keep-all}
+  .rr-line b{color:var(--ink)}
+  .rr-end{margin:14px 0 0;font-size:12.5px;color:var(--muted);line-height:1.5}
   /* 첫 화면 '다음 칸' 한 줄 (미션 10칸을 마치면 사라져요) */
   .nx{display:flex;align-items:center;gap:4px;margin:-3px 0 12px;padding:6px 8px 6px 4px;border-radius:12px;background:var(--surface);border:1px dashed var(--seal-soft);font-family:var(--sans)}
   .nx .nx-t{flex:1;min-width:0;min-height:40px;display:flex;align-items:center;gap:8px;padding:0 4px 0 7px;border:0;background:none;font-family:var(--sans);font-size:12.5px;color:var(--ink);font-weight:400;text-align:left;cursor:pointer}
@@ -1152,6 +1169,13 @@ body.dark .cv-memo{background:rgba(15,20,29,.9);color:#E6EBF3}
 .auth-policy a{color:var(--seal);text-decoration:underline}
 .app-foot{margin:34px 0 10px;text-align:center;font-size:11.5px;color:var(--muted)}
 .app-foot a{color:var(--muted);text-decoration:underline}
+.app-foot button{border:0;background:none;padding:6px 2px;font:inherit;color:var(--muted);text-decoration:underline;cursor:pointer}
+.ad-list{margin:10px 0 0;padding:12px 14px;border-radius:12px;background:var(--paper-2);border:1px solid var(--line);font-size:13px;line-height:1.7;color:var(--ink-soft)}
+.ad-warn{margin:12px 0 0;font-size:13px;line-height:1.6;color:#B4324F;font-weight:600}
+.ad-msg{min-height:18px;margin-top:8px;font-size:12.5px;color:#B4324F;line-height:1.5}
+.ad-foot{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap}
+.btn.danger.solid{background:#B4324F;color:#fff;border-color:#B4324F}
+.btn.danger.solid:disabled{opacity:.4;cursor:default}
 /* ── 책장 첫 화면: 분야별 선반 (새 오버북 앱처럼) ── */
 .home-shelves{margin-bottom:10px}
 .home-shelves.hide{display:none}
@@ -1689,7 +1713,7 @@ body.dark .cv-memo{background:rgba(15,20,29,.9);color:#E6EBF3}
       <div class="fr-detail-books" id="frDetailBooks"></div>
     </div>
   </div>
-  <footer class="app-foot"><a href="./privacy.html" target="_blank" rel="noopener">개인정보 처리방침</a> · 문의 tpsksrkd@naver.com</footer>
+  <footer class="app-foot"><a href="./privacy.html" target="_blank" rel="noopener">개인정보 처리방침</a> · 문의 tpsksrkd@naver.com · <button type="button" id="acctDelOpen">회원 탈퇴</button></footer>
 </main>
 
 <input type="file" id="fileIn" class="file-in" accept="application/json">
@@ -1950,6 +1974,41 @@ body.dark .cv-memo{background:rgba(15,20,29,.9);color:#E6EBF3}
 </div>
 
 <!-- 독서 습관: 오늘 읽었어요 -->
+<div class="overlay" id="restOverlay">
+  <div class="modal quick" style="max-width:400px">
+    <div class="modal-head">
+      <h2>돌아보기</h2>
+      <button class="x" data-rrclose aria-label="닫기">×</button>
+    </div>
+    <div class="modal-body">
+      <div id="rrBody"></div>
+      <div class="ad-foot"><button type="button" class="btn" data-rrclose>닫기</button><button type="button" class="btn primary" id="rrBack">길로 돌아가기</button></div>
+    </div>
+  </div>
+</div>
+<div class="overlay" id="acctOverlay">
+  <div class="modal quick" style="max-width:420px">
+    <div class="modal-head">
+      <h2>회원 탈퇴</h2>
+      <button class="x" data-adclose aria-label="닫기">×</button>
+    </div>
+    <div class="modal-body">
+      <p style="margin:0;font-size:14px;line-height:1.6">탈퇴하면 아래 정보가 <b>모두 삭제</b>되고 계정도 사라져요.</p>
+      <div class="ad-list">등록한 책과 구절·사진 · 아이디어 노트 · 독서 기록과 목표 · 선반 설정 · 친구와 주고받은 추천 · 공유 링크 · 이용 기록 · 로그인 계정</div>
+      <p class="ad-warn">삭제한 뒤에는 되돌릴 수 없어요.</p>
+      <p style="margin:10px 0 0;font-size:13px;line-height:1.6;color:var(--ink-soft)">기록을 간직하고 싶다면 먼저 파일로 받아두세요. <button type="button" class="btn" id="adExport" style="margin-left:4px;padding:5px 10px;font-size:12.5px">내보내기</button></p>
+      <div class="field" style="margin:18px 0 0">
+        <label for="adConfirm">확인을 위해 <b style="color:var(--ink)">탈퇴</b> 라고 입력해 주세요</label>
+        <input id="adConfirm" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="탈퇴">
+      </div>
+      <div class="ad-msg" id="adMsg" role="status"></div>
+      <div class="ad-foot">
+        <button type="button" class="btn" data-adclose>취소</button>
+        <button type="button" class="btn danger solid" id="adGo" disabled>탈퇴하고 모두 삭제</button>
+      </div>
+    </div>
+  </div>
+</div>
 <div class="overlay" id="readOverlay">
   <div class="modal quick" style="max-width:400px">
     <div class="modal-head">
@@ -3944,7 +4003,8 @@ const PATH_MISSIONS=[
   { id:'read',    label:'첫 \'오늘 읽었어요\'',     how:'지금 읽는 중 카드의 📖 오늘 읽었어요를 눌러보세요.',     done:()=>readLogs.some(l=>l.kind==='read') },
   { id:'quote',   label:'첫 구절 남기기',           how:'카드의 ✏️ 한 줄이나 📷 사진으로 구절을 남겨보세요.',     done:()=>books.some(b=>(b.quote||'').trim()||(b.quoteShots||[]).length) },
   { id:'pages',   label:'전체 쪽수 넣기',           how:'오늘 읽었어요 창에서 전체 쪽수를 넣으면 진행률이 보여요.', done:()=>books.some(b=>b.totalPages>0) },
-  { id:'week',    label:'한 주 목표 채우기',        how:'이번 주에 정한 일수만큼 기록해보세요.',                  done:()=>pathWeeks(true).length>0 },
+  /* '한 주 목표 채우기'는 하루에 끝낼 수 없어서 뺐어요(2026-11-10). 그 역할은 첫 봉우리 위 '1주째' 칸이 해요. */
+  { id:'tag',     label:'태그 하나 붙이기',         how:'책 수정 화면에서 #태그를 하나 붙여보세요. 나중에 모아 볼 수 있어요.', done:()=>books.some(b=>(b.tags||[]).length>0) },
   { id:'goal',    label:'올해 목표 정하기',         how:'첫 화면의 목표 버튼에서 올해 읽을 권수를 정해보세요.',   done:()=>!!(goals && goals[new Date().getFullYear()]) },
   { id:'finish',  label:'첫 완독',                  how:'끝까지 읽은 책을 \'다 읽음\'으로 바꿔보세요.',           done:()=>books.some(b=>b.status==='done') },
   { id:'oneliner',label:'한 줄 소개 쓰기',          how:'다 읽은 책의 수정 화면에서 한 줄 소개를 써보세요.',      done:()=>books.some(b=>(b.oneliner||'').trim()) },
@@ -4005,6 +4065,13 @@ const PATH_LOOKS=[
   { id:'beret',   type:'acc',   name:'베레모' },
   { id:'plum',    type:'cover', name:'자주 표지', c:'#7B3F6E' },
   { id:'sprout',  type:'acc',   name:'새싹' },
+  { id:'headphones', type:'acc', name:'헤드폰' },
+  { id:'mustard', type:'cover', name:'겨자 표지', c:'#B5851C' },
+  { id:'scarf',   type:'acc',   name:'목도리' },
+  { id:'ink',     type:'cover', name:'먹색 표지', c:'#4F576B' },
+  { id:'crown',   type:'acc',   name:'작은 왕관' },
+  { id:'rose',    type:'cover', name:'분홍 표지', c:'#C0607E' },
+  { id:'straw',   type:'acc',   name:'밀짚모자' },
 ];
 function djLook(rests){
   let L={ acc:'', cover:'', n:0 };
@@ -4069,6 +4136,10 @@ function dojangSVG(ribbon, size, mood, look){
   let lk=look; if(!lk){ try{ lk=djLook(pathModel().rests); }catch(e){ lk={acc:'',cover:''}; } }
   const cv=PATH_LOOKS.find(x=>x.id===lk.cover&&x.type==='cover');
   const ACC={
+    headphones:'<path d="M4.6 23C2.6 7.5 33.5 2.5 38 19.5" fill="none" stroke="#ECE7DA" stroke-width="2.2" stroke-linecap="round"/><rect x="1.2" y="19.6" width="5.6" height="9.6" rx="2.6" fill="#ECE7DA"/><rect x="35.8" y="16.4" width="5.6" height="9.6" rx="2.6" fill="#ECE7DA"/><rect x="2.6" y="21.6" width="2.2" height="5.6" rx="1.1" fill="#B8322E"/><rect x="37.8" y="18.4" width="2.2" height="5.6" rx="1.1" fill="#B8322E"/>',
+    scarf:'<g transform="rotate(-4 22 24)"><path d="M28 36.5h5.6v8.2l-2.8-1.6-2.8 1.6z" fill="#C8443F"/><rect x="2.6" y="32.4" width="35" height="5.4" rx="2.7" fill="#D9534F"/><path d="M9 32.4v5.4M16 32.4v5.4M23 32.4v5.4M30 32.4v5.4" stroke="#F6EEDC" stroke-width="1.3"/></g>',
+    crown:'<g transform="rotate(-6 14 6)"><path d="M6.5 8.4L7 1.6l4.2 3.6L14.2.4l3 4.8 4.2-3.6.5 6.8z" fill="#EBCB6B" stroke="#C9A227" stroke-width=".7" stroke-linejoin="round"/><circle cx="14.2" cy="6" r="1" fill="#B8322E"/></g>',
+    straw:'<g transform="rotate(-6 15 7)"><path d="M7.6 7.2C7.6-.6 22.4-.6 22.4 7.2z" fill="#EBD29A"/><path d="M7.6 5.2h14.8v2H7.6z" fill="#B8322E"/><ellipse cx="15" cy="7.6" rx="13.4" ry="2.9" fill="#E2C383"/><path d="M7.9 6.6C10 7.6 20 7.6 22.1 6.6" fill="none" stroke="#C9A866" stroke-width=".8"/></g>',
     glasses:'<g fill="none" stroke="#EBCB6B" stroke-width="1.35"><circle cx="16.6" cy="21.4" r="4.7"/><circle cx="28.6" cy="20.4" r="4.7"/><path d="M21.2 20.9L24 20.7"/></g>',
     bowtie:'<path d="M22.6 35.4l-5-2.7v5.6zM22.6 35.4l5-3.1v5.6z" fill="#EBCB6B"/><circle cx="22.6" cy="35.4" r="1.4" fill="#C9A227"/>',
     beret:'<g transform="rotate(-9 14 7)"><ellipse cx="14" cy="6.6" rx="10" ry="4.4" fill="#B8322E"/><path d="M14 2.6v-2" stroke="#B8322E" stroke-width="1.5" stroke-linecap="round"/></g>',
@@ -4100,6 +4171,7 @@ const PATH_ICONS={
   finish:'<rect x="6" y="4" width="12" height="16" rx="2"/><path d="M10 4v7l2-1.6 2 1.6V4"/>',
   oneliner:'<path d="M5 19l1-4L16.5 4.5l3 3L9 18zM14.5 6.5l3 3"/>',
   photo:'<rect x="4" y="7" width="16" height="12" rx="2"/><circle cx="12" cy="13" r="3.2"/><path d="M9 7l1.2-2h3.6L15 7"/>',
+  tag:'<path d="M4 5v6.2l8.6 8.6 6.2-6.2L10.2 5z"/><circle cx="8" cy="9" r="1.3"/>',
   idea:'<path d="M9.5 17.5h5M10.5 20.5h3M12 4a5.5 5.5 0 0 0-3.2 10c.5.4.7.9.7 1.5h5c0-.6.2-1.1.7-1.5A5.5 5.5 0 0 0 12 4z"/>',
 };
 /* 쉼터: 책 더미 위의 작은 스탠드 */
@@ -4228,6 +4300,38 @@ function renderCloset(M){
     try{ render(); }catch(e){}
   };
 }
+/* ----- 쉼터에서 지난 4주 돌아보기: 그 쉼터까지 오게 한 '목표를 채운 4주'의 기록을 한 장으로 ----- */
+function restReviewData(b){
+  const ws=pathWeeks(false).slice((b-1)*PATH_REST_EVERY, b*PATH_REST_EVERY);
+  if(ws.length<PATH_REST_EVERY) return null;
+  const logs=readLogs.filter(l=>ws.indexOf(weekStart(l.day))>=0);
+  const days=new Set(logs.map(l=>l.day));
+  const daysOf=k=>new Set(logs.filter(l=>l.kind===k).map(l=>l.day)).size;
+  const booksOf=k=>new Set(logs.filter(l=>l.kind===k&&l.bookId).map(l=>l.bookId)).size;
+  const per={}; logs.forEach(l=>{ if(l.bookId){ (per[l.bookId]=per[l.bookId]||new Set()).add(l.day); } });
+  let top=null; Object.keys(per).forEach(id=>{ const bk=books.find(x=>x.id===id); if(bk && (!top || per[id].size>top.n)) top={ title:bk.title||'제목 없음', n:per[id].size }; });
+  return { b, ws, days, total:days.size, read:daysOf('read'), quote:daysOf('quote'), idea:daysOf('idea'), done:booksOf('done'), add:booksOf('add'), top, gift:PATH_LOOKS[b]||null };
+}
+function openRestReview(b){
+  const D=restReviewData(b); const box=document.getElementById('rrBody'); if(!D || !box) return;
+  const md=d=>`${+d.slice(5,7)}월 ${+d.slice(8,10)}일`;
+  const tiles=[['기록한 날',D.total,'일'],['읽은 날',D.read,'일'],['구절 남긴 날',D.quote,'일'],['다 읽은 책',D.done,'권'],['새로 담은 책',D.add,'권'],['아이디어 적은 날',D.idea,'일']].filter((t,i)=>i===0||t[1]>0);
+  let M=null; try{ M=pathModel(); }catch(e){}
+  const cal=D.ws.map(w=>`<div class="rr-wk"><span>${+w.slice(5,7)}.${+w.slice(8,10)}</span>${[0,1,2,3,4,5,6].map(i=>`<i class="${D.days.has(addDays(w,i))?'on':''}">${D.days.has(addDays(w,i))?'冊':''}</i>`).join('')}</div>`).join('');
+  box.innerHTML=`
+    <div class="rr-top">${dojangSVG(M?M.ribbon:PATH_RIBBONS[0],58,'joy')}<div><div class="rr-t">쉼터 ${D.b}에서 돌아보기</div><div class="rr-s">${md(D.ws[0])} – ${md(addDays(D.ws[D.ws.length-1],6))} 사이, 목표를 채운 4주</div></div></div>
+    <div class="rr-cal"><div class="rr-wk rr-hd"><span></span>${['월','화','수','목','금','토','일'].map(x=>`<i>${x}</i>`).join('')}</div>${cal}</div>
+    <div class="rr-tiles">${tiles.map(t=>`<div class="rr-tile"><b>${t[1]}<small>${t[2]}</small></b><span>${t[0]}</span></div>`).join('')}</div>
+    ${D.top?`<p class="rr-line">가장 자주 펼친 책은 <b>『${esc(D.top.title)}』</b> · ${D.top.n}일</p>`:''}
+    ${D.gift?`<p class="rr-line">이 쉼터에서 얻은 꾸미기 · <b>${esc(D.gift.name)}</b></p>`:''}
+    <p class="rr-end">다음 쉼터까지도 한 주에 한 칸씩, 천천히 올라가요.</p>`;
+  open('restOverlay');
+}
+(function wireRestReview(){
+  const ov=document.getElementById('restOverlay'); if(!ov) return;
+  ov.querySelectorAll('[data-rrclose]').forEach(x=>x.onclick=()=>close('restOverlay'));
+  const back=document.getElementById('rrBack'); if(back) back.onclick=()=>{ close('restOverlay'); openHabit(); };
+})();
 let pathCelBase=null, pathCelTimer=null;
 function pathCelCheck(){
   if(!habitOn() || !cloudLoadedOK || !currentUserId) return;
@@ -4241,7 +4345,7 @@ function pathCelCheck(){
   if(ho && ho.classList.contains('show')) return;      // 길 창이 열려 있으면 그 안에서 올라가는 장면이 나와요
   clearTimeout(pathCelTimer);
   pathCelTimer=setTimeout(()=>{
-    showToast(gift ? `쉼터 도착 · 새 꾸미기 '${gift.name}'` : up>1 ? `도장이가 ${up}칸 올라갔어요` : (up===1 ? '도장이가 한 칸 올라갔어요' : '독서 길 한 칸을 채웠어요'));
+    showToast(gift ? `${M.rests===1?'첫 봉우리':'쉼터'} 도착 · 새 꾸미기 '${gift.name}'` : up>1 ? `도장이가 ${up}칸 올라갔어요` : (up===1 ? '도장이가 한 칸 올라갔어요' : '독서 길 한 칸을 채웠어요'));
     const chip=document.getElementById('hbChip'); if(!chip) return;
     djSetMood(chip,'joy'); chip.classList.remove('cel'); void chip.offsetWidth; chip.classList.add('cel');
     setTimeout(()=>{ const c=document.getElementById('hbChip'); if(c){ c.classList.remove('cel'); djSetMood(c, djMood()); } }, 1500);
@@ -4263,6 +4367,7 @@ function pathAction(s){
     case 'read': case 'pages': case 'week':
       return reading && fn('openRead') ? { label:'오늘 읽었어요 기록하기', run:()=>openRead(reading.id) } : { note:needReading };
     case 'quote': { const b=reading||books[0]; return b && fn('openQuick') ? { label:'구절 남기기', run:()=>openQuick(b.id) } : { note:'먼저 책을 한 권 등록해주세요.' }; }
+    case 'tag': { const b=reading||books[0]; return b && fn('openEdit') ? { label:'태그 붙이러 가기', run:()=>openEdit(b.id) } : { note:'먼저 책을 한 권 등록해주세요.' }; }
     case 'goal': return fn('setGoal') ? { label:'올해 목표 정하기', run:()=>setGoal() } : null;
     case 'finish': return reading && fn('openEdit') ? { label:'이 책 상태 바꾸기', note:`다 읽었다면 『${reading.title||'제목 없음'}』을 '다 읽음'으로 바꿔보세요.`, run:()=>openEdit(reading.id) } : { note:needReading };
     case 'oneliner': { const d2=books.find(b=>b.status==='done'&&!(b.oneliner||'').trim())||done; return d2 && fn('openEdit') ? { label:'한 줄 소개 쓰기', run:()=>openEdit(d2.id) } : { note:'다 읽은 책이 생기면 여기서 바로 쓸 수 있어요.' }; }
@@ -4281,9 +4386,10 @@ function pathTip(i, M, total){
     const gift=PATH_LOOKS[s.rest];
     body = s.ok ? '여기까지 올라왔어요. 도장이의 리본 색이 바뀌었어요.' : (s.rest===0 ? '미션 10칸을 모두 하면 도착하는 첫 쉼터예요.' : '목표를 채운 주가 4번 쌓일 때마다 나오는 쉼터예요. 도착하면 도장이의 리본 색이 바뀌어요.');
     if(gift) body += s.ok ? ` 꾸미기 '${gift.name}'도 열렸어요.` : ` 꾸미기 '${gift.name}'도 열려요.`;
+    if(s.ok && s.rest>=1 && restReviewData(s.rest)){ const rb=s.rest; act={ label:'지난 4주 돌아보기', run:()=>openRestReview(rb) }; }
   }else if(s.ok){ okmark='冊 완료한 칸이에요'; body=s.kind==='week'?'주간 목표를 채운 주예요.':''; }
   else if(s.kind==='week'){
-    if(i===M.weekAt && M.allMissions){ const hs=habitStats(); title='이번 주 목표 채우기'; body=`이번 주 ${hs.thisCount}/${hs.thisTarget}일 기록했어요. 다 채우면 한 칸 올라가요.`; act=pathAction(s); }
+    if(i===M.weekAt && M.allMissions){ const hs=habitStats(); title='이번 주 목표 채우기'; body=`이번 주 ${hs.thisCount}/${hs.thisTarget}일 기록했어요. 다 채우면 한 칸 올라가요.`; if(hs.ws<PATH_WEEKS_FROM) body=`주간 계단은 ${+PATH_WEEKS_FROM.slice(5,7)}월 ${+PATH_WEEKS_FROM.slice(8,10)}일 주부터 세요. 그때부터 주간 목표를 채우면 한 칸씩 올라가요.`; act=pathAction(s); }
     else body = M.allMissions ? '아래 칸부터 한 주에 한 칸씩 올라가요.' : '미션 10칸을 마치면 열리는 주간 계단이에요.';
   }else if(s.extra && !M.allMissions){ body='첫 봉우리를 지나면 열리는 미션이에요.'; }
   else{ body=s.how||''; act=pathAction(s); }
@@ -6373,6 +6479,70 @@ async function submitNewPassword(){
   }catch(err){ newPwError(friendlyAuthError(err)); }
   finally{ btn.disabled=false; btn.textContent=orig; }
 }
+/* ---------- 회원 탈퇴(셀프 삭제) ----------
+   순서: ① 서버 준비 확인(delete_my_account(dry:true)) → ② 사진 파일 삭제 → ③ DB 기록+계정 삭제 → ④ 이 기기 정리.
+   서버 함수(5_account_delete.sql)가 아직 없으면 아무것도 지우지 않고 이메일 안내만 해요. */
+const ACCT_MAIL='tpsksrkd@naver.com';
+let acctBusy=false;
+function openAccountDelete(){
+  if(!currentUserId){ showToast('로그인한 뒤에 할 수 있어요'); return; }
+  const inp=document.getElementById('adConfirm'), go=document.getElementById('adGo');
+  inp.value=''; inp.disabled=false; go.disabled=true; go.textContent='탈퇴하고 모두 삭제';
+  document.getElementById('adMsg').textContent='';
+  open('acctOverlay');
+}
+async function acctRemoveFiles(uid){
+  // 내 폴더(uid/)의 사진: 목록으로 찾은 것 + 화면에 올라와 있는 기록의 경로
+  const paths=new Set();
+  try{ books.forEach(b=>(b.quoteShots||[]).forEach(x=>{ if(x&&x.path) paths.add(x.path); })); }catch(e){}
+  try{ ideas.forEach(i=>(i.shots||[]).forEach(x=>{ if(x&&x.path) paths.add(x.path); })); }catch(e){}
+  try{
+    for(let off=0; off<5000; off+=100){
+      const { data, error } = await sb.storage.from(BUCKET).list(uid, { limit:100, offset:off });
+      if(error || !data || !data.length) break;
+      data.forEach(f=>{ if(f && f.name) paths.add(uid+'/'+f.name); });
+      if(data.length<100) break;
+    }
+  }catch(e){}
+  const all=[...paths].filter(x=>x.indexOf(uid+'/')===0);
+  for(let i=0;i<all.length;i+=100){
+    try{ await sb.storage.from(BUCKET).remove(all.slice(i,i+100)); }catch(e){}
+  }
+  return all.length;
+}
+async function doAccountDelete(){
+  if(acctBusy) return;
+  const inp=document.getElementById('adConfirm'), go=document.getElementById('adGo'), msg=document.getElementById('adMsg');
+  if(inp.value.trim()!=='탈퇴' || !currentUserId) return;
+  const uid=currentUserId;
+  const mailNote=`지금은 여기서 처리할 수 없어요. ${ACCT_MAIL} 으로 탈퇴를 요청해 주시면 10일 안에 처리해 드릴게요.`;
+  acctBusy=true; go.disabled=true; inp.disabled=true; go.textContent='삭제하는 중…'; msg.textContent='';
+  const fail=t=>{ acctBusy=false; inp.disabled=false; go.disabled=false; go.textContent='탈퇴하고 모두 삭제'; msg.textContent=t; };
+  try{
+    // ① 서버가 준비됐는지 먼저 확인(아무것도 지우지 않음)
+    const pre=await sb.rpc('delete_my_account',{ dry:true });
+    if(pre.error){ fail(mailNote); return; }
+    // ② 사진 파일  ③ 기록과 계정
+    await acctRemoveFiles(uid);
+    const res=await sb.rpc('delete_my_account',{ dry:false });
+    if(res.error){ fail(`삭제를 끝내지 못했어요. 잠시 뒤 다시 시도하거나 ${ACCT_MAIL} 으로 알려주세요.`); return; }
+  }catch(e){ fail(mailNote); return; }
+  // ④ 이 기기에 남은 것 정리 후 첫 화면으로
+  try{ Object.keys(localStorage).forEach(k=>{ if(k.indexOf('ob_')===0 || k.indexOf('chaekjang')===0 || k.indexOf('sb-')===0) localStorage.removeItem(k); }); }catch(e){}
+  try{ await sb.auth.signOut({ scope:'local' }); }catch(e){}
+  msg.style.color='var(--seal)'; msg.textContent='탈퇴가 끝났어요. 그동안 함께해 주셔서 고마웠어요.';
+  go.textContent='완료';
+  setTimeout(()=>{ try{ location.replace(location.pathname); }catch(e){ location.reload(); } }, 1800);
+}
+(function wireAccountDelete(){
+  const ov=document.getElementById('acctOverlay'); if(!ov) return;
+  const o=document.getElementById('acctDelOpen'); if(o) o.onclick=openAccountDelete;
+  ov.querySelectorAll('[data-adclose]').forEach(x=>x.onclick=()=>{ if(!acctBusy) close('acctOverlay'); });
+  const inp=document.getElementById('adConfirm'), go=document.getElementById('adGo');
+  inp.oninput=()=>{ go.disabled = acctBusy || inp.value.trim()!=='탈퇴'; };
+  go.onclick=doAccountDelete;
+  document.getElementById('adExport').onclick=()=>{ try{ exportData(); }catch(e){} };
+})();
 async function doLogout(){
   try{ await sb.auth.signOut(); }catch(e){}
   // onAuthStateChange 가 게이트를 다시 염

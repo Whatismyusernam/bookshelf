@@ -74,6 +74,38 @@ async function obScanIsbn(){
 }
 if(window.OB_IS_APP){
   document.documentElement.classList.add('ob-app');
+  /* 기기 저장값 지킴이: iOS가 웹 저장소(localStorage)를 비워도 로그인·독서 길 달성 기록 등이 남도록
+     앱 저장소(@capacitor/preferences)에 같이 적어 두고, 비워진 걸 발견하면 되살린 뒤 한 번 새로고침.
+     로그아웃·탈퇴로 지운 값은 앱 저장소에서도 같이 지워짐. */
+  (function(){
+    const P=window.Capacitor.Plugins && window.Capacitor.Plugins.Preferences; if(!P) return;
+    const MARK='ob_ls_alive';
+    const want=k=>k!==MARK && /^(ob_|chaekjang|sb-|overbook_|bookshelf_(view|mode|theme)$)/.test(k);
+    const _set=Storage.prototype.setItem, _rem=Storage.prototype.removeItem;
+    let restoring=false;
+    Storage.prototype.setItem=function(k,v){ _set.call(this,k,v);
+      if(!restoring && this===window.localStorage && want(k) && String(v).length<200000){ try{ P.set({key:k,value:String(v)}).catch(()=>{}); }catch(e){} } };
+    Storage.prototype.removeItem=function(k){ _rem.call(this,k);
+      if(!restoring && this===window.localStorage && want(k)){ try{ P.remove({key:k}).catch(()=>{}); }catch(e){} } };
+    let alive=null; try{ alive=localStorage.getItem(MARK); }catch(e){ return; }
+    if(alive) return;
+    restoring=true;
+    const root=document.documentElement; root.style.visibility='hidden';
+    const show=()=>{ restoring=false; root.style.visibility=''; };
+    const timer=setTimeout(show, 2500);
+    (async()=>{
+      const saved=((await P.keys()).keys||[]).filter(want); let n=0;
+      for(const k of saved){
+        if(localStorage.getItem(k)===null){ const g=await P.get({key:k}); if(g && g.value!=null){ _set.call(localStorage,k,g.value); n++; } }
+      }
+      for(const k of Object.keys(localStorage)){          // 아직 앱 저장소에 없는 기존 값은 지금 적어 둠
+        if(want(k) && saved.indexOf(k)<0){ const v=localStorage.getItem(k); if(v!=null && v.length<200000) await P.set({key:k,value:v}); }
+      }
+      _set.call(localStorage,MARK,'1');
+      clearTimeout(timer);
+      if(n && localStorage.getItem(MARK)==='1') location.reload(); else show();
+    })().catch(()=>{ clearTimeout(timer); show(); });
+  })();
   if(!window.OB_GOOGLE_IOS_CLIENT_ID) document.documentElement.classList.add('ob-no-google');
   // 앱 안의 링크(처리방침·구매 링크 등)는 앱 화면을 덮어쓰지 않도록 Safari 시트로 연다
   document.addEventListener('click', function(e){

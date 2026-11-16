@@ -41,7 +41,7 @@
 window.OB_IS_APP = !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform());
 window.OB_SITE = 'https://overbook.co.kr/';
 /* 앱(iOS) 네이티브 구글 로그인용 iOS OAuth 클라이언트 ID(공개값). 비어 있으면 앱에서 구글 버튼을 숨김 */
-window.OB_GOOGLE_IOS_CLIENT_ID = '';
+window.OB_GOOGLE_IOS_CLIENT_ID = '126563180991-93u5lrserr24882o68cvd1chjjji10kg.apps.googleusercontent.com';
 function obBase(){ return window.OB_IS_APP ? window.OB_SITE : location.origin + location.pathname; }
 function obOpenExternal(url){            // 앱: Safari 시트(@capacitor/browser)로, 없으면 Safari 앱으로
   try{ const B = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Browser;
@@ -2966,7 +2966,7 @@ function milestonesHTML(){
 }
 /* 공유 이미지 하단 홍보 문구 — 앱 이름 + 주소.
    ★ 아래 APP_PUBLIC_URL 에 배포한 앱 주소를 넣으면, 저장·공유되는 모든 이미지 하단에
-     '冊 책장 / 주소 · 나의 독서 기록' 이 함께 찍혀 이미지를 본 사람이 찾아올 수 있어요.
+     '冊 오버북 / 주소 · 책을 기록하다' 가 함께 찍혀 이미지를 본 사람이 찾아올 수 있어요.
      비워두면 지금처럼 이름만 표시됩니다. (예: 'chaekjang.app') */
 const APP_PUBLIC_URL = 'overbook.co.kr';
 function drawPromoFooter(ctx, W, H, muted, seal){
@@ -5284,7 +5284,7 @@ async function exportData(){
       }
     }
   }
-  const payload={ app:'책장', format:2, exportedAt:new Date().toISOString(), books:outBooks, ideas:outIdeas };
+  const payload={ app:'오버북', format:2, exportedAt:new Date().toISOString(), books:outBooks, ideas:outIdeas };
   const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
   a.download=`오버북_백업_${new Date().toISOString().slice(0,10)}.json`; a.click(); URL.revokeObjectURL(a.href);

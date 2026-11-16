@@ -35,7 +35,34 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* iOS 앱(Capacitor) 안에서 실행 중인지 + 밖으로 내보내는 주소의 기준.
+   웹에서는 OB_IS_APP=false라 기존 동작 그대로. */
+window.OB_IS_APP = !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform());
+window.OB_SITE = 'https://overbook.co.kr/';
+function obBase(){ return window.OB_IS_APP ? window.OB_SITE : location.origin + location.pathname; }
+function obOpenExternal(url){            // 앱: Safari 시트(@capacitor/browser)로, 없으면 Safari 앱으로
+  try{ const B = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Browser;
+       if(B && B.open){ B.open({ url }); return; } }catch(e){}
+  window.open(url, '_blank');
+}
+if(window.OB_IS_APP){
+  document.documentElement.classList.add('ob-app');
+  // 앱 안의 링크(처리방침·구매 링크 등)는 앱 화면을 덮어쓰지 않도록 Safari 시트로 연다
+  document.addEventListener('click', function(e){
+    const a = e.target && e.target.closest && e.target.closest('a[href]');
+    if(!a || a.hasAttribute('download')) return;
+    const href = a.getAttribute('href') || '';
+    if(!href || href.charAt(0) === '#' || /^(blob|data|javascript|mailto|tel):/i.test(href)) return;
+    let u; try{ u = new URL(href, window.OB_SITE); }catch(_){ return; }
+    if(u.protocol !== 'https:' && u.protocol !== 'http:') return;
+    e.preventDefault(); obOpenExternal(u.href);
+  }, true);
+}
+</script>
 <style>
+/* 앱에선 구글 로그인이 아직 안 됨(웹뷰 차단) → 네이티브 로그인 붙일 때까지 숨김 */
+.ob-app #authGoogle, .ob-app #authGoogle + .auth-divider, .ob-app #lp .lp-note{display:none}
   :root{
     --paper:#FFFFFF; --paper-2:#F3F6FB; --ink:#16243F; --ink-soft:#44516B;
     --muted:#8B93A7; --line:#E2E7F0; --line-soft:#EEF1F7;
@@ -5424,7 +5451,7 @@ async function shareBook(){
   showToast('공유 링크 만드는 중…');
   const { error }=await sb.from('shares').insert({ id, user_id:currentUserId, payload:buildSharePayload(b) });
   if(error){ showToast('공유 링크 생성 실패: '+error.message); return; }
-  const url=new URL('share.html',location.href).href+'?id='+id;
+  const url=new URL('share.html',obBase()).href+'?id='+id;
   try{ await navigator.clipboard.writeText(url); showToast('공유 링크를 복사했어요! 카톡 등에 붙여넣으세요'); }
   catch(e){ prompt('아래 링크를 복사하세요', url); }
 }
@@ -5912,7 +5939,7 @@ async function frSaveProfile(){
   }catch(e){ showToast('저장 실패: '+(e.message||'')); }
   finally{ btn.disabled=false; }
 }
-function frMyLink(){ const c=(frState.profile&&frState.profile.code)||''; return location.origin+location.pathname+'?add='+c; }
+function frMyLink(){ const c=(frState.profile&&frState.profile.code)||''; return obBase()+'?add='+c; }
 async function frAddByCode(code){
   code=(code||'').trim().toUpperCase();
   if(!code){ showToast('코드를 입력하세요'); return; }
@@ -6454,7 +6481,7 @@ async function submitAuth(){
   try{
     if(authMode==='reset'){
       btn.textContent='보내는 중…';
-      const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname });
+      const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: obBase() });
       if(error) throw error;
       setAuthMode('login');
       const info=document.getElementById('authInfo');
@@ -6801,7 +6828,7 @@ window.addEventListener('load', initAds);
 </script>
 <script>
 /* PWA: 서비스워커 등록 (오프라인 대비 + 설치 지원) */
-if ('serviceWorker' in navigator) {
+if (!window.OB_IS_APP && 'serviceWorker' in navigator) {   // 앱에선 서비스워커 안 씀
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js').catch(err => console.warn('SW 등록 실패', err));
   });

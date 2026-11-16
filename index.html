@@ -48,6 +48,30 @@ function obOpenExternal(url){            // 앱: Safari 시트(@capacitor/browse
        if(B && B.open){ B.open({ url }); return; } }catch(e){}
   window.open(url, '_blank');
 }
+/* 앱: 파일(이미지·백업)을 아이폰 공유 시트로 내보냄. 웹뷰에선 a[download]가 동작하지 않아서 필요.
+   처리했으면 true(사용자가 시트를 닫은 경우 포함), 플러그인이 없거나 실패하면 false → 호출한 쪽이 기존 방식으로 진행 */
+async function obAppShareBlob(blob, name){
+  if(!window.OB_IS_APP) return false;
+  try{
+    const P=window.Capacitor.Plugins||{}; const FS=P.Filesystem, SH=P.Share;
+    if(!FS || !SH) return false;
+    const b64=await new Promise((res,rej)=>{ const r=new FileReader();
+      r.onload=()=>res(String(r.result).split(',')[1]||''); r.onerror=()=>rej(r.error); r.readAsDataURL(blob); });
+    const w=await FS.writeFile({ path:name, data:b64, directory:'CACHE' });
+    try{ await SH.share({ files:[w.uri] }); }catch(e){ /* 공유 시트를 그냥 닫은 경우 */ }
+    return true;
+  }catch(e){ console.warn('앱 공유 실패', e); return false; }
+}
+/* 앱: 책 뒤표지 바코드(EAN-13) 읽기 → ISBN 13자리 문자열, 취소하면 null, 책 바코드가 아니면 '' */
+async function obScanIsbn(){
+  const BS=window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.CapacitorBarcodeScanner;
+  if(!BS) throw new Error('no-scanner');
+  let r;
+  try{ r=await BS.scanBarcode({ hint:9, scanInstructions:'책 뒤표지의 바코드를 비춰 주세요', scanButton:false, scanText:' ', cameraDirection:1, scanOrientation:1 }); }
+  catch(e){ const m=String((e&&(e.message||e.code))||e); if(/cancel|취소|OS-PLUG-BARC-0006/i.test(m)) return null; throw e; }
+  const d=String((r&&r.ScanResult)||'').replace(/[^0-9]/g,'');
+  return (d.length===13 && /^97[89]/.test(d)) ? d : '';
+}
 if(window.OB_IS_APP){
   document.documentElement.classList.add('ob-app');
   if(!window.OB_GOOGLE_IOS_CLIENT_ID) document.documentElement.classList.add('ob-no-google');
@@ -66,6 +90,10 @@ if(window.OB_IS_APP){
 <style>
 /* 앱(iOS): Apple 로그인은 앱에서만, 구글은 iOS 클라이언트 ID가 있을 때만 보임 */
 #authApple{display:none}
+#qScan{display:none}
+.ob-app .qrow{flex-wrap:wrap}
+.ob-app .qrow input{min-width:0}
+.ob-app #qScan{display:flex;flex:1 1 100%;order:-1;align-items:center;justify-content:center;gap:8px;padding:11px 12px}
 .ob-app #authApple{display:flex;background:#000;color:#fff;border-color:#000;margin-bottom:10px}
 .ob-app #authApple:hover{background:#1a1a1a;border-color:#1a1a1a}
 .ob-app.ob-no-google #authGoogle, .ob-app #lp .lp-note{display:none}
@@ -1795,6 +1823,7 @@ body.dark .cv-memo{background:rgba(15,20,29,.9);color:#E6EBF3}
         <div class="qrow">
           <input id="qInput" type="text" placeholder="예) 데미안  ·  9788954682152">
           <button class="btn" id="qBtn">가져오기</button>
+          <button class="btn" id="qScan" type="button"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6v12M8 6v12M11 6v12M15 6v12M18 6v12M20.5 6v12"/></svg>바코드로 책 찾기</button>
         </div>
         <div class="qnote" id="qNote">표지·저자·출판사·출간연도를 자동으로 채웁니다. 인터넷 연결 필요.</div>
         <div class="lk-results" id="lkResults"></div>
@@ -3020,8 +3049,9 @@ async function exportReviewImage(){
   drawPromoFooter(ctx, W, H, muted, seal);
   cv.toBlob(blob=>{
     if(!blob){ showToast('이미지 생성에 실패했어요'); return; }
-    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`오버북_결산_${Y}.png`; a.click(); URL.revokeObjectURL(a.href);
-    showToast('결산 이미지를 저장했어요');
+    const save=()=>{ const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`오버북_결산_${Y}.png`; a.click(); URL.revokeObjectURL(a.href);
+      showToast('결산 이미지를 저장했어요'); };
+    if(window.OB_IS_APP) obAppShareBlob(blob, `오버북_결산_${Y}.png`).then(ok=>{ if(!ok) save(); }); else save();
   }, 'image/png');
 }
 
@@ -3190,13 +3220,14 @@ async function renderReviewCard(){
   img.src=cardState.url; img.classList.remove('loading');
   document.getElementById('rcShare').disabled=!cardState.blob;
   const canShare=!!(cardState.blob && navigator.canShare && navigator.canShare({files:[new File([cardState.blob],'a.png',{type:'image/png'})]}));
-  document.getElementById('rcShare').textContent=canShare?'공유하기':'이미지 저장';
+  document.getElementById('rcShare').textContent=(canShare||window.OB_IS_APP)?'공유하기':'이미지 저장';
 }
 async function shareReviewCard(){
   if(!cardState.blob) return;
   const name=`오버북_${cardState.Y}_결산_${CARD_SIZES[cardState.fmt].label}.png`;
   const file=new File([cardState.blob], name, {type:'image/png'});
   trackNew('review_card_share',{ y:cardState.Y, fmt:cardState.fmt });
+  if(await obAppShareBlob(cardState.blob, name)) return;
   if(navigator.canShare && navigator.canShare({files:[file]})){
     try{ await navigator.share({files:[file]}); return; }
     catch(e){ if(e && e.name==='AbortError') return; }
@@ -3285,6 +3316,7 @@ async function exportQuoteImage(p){
   cv.toBlob(async blob=>{
     if(!blob){ showToast('이미지 생성에 실패했어요'); return; }
     const name=`오버북_문장_${(p.title||'문장').slice(0,20).replace(/[\\/:*?"<>|]/g,'')}.png`;
+    if(await obAppShareBlob(blob, name)) return;
     const file=new File([blob], name, {type:'image/png'});
     if(navigator.canShare && navigator.canShare({files:[file]})){
       try{ await navigator.share({files:[file]}); return; }
@@ -3299,6 +3331,7 @@ async function exportQuoteImage(p){
 function _sharePng(cv, name, doneMsg){
   cv.toBlob(async blob=>{
     if(!blob){ showToast('이미지 생성에 실패했어요'); return; }
+    if(await obAppShareBlob(blob, name)) return;
     const file=new File([blob], name, {type:'image/png'});
     if(navigator.canShare && navigator.canShare({files:[file]})){
       try{ await navigator.share({files:[file]}); return; }
@@ -5286,8 +5319,10 @@ async function exportData(){
   }
   const payload={ app:'오버북', format:2, exportedAt:new Date().toISOString(), books:outBooks, ideas:outIdeas };
   const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+  const bkName=`오버북_백업_${new Date().toISOString().slice(0,10)}.json`;
+  if(await obAppShareBlob(blob, bkName)) return;
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
-  a.download=`오버북_백업_${new Date().toISOString().slice(0,10)}.json`; a.click(); URL.revokeObjectURL(a.href);
+  a.download=bkName; a.click(); URL.revokeObjectURL(a.href);
   showToast(`백업 파일을 내려받았어요 (책 ${outBooks.length} · 아이디어 ${outIdeas.length})`);
 }
 function importData(file){
@@ -5433,6 +5468,20 @@ document.getElementById('saveBtn').onclick=saveBook;
 document.getElementById('deleteBtn').onclick=deleteBook;
 document.getElementById('aiBtn').onclick=aiSummarize;
 document.getElementById('qBtn').onclick=lookup;
+/* 앱: 바코드로 ISBN을 읽어 바로 검색. 결과가 1건이면 폼에 바로 채움 */
+document.getElementById('qScan').onclick=async function(){
+  const btn=this; btn.disabled=true;
+  try{
+    const isbn=await obScanIsbn();
+    if(isbn===null) return;                                   // 취소
+    if(!isbn){ setQNote('책 바코드(978·979로 시작하는 13자리)가 아니에요. 뒤표지의 바코드를 다시 비춰 주세요.',true); return; }
+    document.getElementById('qInput').value=isbn;
+    await lookup();
+    if(lkResults.length===1){ applyResult(0); setQNote('바코드로 찾은 책 정보를 채웠어요.',false); }
+  }catch(e){
+    setQNote('바코드를 읽지 못했어요. 설정에서 카메라 권한을 확인하거나 제목으로 검색해 주세요.',true);
+  }finally{ btn.disabled=false; }
+};
 document.getElementById('qInput').addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); lookup(); } });
 document.getElementById('fCover').addEventListener('input',updateCvThumb);
 document.getElementById('addPhotoBtn').onclick=()=>document.getElementById('photoInput').click();

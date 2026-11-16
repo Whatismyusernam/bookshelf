@@ -1007,7 +1007,7 @@
 #lp .lp-tb i{width:9px;height:9px;border-radius:50%;background:var(--line);display:inline-block}
 #lp .lp-tb i:nth-child(1){background:#E4B7B2}#lp .lp-tb i:nth-child(2){background:#E9D3A6}#lp .lp-tb i:nth-child(3){background:#BFD8C4}
 #lp .lp-tb span{margin-left:6px}
-#lp .lp-shelf{display:grid;grid-template-columns:repeat(4,1fr);gap:16px 13px}
+#lp .lp-shelf{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px 13px}
 #lp .lp-cover{position:relative;width:100%;aspect-ratio:2/3;border-radius:5px;overflow:hidden;background:var(--cc,var(--c-etc));
   box-shadow:0 2px 4px rgba(20,30,55,.12),0 9px 20px rgba(20,30,55,.15);
   display:flex;flex-direction:column;justify-content:space-between;padding:11px 10px;transition:transform .18s,box-shadow .18s}
@@ -1027,6 +1027,33 @@
 #lp .lp-anim .lp-cover{opacity:0;transform:translateY(16px)}
 #lp .lp-anim.play .lp-cover{animation:lpShelve .6s cubic-bezier(.2,.7,.2,1) forwards}
 @keyframes lpShelve{to{opacity:1;transform:translateY(0)}}
+/* 소개 화면 예시 표지: 실제 표지 이미지(.lp-img, 카카오 썸네일). 이미지가 안 뜨면 아래 '가상 표지'(빛·띠지·무늬)가 대신 보임 */
+#lp .lp-cover{background-image:linear-gradient(180deg,rgba(255,255,255,.12) 0%,rgba(255,255,255,0) 38%,rgba(0,0,0,.16) 100%)}
+#lp .lp-cover:has(.lp-cvst){padding-top:24px}
+#lp .lp-cover::before{content:"";position:absolute;pointer-events:none}
+#lp .lp-cover::after{z-index:1}
+#lp .lp-pt,#lp .lp-pa{position:relative;z-index:2}
+#lp .lp-cvst{z-index:4}
+#lp .lp-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:3;display:block}
+#lp .lp-cover:has(.lp-img)::after{z-index:5;background:linear-gradient(90deg,rgba(0,0,0,.28),rgba(0,0,0,0))}
+#lp .lp-pt{font-size:11.5px;line-height:1.25;font-weight:700;letter-spacing:-.01em;word-break:keep-all;overflow-wrap:anywhere;-webkit-line-clamp:3;text-shadow:0 1px 1px rgba(0,0,0,.18)}
+#lp .lp-pa{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:8.5px;padding-top:3px;border-top:1px solid rgba(255,255,255,.4);letter-spacing:.02em}
+/* 1: 크림색 띠지 */
+#lp .lp-shelf>.lp-bk:nth-child(5n+1) .lp-cover::before{left:0;right:0;top:66%;height:6%;background:rgba(246,238,219,.88);box-shadow:0 1px 0 rgba(0,0,0,.12)}
+#lp .lp-shelf>.lp-bk:nth-child(5n+1) .lp-pa{border-top:0;padding-top:0}
+/* 2: 큰 원 */
+#lp .lp-shelf>.lp-bk:nth-child(5n+2) .lp-cover::before{width:78%;aspect-ratio:1;right:-20%;top:36%;border-radius:50%;
+  background:rgba(255,255,255,.13);box-shadow:inset 0 0 0 5px rgba(255,255,255,.08)}
+/* 3: 고전 소설 같은 테두리 */
+#lp .lp-shelf>.lp-bk:nth-child(5n+3) .lp-cover::before{inset:5px 5px 5px 9px;border:1px solid rgba(255,255,255,.5);border-radius:2px;
+  box-shadow:inset 0 0 0 3px rgba(0,0,0,0),inset 0 0 0 4px rgba(255,255,255,.22)}
+#lp .lp-shelf>.lp-bk:nth-child(5n+3) .lp-pa{border-top:0;padding-top:0}
+#lp .lp-shelf>.lp-bk:nth-child(5n+3) .lp-cover{padding-left:14px;padding-right:12px;padding-bottom:13px}
+/* 4: 아래쪽 어두운 면 */
+#lp .lp-shelf>.lp-bk:nth-child(5n+4) .lp-cover::before{left:0;right:0;bottom:0;height:30%;background:rgba(0,0,0,.2);border-top:2px solid rgba(255,255,255,.55)}
+/* 5: 사선 무늬 */
+#lp .lp-shelf>.lp-bk:nth-child(5n+5) .lp-cover::before{left:0;right:0;top:48%;height:24%;
+  background:repeating-linear-gradient(135deg,rgba(255,255,255,.17) 0 3px,rgba(255,255,255,0) 3px 8px)}
 
 #lp .lp-feat{padding:66px 0;border-top:1px solid var(--line-soft)}
 #lp .lp-feat.alt{background:var(--paper-2)}
@@ -1336,14 +1363,14 @@ body.dark .cv-memo{background:rgba(15,20,29,.9);color:#E6EBF3}
         <div class="lp-card">
           <div class="lp-tb"><i></i><i></i><i></i><span>나의 책장 · 24권</span></div>
           <div class="lp-shelf lp-anim" id="lpHeroShelf">
-            <div class="lp-bk"><div class="lp-cover" style="--cc:var(--c-self)"><span class="lp-cvst done">✓ 완독</span><div class="lp-pt">아주 작은 습관의 힘</div><div class="lp-pa">제임스 클리어</div></div><div class="lp-m"><div class="lp-mt">아주 작은 습관의 힘</div><div class="lp-ma">제임스 클리어</div></div></div>
-            <div class="lp-bk"><div class="lp-cover" style="--cc:var(--c-invest)"><span class="lp-cvst done">✓ 완독</span><div class="lp-pt">돈의 심리학</div><div class="lp-pa">모건 하우절</div></div><div class="lp-m"><div class="lp-mt">돈의 심리학</div><div class="lp-ma">모건 하우절</div></div></div>
-            <div class="lp-bk"><div class="lp-cover" style="--cc:var(--c-lit)"><span class="lp-cvst reading">읽는 중</span><div class="lp-pt">데미안</div><div class="lp-pa">헤르만 헤세</div></div><div class="lp-m"><div class="lp-mt">데미안</div><div class="lp-ma">헤르만 헤세</div></div></div>
-            <div class="lp-bk"><div class="lp-cover" style="--cc:var(--c-mgmt)"><div class="lp-pt">하이 아웃풋 매니지먼트</div><div class="lp-pa">앤드루 그로브</div></div><div class="lp-m"><div class="lp-mt">하이 아웃풋…</div><div class="lp-ma">앤드루 그로브</div></div></div>
-            <div class="lp-bk"><div class="lp-cover" style="--cc:var(--c-etc)"><div class="lp-pt">사피엔스</div><div class="lp-pa">유발 하라리</div></div><div class="lp-m"><div class="lp-mt">사피엔스</div><div class="lp-ma">유발 하라리</div></div></div>
-            <div class="lp-bk"><div class="lp-cover dim" style="--cc:var(--c-self)"><span class="lp-cvst todo">읽을 책</span><div class="lp-pt">원씽</div><div class="lp-pa">게리 켈러</div></div><div class="lp-m"><div class="lp-mt">원씽</div><div class="lp-ma">게리 켈러</div></div></div>
-            <div class="lp-bk"><div class="lp-cover" style="--cc:var(--c-invest)"><div class="lp-pt">현명한 투자자</div><div class="lp-pa">벤저민 그레이엄</div></div><div class="lp-m"><div class="lp-mt">현명한 투자자</div><div class="lp-ma">벤저민 그레이엄</div></div></div>
-            <div class="lp-bk"><div class="lp-cover dim" style="--cc:var(--c-lit)"><span class="lp-cvst todo">읽을 책</span><div class="lp-pt">노르웨이의 숲</div><div class="lp-pa">무라카미 하루키</div></div><div class="lp-m"><div class="lp-mt">노르웨이의 숲</div><div class="lp-ma">무라카미 하루키</div></div></div>
+            <div class="lp-bk"><div class="lp-cover" style="--cc:var(--c-self)"><img class="lp-img" src="https://search1.kakaocdn.net/thumb/R120x174.q85/?fname=http%3A%2F%2Ft1.daumcdn.net%2Flbook%2Fimage%2F4881578%3Ftimestamp%3D20261106122553" alt="아주 작은 습관의 힘 표지" loading="lazy" onerror="this.remove()"><span class="lp-cvst done">✓ 완독</span><div class="lp-pt">아주 작은 습관의 힘</div><div class="lp-pa">제임스 클리어</div></div><div class="lp-m"><div class="lp-mt">아주 작은 습관의 힘</div><div class="lp-ma">제임스 클리어</div></div></div>
+            <div class="lp-bk"><div class="lp-cover" style="--cc:var(--c-invest)"><img class="lp-img" src="https://search1.kakaocdn.net/thumb/R120x174.q85/?fname=http%3A%2F%2Ft1.daumcdn.net%2Flbook%2Fimage%2F7120183%3Ftimestamp%3D20260623122238" alt="돈의 심리학 표지" loading="lazy" onerror="this.remove()"><span class="lp-cvst done">✓ 완독</span><div class="lp-pt">돈의 심리학</div><div class="lp-pa">모건 하우절</div></div><div class="lp-m"><div class="lp-mt">돈의 심리학</div><div class="lp-ma">모건 하우절</div></div></div>
+            <div class="lp-bk"><div class="lp-cover" style="--cc:var(--c-lit)"><img class="lp-img" src="https://search1.kakaocdn.net/thumb/R120x174.q85/?fname=http%3A%2F%2Ft1.daumcdn.net%2Flbook%2Fimage%2F540810%3Ftimestamp%3D20261023110741" alt="데미안 표지" loading="lazy" onerror="this.remove()"><span class="lp-cvst reading">읽는 중</span><div class="lp-pt">데미안</div><div class="lp-pa">헤르만 헤세</div></div><div class="lp-m"><div class="lp-mt">데미안</div><div class="lp-ma">헤르만 헤세</div></div></div>
+            <div class="lp-bk"><div class="lp-cover" style="--cc:var(--c-mgmt)"><img class="lp-img" src="https://search1.kakaocdn.net/thumb/R120x174.q85/?fname=http%3A%2F%2Ft1.daumcdn.net%2Flbook%2Fimage%2F523470%3Ftimestamp%3D20261111111102" alt="하이 아웃풋 매니지먼트 표지" loading="lazy" onerror="this.remove()"><div class="lp-pt">하이 아웃풋 매니지먼트</div><div class="lp-pa">앤드루 그로브</div></div><div class="lp-m"><div class="lp-mt">하이 아웃풋…</div><div class="lp-ma">앤드루 그로브</div></div></div>
+            <div class="lp-bk"><div class="lp-cover" style="--cc:var(--c-etc)"><img class="lp-img" src="https://search1.kakaocdn.net/thumb/R120x174.q85/?fname=http%3A%2F%2Ft1.daumcdn.net%2Flbook%2Fimage%2F521598%3Ftimestamp%3D20260113110825" alt="사피엔스 표지" loading="lazy" onerror="this.remove()"><div class="lp-pt">사피엔스</div><div class="lp-pa">유발 하라리</div></div><div class="lp-m"><div class="lp-mt">사피엔스</div><div class="lp-ma">유발 하라리</div></div></div>
+            <div class="lp-bk"><div class="lp-cover dim" style="--cc:var(--c-self)"><img class="lp-img" src="https://search1.kakaocdn.net/thumb/R120x174.q85/?fname=http%3A%2F%2Ft1.daumcdn.net%2Flbook%2Fimage%2F1486275%3Ftimestamp%3D20261113110855" alt="원씽 표지" loading="lazy" onerror="this.remove()"><span class="lp-cvst todo">읽을 책</span><div class="lp-pt">원씽</div><div class="lp-pa">게리 켈러</div></div><div class="lp-m"><div class="lp-mt">원씽</div><div class="lp-ma">게리 켈러</div></div></div>
+            <div class="lp-bk"><div class="lp-cover" style="--cc:var(--c-invest)"><img class="lp-img" src="https://search1.kakaocdn.net/thumb/R120x174.q85/?fname=http%3A%2F%2Ft1.daumcdn.net%2Flbook%2Fimage%2F5372468%3Ftimestamp%3D20261011114845" alt="현명한 투자자 표지" loading="lazy" onerror="this.remove()"><div class="lp-pt">현명한 투자자</div><div class="lp-pa">벤저민 그레이엄</div></div><div class="lp-m"><div class="lp-mt">현명한 투자자</div><div class="lp-ma">벤저민 그레이엄</div></div></div>
+            <div class="lp-bk"><div class="lp-cover dim" style="--cc:var(--c-lit)"><img class="lp-img" src="https://search1.kakaocdn.net/thumb/R120x174.q85/?fname=http%3A%2F%2Ft1.daumcdn.net%2Flbook%2Fimage%2F540378%3Ftimestamp%3D20241101113739" alt="노르웨이의 숲 표지" loading="lazy" onerror="this.remove()"><span class="lp-cvst todo">읽을 책</span><div class="lp-pt">노르웨이의 숲</div><div class="lp-pa">무라카미 하루키</div></div><div class="lp-m"><div class="lp-mt">노르웨이의 숲</div><div class="lp-ma">무라카미 하루키</div></div></div>
           </div>
         </div>
       </div>

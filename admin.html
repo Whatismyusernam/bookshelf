@@ -61,6 +61,18 @@
   .gate p{font-size:14px;color:var(--soft);margin-top:10px}
   .gate a{color:var(--seal);font-weight:600}
   .note{font-size:11.5px;color:var(--muted);margin-top:14px}
+  .rp-filter{display:flex;gap:6px;margin:4px 0 10px;flex-wrap:wrap}
+  .rp-filter .btn.on{border-color:var(--seal);color:var(--seal);font-weight:600}
+  .rp-item{border-top:1px solid var(--line);padding:10px 0;display:grid;gap:4px;font-size:13px}
+  .rp-item:first-child{border-top:0}
+  .rp-head{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .rp-tag{font-size:11.5px;padding:1px 7px;border-radius:999px;background:var(--seal-soft);color:var(--seal);font-weight:600}
+  .rp-tag.done{background:var(--grid);color:var(--muted)}
+  .rp-meta{font-size:12px;color:var(--muted)}
+  .rp-text{white-space:pre-wrap;word-break:break-all}
+  .rp-snap{font-size:12px;color:var(--soft);background:var(--bg);border-radius:8px;padding:6px 8px;white-space:pre-wrap;word-break:break-all}
+  .rp-acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:2px}
+  .rp-count{font-size:12px;color:var(--muted);font-weight:500;margin-left:4px}
   .hide{display:none!important}
 </style>
 </head>
@@ -90,6 +102,10 @@
       <div class="card"><h2>최근 30일 가입 흐름</h2><div class="sub">소개 화면 → 시작하기 → 가입 → 첫 책 등록</div><div class="funnel" id="funnel"></div></div>
     </div>
     <div class="card" style="margin-top:12px"><h2>새 기능 사용 (최근 30일)</h2><div class="sub">11/17부터 기록</div><div class="tablewrap" id="features"></div></div>
+    <div class="card" style="margin-top:12px" id="rpCard"><h2>신고<span class="rp-count" id="rpCount"></span></h2><div class="sub">친구 기능에서 들어온 신고 · 24시간 안에 확인해 주세요 · 처리한 지 1년 지난 신고는 자동으로 지워져요</div>
+      <div class="rp-filter" id="rpFilter"><button class="btn on" data-st="open">처리 대기</button><button class="btn" data-st="done">처리함</button><button class="btn" data-st="dismissed">문제없음</button><button class="btn" data-st="all">전체</button></div>
+      <div id="rpList"><div class="empty">불러오는 중…</div></div>
+    </div>
     <div class="card" style="margin-top:12px"><h2>주별 표</h2><div class="sub">차트의 숫자를 표로</div><div class="tablewrap" id="weekTable"></div></div>
     <p class="note">운영자 본인 계정은 모든 숫자에서 빠져 있어요. 숫자는 모두 집계값이며, 개인별 기록은 이 화면에 나오지 않아요.</p>
   </main>
@@ -117,6 +133,7 @@ async function load(){
   }
   $('gate').classList.add('hide'); $('main').classList.remove('hide');
   render(data);
+  loadReports();
   const t=new Date(data.generated_at); $('when').textContent=`${t.getMonth()+1}/${t.getDate()} ${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')} 기준`;
 }
 
@@ -221,6 +238,51 @@ function lineChart(el, pts, o){
   hit.addEventListener('touchstart',e=>move(e.touches[0].clientX),{passive:true});
   hit.addEventListener('mouseleave',()=>{ hideTip(el); xh.setAttribute('opacity',0); dot.setAttribute('opacity',0); });
 }
+
+/* ---- 신고 목록 (7_admin_reports.sql의 admin_reports / admin_report_set) ----
+   신고 내용은 사용자가 쓴 글이라 반드시 esc()로 넣어요. */
+const esc=t=>String(t??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const RP_KIND={user:'친구',request:'받은 친구 요청',rec:'받은 책 추천'};
+const RP_REASON={abuse:'욕설·괴롭힘',sexual:'음란·성적인 내용',spam:'광고·스팸',impersonation:'사칭',other:'기타'};
+const RP_STATUS={open:'처리 대기',done:'처리함',dismissed:'문제없음'};
+let rpStatus='open';
+const dt=s=>{ const d=new Date(s); return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; };
+async function loadReports(){
+  const box=$('rpList');
+  const { data, error } = await sb.rpc('admin_reports',{p_status:rpStatus});
+  if(error){
+    box.innerHTML = /admin_reports|PGRST202|does not exist|schema cache/i.test(error.message||'')
+      ? '<div class="empty">신고 기능 SQL(6_reports.sql, 7_admin_reports.sql)을 실행하면 여기에 보여요.</div>'
+      : '<div class="empty">신고를 불러오지 못했어요.<br><small>'+esc(error.message)+'</small></div>';
+    $('rpCount').textContent=''; return;
+  }
+  const L=data||[];
+  if(rpStatus==='open') $('rpCount').textContent = L.length ? `· 대기 ${L.length}건` : '· 대기 없음';
+  if(!L.length){ box.innerHTML='<div class="empty">'+(rpStatus==='open'?'처리할 신고가 없어요':'해당하는 신고가 없어요')+'</div>'; return; }
+  box.innerHTML=L.map(r=>`<div class="rp-item">
+    <div class="rp-head"><span class="rp-tag ${r.status==='open'?'':'done'}">${RP_STATUS[r.status]||esc(r.status)}</span><b>${esc(r.target_nick||'(닉네임 없음)')}</b><span class="rp-meta">${RP_KIND[r.kind]||esc(r.kind)} · ${RP_REASON[r.reason]||esc(r.reason)} · ${dt(r.created_at)}</span></div>
+    ${r.detail?`<div class="rp-text">${esc(r.detail)}</div>`:''}
+    ${r.snapshot?`<div class="rp-snap">신고 당시 보인 내용: ${esc(r.snapshot)}</div>`:''}
+    <div class="rp-meta">대상 id ${esc(r.ref)}${r.handled_at?` · 처리 ${dt(r.handled_at)}`:''}${r.handled_note?` · 메모: ${esc(r.handled_note)}`:''}</div>
+    <div class="rp-acts">${r.status==='open'
+      ? `<button class="btn" data-rpset="done" data-id="${esc(r.id)}">처리 완료</button><button class="btn" data-rpset="dismissed" data-id="${esc(r.id)}">문제없음</button>`
+      : `<button class="btn" data-rpset="open" data-id="${esc(r.id)}">다시 열기</button>`}</div>
+  </div>`).join('');
+}
+$('rpFilter').addEventListener('click',e=>{
+  const b=e.target.closest('[data-st]'); if(!b) return;
+  rpStatus=b.dataset.st; [...$('rpFilter').children].forEach(x=>x.classList.toggle('on',x===b)); loadReports();
+});
+$('rpList').addEventListener('click',async e=>{
+  const b=e.target.closest('[data-rpset]'); if(!b) return;
+  const st=b.dataset.rpset;
+  let note=null;
+  if(st==='done'){ note=prompt('어떻게 처리했는지 짧게 메모해 두세요 (예: 닉네임 변경 요청, 계정 정지). 비워 둬도 돼요.',''); if(note===null) return; }
+  b.disabled=true;
+  const { error } = await sb.rpc('admin_report_set',{p_id:b.dataset.id,p_status:st,p_note:note||null});
+  if(error){ b.disabled=false; alert('바꾸지 못했어요: '+(error.message||'')); return; }
+  loadReports();
+});
 $('reload').onclick=load;
 load();
 </script>

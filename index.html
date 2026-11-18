@@ -157,10 +157,10 @@ if(window.OB_IS_APP){
 .ob-app #authApple:hover{background:#1a1a1a;border-color:#1a1a1a}
 .ob-app.ob-no-google #authGoogle, .ob-app #lp .lp-note{display:none}
   :root{
-    --paper:#FFFFFF; --paper-2:#F3F6FB; --ink:#16243F; --ink-soft:#44516B;
-    --muted:#8B93A7; --line:#E2E7F0; --line-soft:#EEF1F7;
+    --paper:#F3EDE2; --paper-2:#EFE7DA; --ink:#2B241E; --ink-soft:#4A3F35;
+    --muted:#7A6D60; --line:#E6DCCB; --line-soft:#EFE7DA;
     --seal:#1E4D8C; --seal-soft:#C5D6EC;
-    --surface:#FFFFFF; --on-accent:#FFFFFF; --header-bg:rgba(255,255,255,.85); --btn-primary-hover:#0F1A30;
+    --surface:#FFFCF7; --on-accent:#FFFFFF; --header-bg:rgba(243,237,226,.92); --btn-primary-hover:#163B6C;
     --c-invest:#2E5E4E; --c-mgmt:#3B5070; --c-lit:#7A3B5E; --c-self:#8A6A2E; --c-etc:#5A5550; --c-econ:#3B5070; --c-hum:#8A4B3C; --c-sci:#2F6468;
     --shadow:0 1px 2px rgba(20,30,55,.05), 0 8px 24px rgba(20,30,55,.08);
     --serif:'Noto Serif KR', 'Apple SD Gothic Neo', serif;
@@ -1282,6 +1282,107 @@ body.dark{ --wood-top:#86614A; --wood-mid:#654532; --wood-bot:#4B3224; --wood-ed
 .shelf .plank::after{content:"";position:absolute;left:0;right:0;bottom:-5px;height:5px;border-radius:0;
   background:linear-gradient(180deg,var(--brass-light) 0 1px,var(--brass-dark) 1px 2px,var(--wood-edge) 2px)}
 .grid.cards .plank{display:none}
+
+/* ── 2026-11 홈 개편 (시안 F): 종이 바탕 + 카드 + 원목 선반. 웹·앱 공통 ──
+   목표·결산·백업 같은 버튼은 오른쪽 위 메뉴(☰)로, 검색·분류·정렬은 돋보기를 눌러 펼쳐요. */
+#themeBtn,#logoutBtn,#exportBtn,#importBtn,#stats{display:none !important}
+.hd-ic,#obMenuBtn{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;padding:0 !important;border:0;color:var(--ink-soft);position:relative}
+.hd-ic,#obMenuBtn,.hd-ic:hover,#obMenuBtn:hover{background:none !important}
+.hd-ic .hd-dot{display:none;position:absolute;top:9px;right:9px;width:7px;height:7px;border-radius:50%;background:var(--seal)}
+.hd-ic.on .hd-dot{display:block}
+#addBtn .ab-ic{display:none}
+.search{display:none}
+.subbar{display:none}
+.tagcloud{display:none}
+html.ob-filters-open .search{display:block}
+html.ob-filters-open .subbar{display:flex}
+html.ob-filters-open .tagcloud{display:block}
+html.ob-filters-open #obSearchBtn{color:var(--seal)}
+@media (max-width:860px){
+  #addBtn{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;padding:0 !important;border:0;background:none;color:var(--ink-soft)}
+  #addBtn .ab-ic{display:block}
+  #addBtn .ab-t{display:none}
+  .actions{gap:0 !important;margin-right:-6px}
+}
+@media (min-width:861px){
+  .search{display:block}
+  .subbar{display:flex}
+  .tagcloud{display:block}
+  #obSearchBtn{display:none}
+}
+.st-filter{margin-left:auto;display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);font-size:12.5px;font-family:inherit;cursor:pointer}
+.st-filter.on{border-color:var(--seal);color:var(--seal);font-weight:600}
+.st-filter i{width:6px;height:6px;border-radius:50%;background:var(--seal);display:inline-block}
+.am-modal{max-width:420px}
+.am-sec{font-size:12px;color:var(--muted);font-weight:600;margin:14px 2px 6px}
+.am-sec:first-child{margin-top:0}
+.am-list{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--surface)}
+.am-item{display:flex;align-items:center;gap:12px;width:100%;min-height:50px;padding:10px 14px;border:0;border-top:1px solid var(--line);background:none;color:var(--ink);font-size:15px;font-family:inherit;text-align:left;cursor:pointer}
+.am-item:first-child{border-top:0}
+.am-item:active{background:var(--paper-2)}
+.am-item .ic{width:24px;text-align:center;flex-shrink:0;font-size:17px}
+.am-item .lb{flex:1;min-width:0}
+.am-item .sub{font-size:12.5px;color:var(--muted);flex-shrink:0}
+.am-item.danger{color:#C2413A}
+.am-foot{font-size:12px;color:var(--muted);text-align:center;margin:16px 0 2px;line-height:1.7}
+.am-foot a,.am-foot button{color:var(--muted);text-decoration:underline;background:none;border:0;font:inherit;padding:0;cursor:pointer}
+/* 책장: 제목은 낱말 단위로 줄바꿈, 줄이 덜 찬 선반도 판이 끝까지 이어지게(빈 칸) */
+.shelf .meta .t,.ph-body .pt,.nr-info .t{word-break:keep-all;overflow-wrap:anywhere}
+
+/* 홈 카드 */
+#libraryView>.homeweek,#libraryView>.nowreading,#libraryView>.home-shelves,#libraryView>.daily,#libraryView>.onthisday,#libraryView>.todoshelf,#libraryView>.homerec{background:var(--surface);border:0;border-radius:22px;box-shadow:none;padding:18px 18px;margin-bottom:12px}
+#libraryView>.report{display:none !important}
+.homeweek{cursor:pointer}
+.hw-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px}
+.hw-title{font-size:16.5px;font-weight:700;color:var(--ink);display:flex;align-items:center;gap:6px}
+.hb-chip.hw-dj{all:unset;display:inline-flex;align-items:flex-end}
+.hw-cnt{font-size:13.5px;color:var(--muted)}
+.hw-cnt b{font-family:var(--serif);font-size:18px;color:var(--seal);margin-right:1px}
+.hw-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.hw-d{display:flex;flex-direction:column;align-items:center;gap:5px;font-size:12px;color:var(--muted)}
+.hw-d i{width:34px;height:34px;border-radius:50%;background:var(--paper-2);display:flex;align-items:center;justify-content:center;font-style:normal;font-family:var(--serif);font-weight:700;font-size:14px;color:#FFFFFF}
+.hw-d.on i{background:var(--seal)}
+body.dark .hw-d.on i{color:#0E1420}
+.hw-d.today span{color:var(--ink);font-weight:700}
+.hw-d.today:not(.on) i{box-shadow:inset 0 0 0 1.5px var(--seal)}
+.homeweek .nx{margin:14px 0 0}
+.nowreading .nr-head{font-family:var(--sans);font-size:16.5px;font-weight:700;margin-bottom:12px}
+.nowreading .nr-card{background:var(--paper);border:0;box-shadow:none}
+.home-shelves{padding-bottom:6px !important}
+.home-shelves .hs-title{font-family:var(--sans);font-size:16.5px;font-weight:700}
+.home-shelves .hs-all{background:var(--paper);border:0}
+@media (max-width:560px){ main{padding-left:14px !important;padding-right:14px !important}
+  .home-shelves .grid.shelf{grid-template-columns:repeat(3,minmax(0,1fr));column-gap:12px} }
+
+#libraryView>.uhide{display:none !important}
+body:not(.dark) .btn.primary{background:var(--seal);border-color:var(--seal);color:#FFFFFF}
+body:not(.dark) .btn.primary:hover{background:#163B6C;border-color:#163B6C}
+.se-sec{font-size:12px;font-weight:700;color:var(--muted);margin:4px 2px 8px}
+.se-list+.se-sec{margin-top:18px}
+/* 첫 사용 안내: 화면을 어둡게 하고 한 곳만 밝게 */
+#tour{position:fixed;inset:0;z-index:300;display:none}
+#tour.show{display:block}
+#tour .tr-hole{position:fixed;border-radius:16px;box-shadow:0 0 0 2px #FFFFFF,0 0 0 4000px rgba(16,12,8,.76);transition:all .28s ease;pointer-events:none}
+#tour .tr-tip{position:fixed;width:min(300px,calc(100vw - 32px));box-sizing:border-box;background:var(--surface);color:var(--ink);border-radius:18px;padding:16px 16px 12px;box-shadow:0 12px 30px rgba(0,0,0,.25);transition:top .28s ease,left .28s ease}
+#tour .tr-tip:after{content:"";position:absolute;width:14px;height:14px;background:var(--surface);transform:rotate(45deg);left:var(--ax,50%);margin-left:-7px}
+#tour .tr-tip.below:after{top:-7px}
+#tour .tr-tip.above:after{bottom:-7px}
+#tour .tr-n{font-size:12px;font-weight:700;color:var(--seal)}
+#tour .tr-t{font-size:16.5px;font-weight:700;margin:5px 0 4px;line-height:1.4}
+#tour .tr-d{font-size:13.5px;color:var(--ink-soft);line-height:1.6}
+#tour .tr-btns{display:flex;align-items:center;gap:6px;margin-top:12px}
+#tour .tr-btns .sp{flex:1}
+#tour .tr-skip,#tour .tr-prev{height:40px;padding:0 8px;font-size:13.5px;color:var(--muted);background:none;border:0}
+#tour .tr-next{height:40px;padding:0 18px;border-radius:12px;background:var(--seal);color:var(--on-accent);font-size:14px;font-weight:700;border:0}
+@media (prefers-reduced-motion:reduce){ #tour .tr-hole,#tour .tr-tip{transition:none} }
+.shelf .item.filler{pointer-events:none}
+/* 선반에서는 표지만 보여요(제목·저자·별점은 화면에서 숨기고 읽기 프로그램용으로만 남김) */
+.shelf .item:not(.filler) .meta{position:absolute;width:1px;height:1px;margin:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.shelf .item,.shelf .meta{min-width:0}
+.shelf .meta .a{display:flex;flex-wrap:wrap;align-items:center;column-gap:6px;row-gap:1px;min-width:0}
+.shelf .meta .a>span:first-child{flex:0 1 auto;max-width:100%;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.shelf .meta .a>:not(:first-child){flex-shrink:0}
+.shelf .item.filler .meta{flex:1}
 /* 아이디어 → 책 연결: 검색해서 고르기 */
 .bk-pick{position:relative}
 .bk-chosen{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--seal-soft);border-radius:10px;background:var(--surface)}
@@ -1690,7 +1791,9 @@ body.dark .cv-memo{background:rgba(15,20,29,.9);color:#E6EBF3}
       <button class="btn ghost" id="logoutBtn" title="로그아웃">로그아웃</button>
       <button class="btn ghost" id="exportBtn">내보내기</button>
       <button class="btn ghost" id="importBtn">불러오기</button>
-      <button class="btn primary" id="addBtn">＋ 책 추가</button>
+      <button class="btn ghost hd-ic" id="obSearchBtn" aria-label="검색·분류" title="검색·분류"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><i class="hd-dot"></i></button>
+      <button class="btn primary" id="addBtn" aria-label="책 추가"><svg class="ab-ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span class="ab-t">＋ 책 추가</span></button>
+      <button class="btn ghost" id="obMenuBtn" aria-label="메뉴" title="메뉴"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
     </div>
   </div>
   <div class="tabs">
@@ -1732,6 +1835,7 @@ body.dark .cv-memo{background:rgba(15,20,29,.9);color:#E6EBF3}
     <section class="report hide" id="report"></section>
     <section class="daily hide" id="daily"></section>
     <section class="onthisday hide" id="onThisDay"></section>
+    <section class="homeweek hide" id="homeWeek"></section>
     <section class="nowreading hide" id="nowReading"></section>
     <section class="todoshelf hide" id="todoShelf"></section>
     <section class="home-shelves hide" id="homeShelves"></section>
@@ -2086,7 +2190,7 @@ body.dark .cv-memo{background:rgba(15,20,29,.9);color:#E6EBF3}
 </div>
 <div class="overlay" id="shelfEditOverlay">
   <div class="modal">
-    <div class="modal-head"><h2>선반 편집</h2><button class="x" id="seClose">×</button></div>
+    <div class="modal-head"><h2>홈 편집</h2><button class="x" id="seClose" aria-label="닫기">×</button></div>
     <div class="se-body" id="seBody"></div>
     <div class="modal-foot"><button class="btn" id="seReset">기본 배치로</button><button class="btn primary" id="seDone">완료</button></div>
   </div>
@@ -2239,6 +2343,24 @@ body.dark .cv-memo{background:rgba(15,20,29,.9);color:#E6EBF3}
 </div>
 
 <!-- 신고하기 (친구 기능) -->
+<div id="tour" role="dialog" aria-modal="true" aria-labelledby="trT">
+  <div class="tr-hole" id="trHole"></div>
+  <div class="tr-tip" id="trTip">
+    <div class="tr-n" id="trN"></div>
+    <div class="tr-t" id="trT"></div>
+    <div class="tr-d" id="trD"></div>
+    <div class="tr-btns"><button type="button" class="tr-skip" id="trSkip">건너뛰기</button><span class="sp"></span><button type="button" class="tr-prev" id="trPrev">이전</button><button type="button" class="tr-next" id="trNext">다음</button></div>
+  </div>
+</div>
+<div class="overlay" id="appMenuOverlay">
+  <div class="modal quick am-modal">
+    <div class="modal-head">
+      <h2>메뉴</h2>
+      <button class="x" data-amclose aria-label="닫기">×</button>
+    </div>
+    <div class="modal-body" id="amBody"></div>
+  </div>
+</div>
 <div class="overlay" id="reportOverlay">
   <div class="modal quick" style="max-width:420px">
     <div class="modal-head">
@@ -2859,7 +2981,11 @@ function renderStats(){
   const streakHtml = stk.n>=2
     ? `<span title="${stk.today?'연속 기록 중! 내일도 이어가 보세요':'오늘 한 줄이라도 기록하면 '+(stk.n+1)+'일로 이어져요'}">🔥 <b>${stk.n}</b>일 기록</span>`
     : '';
-  document.getElementById('stats').innerHTML=`<span><b>${total}</b>권</span><span><b>${done}</b>완독</span><span><b>${reading}</b>읽는 중</span>${streakHtml}${goalHtml}${monthBtn}${weekBtn}${diceBtn}${btn}`;
+  const fltOn = (state.cat!=='전체' || (state.tags||[]).length>0 || (state.sort && state.sort!=='recent') || !!state.q);
+  const sbtn=document.getElementById('obSearchBtn'); if(sbtn) sbtn.classList.toggle('on', fltOn);
+  const fltBtn = false ? `<button type="button" class="st-filter${fltOn?' on':''}" id="stFilter" aria-expanded="${document.documentElement.classList.contains('ob-filters-open')}">${fltOn?'<i></i>':''}분류·정렬 ${document.documentElement.classList.contains('ob-filters-open')?'▴':'▾'}</button>` : '';
+  document.getElementById('stats').innerHTML=`<span><b>${total}</b>권</span><span><b>${done}</b>완독</span><span><b>${reading}</b>읽는 중</span>${streakHtml}${goalHtml}${monthBtn}${weekBtn}${diceBtn}${btn}${fltBtn}`;
+  const sf=document.getElementById('stFilter'); if(sf) sf.onclick=()=>{ document.documentElement.classList.toggle('ob-filters-open'); renderStats(); };
   const gb=document.getElementById('goalBtn'); if(gb) gb.onclick=setGoal;
   const mgb=document.getElementById('monthGoalBtn'); if(mgb) mgb.onclick=openMonthGoal;
   const wb=document.getElementById('weekBtn'); if(wb) wb.onclick=openWeek;
@@ -3657,6 +3783,7 @@ function render(){
   if(state.mode==='excerpts'){ renderExcerpts(); return; }
   if(state.mode==='friends'){ renderFriends(); return; }
   renderLibrary();
+  try{ tourMaybeStart(); }catch(e){}
 }
 /* ---------- 책장 보기 페이지 넘김 (새 오버북 앱처럼 3줄씩) ----------
    휴대폰은 한 줄 3권이라 9권씩, 넓은 화면은 한 줄에 들어가는 만큼 × 3줄씩 보여줘요.
@@ -3727,6 +3854,7 @@ function renderLibrary(){
   const layered = !filterActive;                       // 기본 화면: 읽는 중 → 읽을 책 → 분야별 선반
   const reading = books.filter(b=>b.status==='reading');
   const todo = books.filter(b=>b.status==='todo');
+  renderHomeWeek(layered);
   renderNowReading(layered ? reading : null);
   renderTodoShelf(layered && todo.length ? todo : null);
   renderDaily(!filterActive);
@@ -3780,7 +3908,8 @@ function renderLibrary(){
         </div>
         <i class="plank" aria-hidden="true"></i>
       </div>`).join('');
-    grid.querySelectorAll('.item').forEach(c=>c.onclick=()=>openDetail(c.dataset.id));
+    fillShelfRow(grid);
+    grid.querySelectorAll('.item:not(.filler)').forEach(c=>c.onclick=()=>openDetail(c.dataset.id));
   }else{
     grid.innerHTML=list.map(b=>`
       <article class="card st-${b.status||'todo'}" data-id="${b.id}">
@@ -3946,6 +4075,19 @@ function renderTodoShelf(todos){
   }).join('')}</div>`;
   wrap.querySelectorAll('.td-card').forEach(c=>c.onclick=()=>openDetail(c.dataset.id));
 }
+/* 홈 '이번 주 독서' 카드: 요일 7칸(기록한 날 冊) + 이번 주 n/목표일. 누르면 나의 독서 길 */
+function renderHomeWeek(show){
+  try{ applyHomeLayout(); }catch(e){}
+  const el=document.getElementById('homeWeek'); if(!el) return;
+  if(!show || !habitOn() || !books.length){ el.classList.add('hide'); el.innerHTML=''; return; }
+  const s=habitStats(), names=['월','화','수','목','금','토','일'];
+  el.innerHTML=`<div class="hw-top"><span class="hw-title"><span class="hb-chip hw-dj" id="hbChip" aria-hidden="true">${dojangSVG(pathModel().ribbon,22,djMood())}</span>이번 주 독서</span><span class="hw-cnt"><b>${s.thisCount}</b> / ${s.thisTarget}일</span></div>`+
+    `<div class="hw-days" role="img" aria-label="이번 주 ${s.thisTarget}일 중 ${s.thisCount}일 기록">${s.week.map((x,i)=>`<div class="hw-d${x.on?' on':''}${x.day===s.today?' today':''}"><i>${x.on?'冊':''}</i><span>${names[i]}</span></div>`).join('')}</div>`+
+    pathNextHTML();
+  el.classList.remove('hide');
+  el.onclick=e=>{ if(e.target.closest('.nx')) return; openHabit(); };
+  wirePathNext(el);
+}
 function renderNowReading(reading){
   const wrap=document.getElementById('nowReading');
   const hb=habitOn() && books.length>0;
@@ -3956,9 +4098,7 @@ function renderNowReading(reading){
   const body = sorted.length
     ? `<div class="nr-row">${sorted.map(nrCard).join('')}</div>`
     : `<div class="hb-empty">읽고 있는 책을 <b>읽는 중</b>으로 바꾸면 여기서 바로 기록할 수 있어요.</div>`;
-  wrap.innerHTML=`<div class="nr-head"><div class="nr-title">${head}</div>${hb?habitChipHTML():''}</div>${hb?pathNextHTML():''}${body}`;
-  if(hb) wrap.querySelector('#hbChip').onclick=openHabit;
-  if(hb) wirePathNext(wrap);
+  wrap.innerHTML=`<div class="nr-head"><div class="nr-title">${head}</div></div>${body}`;
   wrap.querySelectorAll('.nr-card').forEach(card=>{
     const id=card.dataset.id;
     card.querySelector('[data-act="open"]').onclick=()=>openDetail(id);
@@ -5819,6 +5959,130 @@ document.querySelectorAll('[data-mgclose]').forEach(b=>b.onclick=()=>close('mont
 document.getElementById('monthGoalOverlay').addEventListener('click',e=>{ if(e.target.id==='monthGoalOverlay') close('monthGoalOverlay'); });
 document.getElementById('exportBtn').onclick=exportData;
 document.getElementById('importBtn').onclick=()=>document.getElementById('fileIn').click();
+
+/* ---------- 첫 사용 안내 (화면을 어둡게 하고 버튼 하나만 밝게) ----------
+   처음 한 번 자동으로 보여요(기기마다 localStorage 'ob_tour_v1'). 메뉴 '사용 안내 다시 보기'로 다시 볼 수 있어요.
+   대상이 화면에 없으면 그 단계는 건너뛰어요(예: 읽는 중인 책이 없으면 '오늘 읽었어요' 단계). */
+const TOUR_KEY='ob_tour_v1';
+const TOUR_STEPS=[
+  { sel:'#addBtn', t:'여기를 눌러 첫 책을 추가해 보세요', d:'제목을 검색하거나 책 뒤의 바코드를 비추면 표지까지 채워져요.', pad:4 },
+  { sel:'.nr-card [data-act="read"]', alt:'#homeWeek', t:'책을 읽은 날엔 이 버튼 한 번', d:'읽은 쪽수만 적으면 이번 주 기록에 冊 도장이 찍혀요.', altT:'이번 주 독서가 여기 쌓여요', altD:'책을 \'읽는 중\'으로 바꾸고 \'오늘 읽었어요\'를 누르면 요일마다 冊 도장이 찍혀요.', pad:6 },
+  { sel:'#obMenuBtn', t:'목표·알림·백업은 메뉴에', d:'올해 목표, 독서 알림, 기록 내보내기를 여기서 할 수 있어요.', pad:4 },
+  { sel:'#hsEdit', t:'홈 순서는 내 마음대로', d:'카드와 선반의 순서를 바꾸거나 숨길 수 있어요.', pad:8 }
+];
+let tourI=0, tourList=[], tourAsked=false;
+function tourVisible(el){ if(!el) return false; const r=el.getBoundingClientRect(); return r.width>0 && r.height>0 && getComputedStyle(el).visibility!=='hidden'; }
+function tourBuild(){
+  return TOUR_STEPS.map(s=>{
+    let el=document.querySelector(s.sel), t=s.t, d=s.d;
+    if(!tourVisible(el) && s.alt){ el=document.querySelector(s.alt); t=s.altT||t; d=s.altD||d; }
+    return tourVisible(el) ? {el,t,d,pad:s.pad||6} : null;
+  }).filter(Boolean);
+}
+function tourMaybeStart(){
+  if(tourAsked || !currentUserId || state.mode!=='library') return;
+  try{ if(localStorage.getItem(TOUR_KEY)) { tourAsked=true; return; } }catch(e){ tourAsked=true; return; }
+  tourAsked=true;
+  setTimeout(()=>{
+    const lp=document.getElementById('lp'), gate=document.getElementById('authGate');
+    if((lp&&lp.classList.contains('show')) || (gate&&gate.style.display==='flex') || document.querySelector('.overlay.show')){ tourAsked=false; return; }
+    tourStart(false);
+  }, 900);
+}
+function tourStart(force){
+  tourList=tourBuild(); if(!tourList.length) return;
+  tourI=0; document.getElementById('tour').classList.add('show'); document.body.style.overflow='hidden';
+  tourShow();
+  setTimeout(()=>{ const n=document.getElementById('trNext'); if(n) n.focus(); },60);
+}
+function tourEnd(){
+  document.getElementById('tour').classList.remove('show'); document.body.style.overflow='';
+  try{ localStorage.setItem(TOUR_KEY,'1'); }catch(e){}
+}
+function tourPlace(){
+  const st=tourList[tourI]; if(!st) return;
+  const r=st.el.getBoundingClientRect(), pad=st.pad, hole=document.getElementById('trHole'), tip=document.getElementById('trTip');
+  const radius=Math.min(18, (r.height+pad*2)/2);
+  Object.assign(hole.style,{left:(r.left-pad)+'px', top:(r.top-pad)+'px', width:(r.width+pad*2)+'px', height:(r.height+pad*2)+'px', borderRadius:radius+'px'});
+  const vw=window.innerWidth, vh=window.innerHeight, tw=tip.offsetWidth, th=tip.offsetHeight;
+  const below = r.bottom+pad+14+th < vh-12 || r.top < vh/2;
+  let left=Math.min(Math.max(12, r.left+r.width/2-tw/2), vw-tw-12);
+  const top = below ? r.bottom+pad+14 : r.top-pad-14-th;
+  tip.style.left=left+'px'; tip.style.top=Math.max(12,top)+'px';
+  tip.classList.toggle('below',below); tip.classList.toggle('above',!below);
+  tip.style.setProperty('--ax', Math.min(Math.max(20, r.left+r.width/2-left), tw-20)+'px');
+}
+function tourShow(){
+  const st=tourList[tourI]; if(!st){ tourEnd(); return; }
+  document.getElementById('trN').textContent=(tourI+1)+' / '+tourList.length;
+  document.getElementById('trT').textContent=st.t;
+  document.getElementById('trD').textContent=st.d;
+  document.getElementById('trPrev').style.visibility=tourI?'visible':'hidden';
+  const last=tourI===tourList.length-1;
+  document.getElementById('trNext').textContent=last?'시작하기':'다음';
+  document.getElementById('trSkip').style.visibility=last?'hidden':'visible';
+  const r=st.el.getBoundingClientRect();
+  if(r.top<70 || r.bottom>window.innerHeight-90){ st.el.scrollIntoView({block:'center', behavior:'instant'}); }
+  requestAnimationFrame(tourPlace);
+}
+document.getElementById('trNext').onclick=()=>{ if(tourI>=tourList.length-1){ tourEnd(); return; } tourI++; tourShow(); };
+document.getElementById('trPrev').onclick=()=>{ if(tourI>0){ tourI--; tourShow(); } };
+document.getElementById('trSkip').onclick=tourEnd;
+window.addEventListener('resize',()=>{ if(document.getElementById('tour').classList.contains('show')) tourPlace(); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape' && document.getElementById('tour').classList.contains('show')){ e.stopPropagation(); tourEnd(); } }, true);
+/* ---------- iOS 앱 메뉴 (오른쪽 위 ☰) ----------
+   첫 화면에 늘어놓던 목표·이달 목표·이번 주·산책·결산, 내보내기·불러오기, 다크 모드·로그아웃을 한곳에 모아요.
+   웹 화면은 바뀌지 않아요(.ob-app에서만 보임). */
+function openAppMenu(){
+  const nowY=new Date().getFullYear(), goal=goals[nowY]||0;
+  const doneY=books.filter(b=>b.status==='done'&&bookYear(b)===nowY).length;
+  const ym=nowY+'-'+String(new Date().getMonth()+1).padStart(2,'0');
+  const mg=books.filter(b=>b.goalMonth===ym), mgDone=mg.filter(b=>b.status==='done').length;
+  const yrs=availableYears(); const yLabel=yrs.length?yrs[0]:nowY;
+  const has=books.length>0, dark=state.theme==='dark';
+  const it=(act,ic,lb,sub,cls)=>`<button type="button" class="am-item${cls?' '+cls:''}" data-am="${act}"><span class="ic">${ic}</span><span class="lb">${lb}</span>${sub?`<span class="sub">${sub}</span>`:''}</button>`;
+  let h='<div class="am-sec">독서</div><div class="am-list">';
+  if(typeof habitOn==='function' && habitOn()) h+=it('habit','🪜','나의 독서 길 · 독서 알림','');
+  h+=it('goal','🎯','올해 목표', goal?`${doneY}/${goal}권`:'정하기');
+  h+=it('month','📌','이달 목표', mg.length?`${mgDone}/${mg.length}권`:'정하기');
+  if(has) h+=it('week','📆','이번 주 기록','');
+  if(has) h+=it('walk','🎲','책장 산책','오랜만인 책');
+  if(has) h+=it('review','🎉',`${yLabel} 결산`,'');
+  h+='</div><div class="am-sec">화면</div><div class="am-list">';
+  h+=it('homeedit','🧱','홈 편집','카드·선반 순서');
+  h+=it('tour','🧭','사용 안내 다시 보기','');
+  h+='</div><div class="am-sec">기록 관리</div><div class="am-list">';
+  h+=it('export','📤','기록 내보내기','파일로 백업');
+  h+=it('import','📥','기록 불러오기','백업 파일에서');
+  h+='</div><div class="am-sec">설정</div><div class="am-list">';
+  h+=it('theme', dark?'☀️':'🌙', dark?'라이트 모드로':'다크 모드로','');
+  if(currentUserId) h+=it('logout','🚪','로그아웃','','danger');
+  h+='</div>';
+  h+=`<div class="am-foot"><span class="ob-report-ui"><a href="./terms.html" target="_blank" rel="noopener">이용약관</a> · </span><a href="./privacy.html" target="_blank" rel="noopener">개인정보 처리방침</a>${currentUserId?' · <button type="button" data-am="delete">회원 탈퇴</button>':''}<br>문의 tpsksrkd@naver.com</div>`;
+  document.getElementById('amBody').innerHTML=h;
+  open('appMenuOverlay');
+}
+(function(){
+  const sb2=document.getElementById('obSearchBtn');
+  if(sb2) sb2.onclick=()=>{ const on=document.documentElement.classList.toggle('ob-filters-open'); sb2.setAttribute('aria-expanded',on); if(on) setTimeout(()=>{ const q=document.getElementById('q'); if(q) q.focus(); },50); };
+  const btn=document.getElementById('obMenuBtn'); if(btn) btn.onclick=openAppMenu;
+  const ov=document.getElementById('appMenuOverlay'); if(!ov) return;
+  ov.addEventListener('click',e=>{
+    if(e.target===ov || e.target.closest('[data-amclose]')){ close('appMenuOverlay'); return; }
+    const b=e.target.closest('[data-am]'); if(!b) return;
+    const a=b.dataset.am;
+    close('appMenuOverlay');
+    const run={
+      habit:()=>openHabit(), goal:()=>setGoal(), month:()=>openMonthGoal(), week:()=>openWeek(),
+      walk:()=>walkShelf(), review:()=>openReview(), export:()=>exportData(),
+      homeedit:()=>{ if(state.mode!=='library') setMode('library'); openShelfEdit(); }, tour:()=>{ if(state.mode!=='library') setMode('library'); setTimeout(()=>tourStart(true),250); },
+      import:()=>document.getElementById('fileIn').click(), theme:()=>toggleTheme(),
+      logout:()=>doLogout(), delete:()=>{ const o=document.getElementById('acctDelOpen'); if(o) o.click(); }
+    }[a];
+    if(run){ try{ run(); }catch(err){ console.warn('menu', err); } }
+  });
+})();
+
 document.getElementById('fileIn').onchange=e=>{ if(e.target.files[0]) importData(e.target.files[0]); e.target.value=''; };
 document.getElementById('tagBtn').onclick=()=>{ state.cloudOpen=!state.cloudOpen; document.getElementById('tagCloud').classList.toggle('open',state.cloudOpen); document.getElementById('tagBtn').classList.toggle('on',state.cloudOpen); };
 document.querySelectorAll('.viewtog button').forEach(b=>b.onclick=()=>{
@@ -5859,7 +6123,9 @@ let shelfLayoutCloud=true;   // 표가 없으면 false → 기기 저장만
 function cleanLayout(o){
   const d=DEFAULT_SHELF_LAYOUT, a=v=>Array.isArray(v)?v.filter(x=>typeof x==='string'&&x):null;
   o=(o&&typeof o==='object')?o:{};
-  return { order:a(o.order)||[], hidden:a(o.hidden)||d.hidden.slice(), tagShelves:a(o.tagShelves)||[], tagShelvesEnabled:o.tagShelvesEnabled===true };
+  const h=(o.home&&typeof o.home==='object')?o.home:{};
+  return { order:a(o.order)||[], hidden:a(o.hidden)||d.hidden.slice(), tagShelves:a(o.tagShelves)||[], tagShelvesEnabled:o.tagShelvesEnabled===true,
+           home:{ order:a(h.order)||[], hidden:a(h.hidden)||[] } };
 }
 function readLocalLayout(){ try{ const t=localStorage.getItem(SHELF_LAYOUT_LS); return t?cleanLayout(JSON.parse(t)):null; }catch(e){ return null; } }
 async function loadShelfLayout(){
@@ -5913,6 +6179,16 @@ function shelfPreview(list){
   const pinned=list.filter(b=>b.pinnedAt).sort((a,b)=>String(b.pinnedAt).localeCompare(String(a.pinnedAt)));
   return [...pinned, ...list.filter(b=>!b.pinnedAt).sort(recent)];
 }
+/* 마지막 줄이 덜 찬 선반: 빈 칸을 넣어 나무 판이 줄 끝까지 이어지게 해요(책이 1~2권이어도 선반이 떠 보이지 않게) */
+function fillShelfRow(g){
+  if(!g) return;
+  g.querySelectorAll('.item.filler').forEach(x=>x.remove());
+  const n=(getComputedStyle(g).gridTemplateColumns||'').split(' ').filter(v=>v&&v!=='none').length;
+  const cnt=g.querySelectorAll('.item').length;
+  if(!n || !cnt) return;
+  const r=(n - cnt % n) % n;
+  for(let i=0;i<r;i++) g.insertAdjacentHTML('beforeend','<div class="item filler" aria-hidden="true"><div class="meta"></div><i class="plank"></i></div>');
+}
 function shelfItemHTML(b){
   return `<div class="item" data-id="${b.id}">
         ${coverHTML(b)}
@@ -5929,7 +6205,7 @@ function renderHomeShelves(el){
     .map(id=>({id, t:shelfTargetFromId(id)})).filter(x=>x.t)
     .map(x=>({...x, list:booksForShelf(x.t)})).filter(x=>x.list.length>0);
   el.classList.remove('hide');
-  el.innerHTML=`<div class="hs-top"><span class="hs-title">내 책장</span><button type="button" class="hs-edit" id="hsEdit">선반 편집 ›</button></div>`+
+  el.innerHTML=`<div class="hs-top"><span class="hs-title">내 책장</span><button type="button" class="hs-edit" id="hsEdit">홈 편집 ›</button></div>`+
     (shelves.length?'':`<div class="grid-head"><em>모든 선반을 숨겼어요 — 선반 편집에서 다시 보이게 할 수 있어요</em></div>`)+
     shelves.map(x=>`<section class="hshelf">
       <button type="button" class="hs-row" data-shelf="${esc(x.id)}"><span class="hs-name"><i class="dot" style="background:${shelfDotOf(x.t)}"></i><em>${esc(shelfLabelOf(x.t))}</em></span><span class="hs-count">${x.list.length}권 ›</span></button>
@@ -5940,6 +6216,7 @@ function renderHomeShelves(el){
   el.querySelectorAll('.hs-grid').forEach(g=>{
     const n=(getComputedStyle(g).gridTemplateColumns||'').split(' ').filter(v=>v&&v!=='none').length||3;
     [...g.children].slice(n).forEach(c=>c.remove());
+    fillShelfRow(g);
   });
   el.querySelectorAll('.hs-grid .item').forEach(c=>c.onclick=()=>openDetail(c.dataset.id));
   el.querySelectorAll('.hs-row').forEach(r=>r.onclick=()=>openShelf(r.dataset.shelf));
@@ -5975,6 +6252,30 @@ function scrollToLibrary(){
 }
 
 /* ---------- 선반 편집 ---------- */
+/* 홈 카드 순서·숨기기 (shelfLayout.home에 함께 저장 — 같은 shelf_layouts 표, 새 칸 없음) */
+const HOME_CARDS=[
+  {id:'week', el:'homeWeek', name:'이번 주 독서'},
+  {id:'reading', el:'nowReading', name:'지금 읽는 중'},
+  {id:'todo', el:'todoShelf', name:'읽을 책'},
+  {id:'daily', el:'daily', name:'오늘의 구절'},
+  {id:'onthisday', el:'onThisDay', name:'그날의 기록'},
+  {id:'shelves', el:'homeShelves', name:'내 책장(선반)'}
+];
+function homeCardOrder(){
+  const H=(shelfLayout&&shelfLayout.home)||{order:[],hidden:[]}, known=HOME_CARDS.map(c=>c.id), out=[];
+  (H.order||[]).forEach(id=>{ if(known.includes(id)&&!out.includes(id)) out.push(id); });
+  known.forEach(id=>{ if(!out.includes(id)) out.push(id); });
+  return out;
+}
+function applyHomeLayout(){
+  const lv=document.getElementById('libraryView'), anchor=document.getElementById('gridHead'); if(!lv||!anchor) return;
+  const hidden=new Set(((shelfLayout&&shelfLayout.home)||{}).hidden||[]);
+  homeCardOrder().forEach(id=>{
+    const c=HOME_CARDS.find(x=>x.id===id), el=c&&document.getElementById(c.el); if(!el) return;
+    lv.insertBefore(el, anchor);
+    el.classList.toggle('uhide', hidden.has(id));
+  });
+}
 function openShelfEdit(){ renderShelfEdit(); open('shelfEditOverlay'); }
 function closeShelfEdit(){ close('shelfEditOverlay'); render(); }
 function layoutChanged(){ saveShelfLayout(); renderShelfEdit(); }
@@ -5983,8 +6284,16 @@ function renderShelfEdit(){
   const counts={}; ids.forEach(id=>{ const t=shelfTargetFromId(id); counts[id]=t?booksForShelf(t).length:0; });
   const allTags={}; books.forEach(b=>(b.tags||[]).forEach(t=>{ allTags[t]=(allTags[t]||0)+1; }));
   const freeTags=Object.keys(allTags).filter(t=>!L.tagShelves.includes(t)).sort((a,b)=>allTags[b]-allTags[a]||a.localeCompare(b,'ko'));
+  if(!L.home) L.home={order:[],hidden:[]};
+  const hOrder=homeCardOrder(), hHidden=new Set(L.home.hidden);
   document.getElementById('seBody').innerHTML=
-    `<p class="se-hint">↑↓로 첫 화면 선반 순서를 바꾸고, ‘보임’을 눌러 숨길 수 있어요. 숨겨도 책은 그대로이고 ‘전체’와 검색에는 나와요. 책이 없는 선반은 첫 화면에 안 보여요.</p>
+    `<p class="se-sec">홈 카드</p><ul class="se-list">${hOrder.map((id,i)=>{ const c=HOME_CARDS.find(x=>x.id===id); const on=!hHidden.has(id);
+      return `<li class="${on?'':'off'}"><span class="se-name"><span>${esc(c.name)}</span></span>
+        <button type="button" class="se-ib" data-hup="${i}" aria-label="${esc(c.name)} 위로" ${i===0?'disabled':''}>↑</button>
+        <button type="button" class="se-ib" data-hdown="${i}" aria-label="${esc(c.name)} 아래로" ${i===hOrder.length-1?'disabled':''}>↓</button>
+        <button type="button" class="se-ib se-eye ${on?'on':''}" data-heye="${id}" aria-pressed="${on}">${on?'보임':'숨김'}</button></li>`; }).join('')}</ul>
+    <p class="se-sec">책장 선반</p>
+    <p class="se-hint">↑↓로 첫 화면 선반 순서를 바꾸고, ‘보임’을 눌러 숨길 수 있어요. 숨겨도 책은 그대로이고 ‘전체’와 검색에는 나와요. 책이 없는 선반은 첫 화면에 안 보여요.</p>
     <ul class="se-list">${ids.map((id,i)=>{ const t=shelfTargetFromId(id); if(!t) return ''; const on=!hidden.has(id);
       return `<li class="${on?'':'off'}"><span class="se-name"><i class="dot" style="background:${shelfDotOf(t)}"></i><span>${esc(shelfLabelOf(t))}</span><small>${counts[id]}권</small></span>
         <button type="button" class="se-ib" data-up="${i}" aria-label="위로" ${i===0?'disabled':''}>↑</button>
@@ -5995,6 +6304,10 @@ function renderShelfEdit(){
     ${L.tagShelvesEnabled?`<div class="se-tags">${freeTags.length?freeTags.slice(0,30).map(t=>`<button type="button" data-addtag="${esc(t)}">+ #${esc(t)} <small>${allTags[t]}</small></button>`).join(''):'<span class="none">꺼낼 태그가 없어요. 책에 태그를 달면 여기에 나와요.</span>'}</div>`:''}`;
   const body=document.getElementById('seBody');
   const move=(i,d)=>{ const arr=orderedShelfIds(L); const j=i+d; if(j<0||j>=arr.length) return; [arr[i],arr[j]]=[arr[j],arr[i]]; L.order=arr; layoutChanged(); };
+  const hmove=(i,d)=>{ const arr=homeCardOrder(); const j=i+d; if(j<0||j>=arr.length) return; [arr[i],arr[j]]=[arr[j],arr[i]]; L.home.order=arr; layoutChanged(); };
+  body.querySelectorAll('[data-hup]').forEach(b=>b.onclick=()=>hmove(+b.dataset.hup,-1));
+  body.querySelectorAll('[data-hdown]').forEach(b=>b.onclick=()=>hmove(+b.dataset.hdown,1));
+  body.querySelectorAll('[data-heye]').forEach(b=>b.onclick=()=>{ const id=b.dataset.heye; L.home.hidden=L.home.hidden.includes(id)?L.home.hidden.filter(x=>x!==id):[...L.home.hidden,id]; layoutChanged(); });
   body.querySelectorAll('[data-up]').forEach(b=>b.onclick=()=>move(+b.dataset.up,-1));
   body.querySelectorAll('[data-down]').forEach(b=>b.onclick=()=>move(+b.dataset.down,1));
   body.querySelectorAll('[data-eye]').forEach(b=>b.onclick=()=>{ const id=b.dataset.eye; L.hidden=L.hidden.includes(id)?L.hidden.filter(x=>x!==id):[...L.hidden,id]; layoutChanged(); });
@@ -6004,7 +6317,7 @@ function renderShelfEdit(){
 }
 document.getElementById('seClose').onclick=closeShelfEdit;
 document.getElementById('seDone').onclick=closeShelfEdit;
-document.getElementById('seReset').onclick=()=>{ if(!confirm('선반 순서·숨기기·태그 선반을 처음 상태로 되돌릴까요?')) return; shelfLayout=cleanLayout(null); layoutChanged(); };
+document.getElementById('seReset').onclick=()=>{ if(!confirm('홈 카드와 선반의 순서·숨기기·태그 선반을 처음 상태로 되돌릴까요?')) return; shelfLayout=cleanLayout(null); layoutChanged(); };
 document.getElementById('shelfEditOverlay').addEventListener('click',e=>{ if(e.target.id==='shelfEditOverlay') render(); });
 
 /* ---------- 선반 앞에 두기 (books.pinned_at) ---------- */

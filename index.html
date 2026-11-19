@@ -78,7 +78,7 @@ async function obFetch(url, opts){
 function obHaptic(kind){
   try{
     const HP=window.OB_IS_APP && window.Capacitor.Plugins && window.Capacitor.Plugins.Haptics; if(!HP) return;
-    const p = kind==='success' ? HP.notification({ type:'SUCCESS' }) : HP.impact({ style:'LIGHT' });
+    const p = kind==='success' ? HP.notification({ type:'SUCCESS' }) : HP.impact({ style:'MEDIUM' });
     if(p && p.catch) p.catch(()=>{});
   }catch(e){}
 }
@@ -1743,7 +1743,7 @@ body.dark .cv-memo{background:rgba(15,20,29,.9);color:#E6EBF3}
       <p>읽은 책을 쉽게 모으고,<br>잊지 않고 다시 만나는 독서 기록</p>
       <ul>
         <li>제목만 검색하면 표지·저자까지 한 번에</li>
-        <li>밑줄 그은 구절은 사진 찍어 글자로</li>
+        <li>밑줄 그은 구절은 사진으로 함께 보관</li>
         <li>분야별 나무 선반에 꽂아 보는 내 책장</li>
       </ul>
     </div>
@@ -1875,7 +1875,7 @@ body.dark .cv-memo{background:rgba(15,20,29,.9);color:#E6EBF3}
     <div class="empty hide" id="ideaEmpty">
       <div class="em-seal">✎</div>
       <h2 id="ideaEmptyTitle">아직 기록된 아이디어가 없습니다</h2>
-      <p id="ideaEmptyMsg">공책에 쓴 메모를 사진으로 찍어 올리면 글자로 바꿔 함께 보관해 드립니다.</p>
+      <p id="ideaEmptyMsg">공책에 쓴 메모를 사진으로 찍어 올려 함께 보관할 수 있어요.</p>
       <button class="btn primary" id="ideaEmptyAdd">＋ 첫 아이디어 기록하기</button>
     </div>
   </div>
@@ -2445,9 +2445,9 @@ body.dark .cv-memo{background:rgba(15,20,29,.9);color:#E6EBF3}
         <textarea id="iaBody" placeholder="생각을 자유롭게 적거나, 아래에서 공책 사진을 첨부하세요." style="min-height:140px"></textarea>
         <div class="photo-attach">
           <button type="button" class="btn small" id="iaPhotoBtn">📷 사진 첨부</button>
-          <button type="button" class="btn small" id="iaOcrToBody">인식된 글자 → 내용에 넣기</button>
+          <button type="button" class="btn small hide" id="iaOcrToBody">인식된 글자 → 내용에 넣기</button>
         </div>
-        <div class="photo-hint" style="margin-top:6px">복사한 이미지는 Ctrl+V(붙여넣기)로 바로 첨부할 수 있어요. 사진의 ‘글자 변환’ 버튼을 누르면 AI가 글자를 읽어요(하루 10회). 인식된 글자는 사진 아래에서 수정할 수 있어요.</div>
+        <div class="photo-hint" style="margin-top:6px">복사한 이미지는 Ctrl+V(붙여넣기)로 바로 첨부할 수 있어요. 사진 아래에 메모를 남길 수 있어요.</div>
         <div class="photo-grid" id="iaPhotoGrid"></div>
         <input type="file" id="iaPhotoInput" accept="image/*" multiple class="file-in">
       </div>
@@ -4157,7 +4157,7 @@ async function handleDirectPhotos(files){
   for(const f of arr){ try{ const shot=await makeShot(f); b.quoteShots=(b.quoteShots||[]); b.quoteShots.push(shot); fresh.push(shot); }catch(e){} }
   if(fresh.length){
     b.updatedAt=Date.now(); logActivity('quote', b.id); render();
-    try{ await cloudSaveBook(b); showToast(`사진 ${fresh.length}장 저장됨 · 글자 변환은 수정 화면에서`); }
+    try{ await cloudSaveBook(b); showToast(`사진 ${fresh.length}장 저장됨`); }
     catch(e){ console.warn(e); showToast('사진 저장 실패 — 인터넷 연결을 확인하세요'); }
   }
   else showToast('사진을 추가하지 못했습니다');
@@ -4285,7 +4285,7 @@ async function saveRead(){
   // 지난날 기록이면 '지금 쪽수'는 더 큰 값일 때만 바꿔요(오늘 132쪽을 적은 뒤 어제 80쪽을 적어도 132 유지).
   if(p!==null && !isNaN(p) && p!==b.currentPage && (state.readOff===0 || !(b.currentPage>p))){ b.currentPage=p; changed=true; }
   close('readOverlay');
-  const after=await logActivity('read', b.id, { day, page:(p===null||isNaN(p))?null:p, quiet:true });
+  const after=await logActivity('read', b.id, { day, page:(p===null||isNaN(p))?null:p });
   trackNew('habit_read', { off:state.readOff||0, page:p!==null });
   render();
   if(after) showToast(after.thisDone && after.thisCount===after.thisTarget && day>=after.ws
@@ -4895,12 +4895,32 @@ function placeDj(i,total,anim){
 }
 
 /* ---------- daily quote ("오늘 다시 보는 문장") ---------- */
+/* 문단을 문장으로 쪼개기. 마침표·물음표·느낌표(+닫는 따옴표) 뒤에서 자름.
+   fromPhoto=true(사진 글자): 빈 줄로 나뉜 덩어리마다 줄바꿈을 이어 붙이고(페이지 폭 줄바꿈),
+   문장 부호로 끝나는 것만 남김 → 머리글·쪽 번호·잘린 끝 문장은 빠짐. */
+function splitSentences(text, fromPhoto){
+  const out=[];
+  const END=/[.!?…。？！]["'”’」』)\]]*$/;
+  const blocks = fromPhoto ? String(text||'').split(/\n\s*\n/).map(x=>x.replace(/\s*\n\s*/g,' ')) : String(text||'').split('\n');
+  blocks.forEach(bl=>{
+    const parts=String(bl).trim().replace(/([.!?…。？！]["'”’」』)\]]*)\s+/g,'$1\u0001').split('\u0001');   // 옛 Safari도 되게 lookbehind 안 씀
+    parts.forEach(t=>{
+      t=t.trim(); if(!t) return;
+      if(/^[\d\s.\-–—·,:;()\[\]]+$/.test(t)) return;           // 쪽 번호 등 숫자만
+      if(t.replace(/[^가-힣A-Za-z]/g,'').length<4) return;          // 너무 짧은 조각
+      if(fromPhoto && !END.test(t)) return;
+      out.push(t);
+    });
+  });
+  return out;
+}
 function passagePool(){
   const pool=[];
   books.forEach(b=>{
-    (b.quote||'').split('\n').map(s=>s.trim()).filter(Boolean).forEach(t=>pool.push({text:t,type:'구절',id:b.id,title:b.title,author:b.author,cat:b.cat}));
-    (b.insight||'').split('\n').map(s=>s.trim()).filter(Boolean).forEach(t=>pool.push({text:t,type:'인사이트',id:b.id,title:b.title,author:b.author,cat:b.cat}));
-    (b.quoteShots||[]).forEach(s=>{ const t=(s.text||'').trim(); if(t) pool.push({text:t,type:'구절',id:b.id,title:b.title,author:b.author,cat:b.cat}); });
+    const add=(t,type)=>pool.push({text:t,type,id:b.id,title:b.title,author:b.author,cat:b.cat});
+    splitSentences(b.quote,false).forEach(t=>add(t,'구절'));
+    splitSentences(b.insight,false).forEach(t=>add(t,'인사이트'));
+    (b.quoteShots||[]).forEach(s=>splitSentences(s.text,true).forEach(t=>add(t,'구절')));
   });
   return pool;
 }
@@ -5200,14 +5220,14 @@ async function runShotOCR(shot, reRender, ownerBook){
 function shotRowHTML(s,i,favBookId){
   const busy=ocrBusy.has(s);
   const status=busy?'<span class="ocr-status">글자 읽는 중…</span>':'';
-  const readBtn=(!busy && !(s.text||'').trim())?`<button type="button" class="ocr-read" data-i="${i}">🔠 글자 변환</button>`:'';
+  const readBtn='';   // 글자 변환 기능 삭제(2026-11-18)
   // ♥ 버튼: 책 수정 화면에서만 (♥한 사진만 상세·발췌집에 노출)
   const fav=favBookId?shotFav(favBookId, s.id):false;
   const favBtn=favBookId?`<button type="button" class="shot-fav ${fav?'on':''}" data-i="${i}" title="♥한 사진만 책 상세와 발췌집에 나타납니다">${fav?'♥ 표시 중':'♡ 표시하기'}</button>`:'';
   return `<div class="shot">
     <div class="shot-thumb"><img src="${s.img}" data-i="${i}" alt=""></div>
     <div class="shot-main">
-      <textarea class="shot-text" data-i="${i}" placeholder="${busy?'글자 읽는 중…':'사진 속 글자 — 아래 글자 변환 버튼으로 인식'}">${esc(s.text||'')}</textarea>
+      <textarea class="shot-text" data-i="${i}" placeholder="사진 메모 (선택)">${esc(s.text||'')}</textarea>
       <div class="shot-meta">${status}${readBtn}${favBtn}</div>
     </div>
     <button type="button" class="shot-del" data-i="${i}">×</button>
@@ -5437,7 +5457,7 @@ function renderIdeas(){
   if(ideas.length===0){
     grid.innerHTML=''; empty.classList.remove('hide'); addBtn.classList.remove('hide');
     document.getElementById('ideaEmptyTitle').textContent='아직 기록된 아이디어가 없습니다';
-    document.getElementById('ideaEmptyMsg').textContent='공책에 쓴 메모를 사진으로 찍어 올리면 글자로 바꿔 함께 보관해 드립니다.';
+    document.getElementById('ideaEmptyMsg').textContent='공책에 쓴 메모를 사진으로 찍어 올려 함께 보관할 수 있어요.';
     return;
   }
   if(list.length===0){
@@ -6257,9 +6277,9 @@ const HOME_CARDS=[
   {id:'week', el:'homeWeek', name:'이번 주 독서'},
   {id:'reading', el:'nowReading', name:'지금 읽는 중'},
   {id:'todo', el:'todoShelf', name:'읽을 책'},
+  {id:'shelves', el:'homeShelves', name:'내 책장(선반)'},
   {id:'daily', el:'daily', name:'오늘의 구절'},
-  {id:'onthisday', el:'onThisDay', name:'그날의 기록'},
-  {id:'shelves', el:'homeShelves', name:'내 책장(선반)'}
+  {id:'onthisday', el:'onThisDay', name:'그날의 기록'}
 ];
 function homeCardOrder(){
   const H=(shelfLayout&&shelfLayout.home)||{order:[],hidden:[]}, known=HOME_CARDS.map(c=>c.id), out=[];

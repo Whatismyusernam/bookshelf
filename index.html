@@ -1361,12 +1361,16 @@ body:not(.dark) .btn.primary:hover{background:#163B6C;border-color:#163B6C}
 .se-list+.se-sec{margin-top:18px}
 /* 첫 사용 안내: 화면을 어둡게 하고 한 곳만 밝게 */
 #tour{position:fixed;inset:0;z-index:300;display:none}
+.modal-head .ft-help{flex:none;width:22px;height:22px;margin-right:10px;border-radius:50%;border:1px solid var(--line);background:none;color:var(--muted);font-size:12px;font-weight:700;line-height:1;display:flex;align-items:center;justify-content:center;padding:0;position:relative}
+.modal-head .ft-help:after{content:"";position:absolute;inset:-9px}
+.modal-head .ft-help+h2{margin-right:auto}
 #tour.show{display:block}
 #tour .tr-hole{position:fixed;border-radius:16px;box-shadow:0 0 0 2px #FFFFFF,0 0 0 4000px rgba(16,12,8,.76);transition:all .28s ease;pointer-events:none}
 #tour .tr-tip{position:fixed;width:min(300px,calc(100vw - 32px));box-sizing:border-box;background:var(--surface);color:var(--ink);border-radius:18px;padding:16px 16px 12px;box-shadow:0 12px 30px rgba(0,0,0,.25);transition:top .28s ease,left .28s ease}
 #tour .tr-tip:after{content:"";position:absolute;width:14px;height:14px;background:var(--surface);transform:rotate(45deg);left:var(--ax,50%);margin-left:-7px}
 #tour .tr-tip.below:after{top:-7px}
 #tour .tr-tip.above:after{bottom:-7px}
+#tour .tr-tip:not(.below):not(.above):after{display:none}
 #tour .tr-n{font-size:12px;font-weight:700;color:var(--seal)}
 #tour .tr-t{font-size:16.5px;font-weight:700;margin:5px 0 4px;line-height:1.4}
 #tour .tr-d{font-size:13.5px;color:var(--ink-soft);line-height:1.6}
@@ -2156,6 +2160,7 @@ body.dark .cv-memo{background:rgba(15,20,29,.9);color:#E6EBF3}
 <div class="overlay" id="reviewOverlay">
   <div class="modal review">
     <div class="modal-head">
+      <button type="button" class="ft-help" data-ft="review" aria-label="결산 사용 안내">?</button>
       <h2>📖 독서 결산</h2>
       <button class="x" data-rclose>×</button>
     </div>
@@ -2171,6 +2176,7 @@ body.dark .cv-memo{background:rgba(15,20,29,.9);color:#E6EBF3}
 <div class="overlay" id="weekOverlay">
   <div class="modal review">
     <div class="modal-head">
+      <button type="button" class="ft-help" data-ft="week" aria-label="이번 주 기록 사용 안내">?</button>
       <h2>📆 이번 주 돌아보기</h2>
       <button class="x" data-wclose>×</button>
     </div>
@@ -2190,7 +2196,7 @@ body.dark .cv-memo{background:rgba(15,20,29,.9);color:#E6EBF3}
 </div>
 <div class="overlay" id="shelfEditOverlay">
   <div class="modal">
-    <div class="modal-head"><h2>홈 편집</h2><button class="x" id="seClose" aria-label="닫기">×</button></div>
+    <div class="modal-head"><button type="button" class="ft-help" data-ft="homeedit" aria-label="홈 편집 사용 안내">?</button><h2>홈 편집</h2><button class="x" id="seClose" aria-label="닫기">×</button></div>
     <div class="se-body" id="seBody"></div>
     <div class="modal-foot"><button class="btn" id="seReset">기본 배치로</button><button class="btn primary" id="seDone">완료</button></div>
   </div>
@@ -2200,6 +2206,7 @@ body.dark .cv-memo{background:rgba(15,20,29,.9);color:#E6EBF3}
 <div class="overlay" id="monthGoalOverlay">
   <div class="modal quick">
     <div class="modal-head">
+      <button type="button" class="ft-help" data-ft="month" aria-label="이달 목표 사용 안내">?</button>
       <h2 id="mgTitle">📌 이달의 목표 책</h2>
       <button class="x" data-mgclose>×</button>
     </div>
@@ -2306,6 +2313,7 @@ body.dark .cv-memo{background:rgba(15,20,29,.9);color:#E6EBF3}
 <div class="overlay" id="habitOverlay">
   <div class="modal quick" style="max-width:400px">
     <div class="modal-head">
+      <button type="button" class="ft-help" data-ft="habit" aria-label="나의 독서 길 사용 안내">?</button>
       <h2>나의 독서 길</h2>
       <button class="x" data-hbclose>×</button>
     </div>
@@ -2325,14 +2333,6 @@ body.dark .cv-memo{background:rgba(15,20,29,.9);color:#E6EBF3}
         </select>
         <div class="rd-hint" id="hbTargetNote"></div>
       </div>
-      <div class="field" id="hbNotifBox" style="margin:18px 0 0">
-        <label for="hbNotifOn">독서 알림</label>
-        <div class="hb-nt-row">
-          <label class="hb-nt" for="hbNotifOn"><input type="checkbox" id="hbNotifOn"> 알림 받기</label>
-          <input type="time" id="hbNotifTime" value="21:00" aria-label="알림 시각" disabled>
-        </div>
-        <div class="rd-hint" id="hbNotifNote">아직 기록하지 않은 날에만 알려요. 이번 주 목표를 채우면 남은 날은 쉬어요.</div>
-      </div>
       <p class="rd-hint" style="margin-top:14px">'오늘 읽었어요'뿐 아니라 구절·사진·메모를 남기거나, 새 책을 등록하거나, 다 읽음으로 바꾼 날도 기록한 날로 세요.</p>
     </div>
     <div class="modal-foot">
@@ -2342,6 +2342,26 @@ body.dark .cv-memo{background:rgba(15,20,29,.9);color:#E6EBF3}
   </div>
 </div>
 
+<div class="overlay" id="notifOverlay">
+  <div class="modal quick" style="max-width:400px">
+    <div class="modal-head">
+      <button type="button" class="ft-help" data-ft="notif" aria-label="독서 알림 사용 안내">?</button>
+      <h2>독서 알림</h2>
+      <button class="x" data-ntclose>×</button>
+    </div>
+    <div class="modal-body">
+      <div class="field" id="hbNotifBox">
+                <div class="hb-nt-row">
+          <label class="hb-nt" for="hbNotifOn"><input type="checkbox" id="hbNotifOn"> 알림 받기</label>
+          <input type="time" id="hbNotifTime" value="21:00" aria-label="알림 시각" disabled>
+        </div>
+        <div class="rd-hint" id="hbNotifNote">아직 기록하지 않은 날에만 알려요. 이번 주 목표를 채우면 남은 날은 쉬어요.</div>
+      </div>
+      <p class="rd-hint" style="margin-top:14px">알림은 이 아이폰 안에서만 예약돼요. 아이폰 설정 &gt; 오버북 &gt; 알림이 꺼져 있으면 오지 않아요.</p>
+    </div>
+    <div class="modal-foot"><button class="btn primary" data-ntclose>닫기</button></div>
+  </div>
+</div>
 <!-- 신고하기 (친구 기능) -->
 <div id="tour" role="dialog" aria-modal="true" aria-labelledby="trT">
   <div class="tr-hole" id="trHole"></div>
@@ -4377,6 +4397,8 @@ function obNotifSync(){                                               // 겹쳐 
   }).catch(()=>{});
   return obNotifBusy;
 }
+function openNotif(){ obNotifRenderUI(); open('notifOverlay'); }
+function obNotifLabel(){ const c=obNotifGet(); return c.on ? `${c.h<12?'오전':'오후'} ${((c.h+11)%12)+1}:${String(c.m).padStart(2,'0')}` : '꺼짐'; }
 function obNotifRenderUI(){
   const box=document.getElementById('hbNotifBox'); if(!box || !obNotifPlugin()) return;
   const c=obNotifGet();
@@ -4459,6 +4481,9 @@ function obHandleAppUrl(url){
   ro.querySelectorAll('#rdDays button').forEach(x=>x.onclick=()=>{ state.readOff=+x.dataset.d; syncReadDays(); });
   document.getElementById('rdSave').onclick=saveRead;
   ho.querySelectorAll('[data-hbclose]').forEach(x=>x.onclick=()=>close('habitOverlay'));
+  const no=document.getElementById('notifOverlay');
+  if(no){ no.querySelectorAll('[data-ntclose]').forEach(x=>x.onclick=()=>close('notifOverlay'));
+    no.addEventListener('click',e=>{ if(e.target===no) close('notifOverlay'); }); }
   document.getElementById('hbSave').onclick=saveHabitTarget;
 })();
 
@@ -5990,10 +6015,10 @@ const TOUR_STEPS=[
   { sel:'#obMenuBtn', t:'목표·알림·백업은 메뉴에', d:'올해 목표, 독서 알림, 기록 내보내기를 여기서 할 수 있어요.', pad:4 },
   { sel:'#hsEdit', t:'홈 순서는 내 마음대로', d:'카드와 선반의 순서를 바꾸거나 숨길 수 있어요.', pad:8 }
 ];
-let tourI=0, tourList=[], tourAsked=false;
+let tourI=0, tourList=[], tourAsked=false, tourKey=TOUR_KEY, tourOverflow='';
 function tourVisible(el){ if(!el) return false; const r=el.getBoundingClientRect(); return r.width>0 && r.height>0 && getComputedStyle(el).visibility!=='hidden'; }
-function tourBuild(){
-  return TOUR_STEPS.map(s=>{
+function tourBuild(steps){
+  return (steps||TOUR_STEPS).map(s=>{
     let el=document.querySelector(s.sel), t=s.t, d=s.d;
     if(!tourVisible(el) && s.alt){ el=document.querySelector(s.alt); t=s.altT||t; d=s.altD||d; }
     return tourVisible(el) ? {el,t,d,pad:s.pad||6} : null;
@@ -6009,15 +6034,17 @@ function tourMaybeStart(){
     tourStart(false);
   }, 900);
 }
-function tourStart(force){
-  tourList=tourBuild(); if(!tourList.length) return;
+function tourStart(force, steps, key){
+  tourList=tourBuild(steps); if(!tourList.length) return false;
+  tourKey=key||TOUR_KEY; tourOverflow=document.body.style.overflow;
   tourI=0; document.getElementById('tour').classList.add('show'); document.body.style.overflow='hidden';
   tourShow();
   setTimeout(()=>{ const n=document.getElementById('trNext'); if(n) n.focus(); },60);
+  return true;
 }
 function tourEnd(){
-  document.getElementById('tour').classList.remove('show'); document.body.style.overflow='';
-  try{ localStorage.setItem(TOUR_KEY,'1'); }catch(e){}
+  document.getElementById('tour').classList.remove('show'); document.body.style.overflow=tourOverflow;
+  try{ localStorage.setItem(tourKey,'1'); }catch(e){}
 }
 function tourPlace(){
   const st=tourList[tourI]; if(!st) return;
@@ -6027,9 +6054,12 @@ function tourPlace(){
   const vw=window.innerWidth, vh=window.innerHeight, tw=tip.offsetWidth, th=tip.offsetHeight;
   const below = r.bottom+pad+14+th < vh-12 || r.top < vh/2;
   let left=Math.min(Math.max(12, r.left+r.width/2-tw/2), vw-tw-12);
-  const top = below ? r.bottom+pad+14 : r.top-pad-14-th;
-  tip.style.left=left+'px'; tip.style.top=Math.max(12,top)+'px';
-  tip.classList.toggle('below',below); tip.classList.toggle('above',!below);
+  let top = below ? r.bottom+pad+14 : r.top-pad-14-th;
+  // 대상이 커서 위·아래 어디에도 안 들어가면 화면 아래쪽에 겹쳐 띄우고 꼬리는 숨김
+  const fits = top>=12 && top+th<=vh-12;
+  top=Math.min(Math.max(12,top), vh-th-12);
+  tip.style.left=left+'px'; tip.style.top=top+'px';
+  tip.classList.toggle('below',below&&fits); tip.classList.toggle('above',!below&&fits);
   tip.style.setProperty('--ax', Math.min(Math.max(20, r.left+r.width/2-left), tw-20)+'px');
 }
 function tourShow(){
@@ -6039,7 +6069,7 @@ function tourShow(){
   document.getElementById('trD').textContent=st.d;
   document.getElementById('trPrev').style.visibility=tourI?'visible':'hidden';
   const last=tourI===tourList.length-1;
-  document.getElementById('trNext').textContent=last?'시작하기':'다음';
+  document.getElementById('trNext').textContent=last?(tourKey===TOUR_KEY?'시작하기':'알겠어요'):'다음';
   document.getElementById('trSkip').style.visibility=last?'hidden':'visible';
   const r=st.el.getBoundingClientRect();
   if(r.top<70 || r.bottom>window.innerHeight-90){ st.el.scrollIntoView({block:'center', behavior:'instant'}); }
@@ -6050,6 +6080,55 @@ document.getElementById('trPrev').onclick=()=>{ if(tourI>0){ tourI--; tourShow()
 document.getElementById('trSkip').onclick=tourEnd;
 window.addEventListener('resize',()=>{ if(document.getElementById('tour').classList.contains('show')) tourPlace(); });
 document.addEventListener('keydown',e=>{ if(e.key==='Escape' && document.getElementById('tour').classList.contains('show')){ e.stopPropagation(); tourEnd(); } }, true);
+/* ---------- 기능별 첫 안내 (2026-11-19) ----------
+   메뉴의 각 기능 창을 이 기기에서 처음 열 때 한 번 자동으로 보여요(localStorage 'ob_ft_<이름>').
+   창 제목 왼쪽의 작은 ? 버튼으로 언제든 다시 볼 수 있어요. 화면에 없는 대상은 건너뛰어요. */
+const FEATURE_TOURS={
+  habit:{ ov:'habitOverlay', steps:[
+    { sel:'#rpScroll', t:'도장이와 오르는 나의 독서 길', d:'처음엔 미션 10칸, 그다음엔 주간 목표를 채운 주마다 한 칸씩 올라가요. 못 채운 주에도 내려가지 않아요.', pad:2 },
+    { sel:'#rpPath .rp-nd.now', alt:'#rpPath .rp-nd', t:'디딤돌을 눌러 보세요', d:'칸마다 할 일이 적혀 있고, [바로 하기]를 누르면 그 기능으로 바로 가요.', pad:2 },
+    { sel:'#djCloset', t:'도장이 꾸미기', d:'길을 오르며 열린 꾸미기를 도장이에게 입혀 줄 수 있어요.', pad:6 },
+    { sel:'#hbWeek', t:'이번 주 기록', d:'기록한 날엔 冊 도장이 찍혀요. 오늘 읽었어요뿐 아니라 구절·사진·메모·새 책·완독도 기록으로 세요.', pad:6 },
+    { sel:'#hbTarget', t:'주간 목표는 내 속도대로', d:'일주일에 며칠 읽을지 고르고 저장하세요. 바꾼 목표는 다음 주부터 적용돼요.', pad:6 }
+  ]},
+  notif:{ ov:'notifOverlay', steps:[
+    { sel:'#hbNotifBox .hb-nt-row', t:'알림 켜고 시각 정하기', d:'알림 받기를 켜고 시각을 고르세요. 처음 켤 때 아이폰이 알림 허용을 물어봐요.', pad:6 },
+    { sel:'#hbNotifNote', t:'기록한 날엔 조용히', d:'그날 이미 기록했거나 이번 주 목표를 채웠으면 알림을 쉬어요.', pad:6 }
+  ]},
+  month:{ ov:'monthGoalOverlay', steps:[
+    { sel:'#mgProgress', t:'이달에 읽을 책 정하기', d:'이달 안에 읽고 싶은 책을 골라 두면 진행 상황을 보여 드려요.', pad:6 },
+    { sel:'#mgPickWrap', t:'책을 눌러 목표에 담기', d:'읽을 책·읽는 중인 책에서 골라요. 다 읽음으로 바꾸면 목표가 채워져요.', pad:6 }
+  ]},
+  week:{ ov:'weekOverlay', steps:[
+    { sel:'#weekBody .rv-hero', t:'이번 주를 한눈에', d:'이번 주(월~일)에 다 읽은 책 수예요.', pad:6 },
+    { sel:'#weekBody .rv-chips', t:'담고 기록한 책', d:'이번 주에 새로 담은 책과 기록을 남긴 책 수예요. 아래엔 손이 간 책이 모여요.', pad:6 }
+  ]},
+  review:{ ov:'reviewOverlay', steps:[
+    { sel:'#reviewBody .rv-hero', alt:'#reviewBody', t:'한 해 독서 결산', d:'다 읽은 책, 많이 읽은 분야, 달마다 읽은 양을 모아 보여 드려요. 위에서 연도를 바꿀 수 있어요.', pad:6 },
+    { sel:'#reviewImage', t:'결산 카드로 남기기', d:'스토리·피드 크기의 이미지로 만들어 저장하거나 공유할 수 있어요.', pad:4 },
+    { sel:'#reviewCopy', t:'글로 복사하기', d:'요약을 글로 복사해 메모나 메시지에 붙일 수 있어요.', pad:4 }
+  ]},
+  homeedit:{ ov:'shelfEditOverlay', steps:[
+    { sel:'#seBody .se-list', t:'홈 카드 순서', d:'↑↓로 첫 화면 카드 순서를 바꾸고, ‘보임’을 누르면 숨겨요.', pad:4 },
+    { sel:'#seBody .se-list ~ .se-list', t:'책장 선반 순서', d:'분야별 선반도 같은 방법으로 순서를 바꾸거나 숨길 수 있어요.', pad:4 },
+    { sel:'#seReset', t:'처음 배치로', d:'헷갈리면 이 버튼으로 기본 순서로 되돌릴 수 있어요.', pad:4 }
+  ]}
+};
+function featureTour(name, force){
+  const ft=FEATURE_TOURS[name]; if(!ft) return;
+  const key='ob_ft_'+name;
+  if(!force){ try{ if(localStorage.getItem(key)) return; }catch(e){ return; } }
+  if(document.getElementById('tour').classList.contains('show')) return;
+  setTimeout(()=>{
+    const ov=document.getElementById(ft.ov); if(!ov || !ov.classList.contains('show')) return;
+    if(document.getElementById('tour').classList.contains('show')) return;
+    tourStart(true, ft.steps, key);
+  }, force?60:450);
+}
+document.addEventListener('click',e=>{ const b=e.target.closest('.ft-help'); if(!b) return; e.stopPropagation(); featureTour(b.dataset.ft, true); });
+/* 창이 열릴 때 그 창의 첫 안내를 확인 (로그인 상태에서만) */
+const _openBase=open;
+open=function(id){ _openBase(id); if(!currentUserId) return; for(const n in FEATURE_TOURS){ if(FEATURE_TOURS[n].ov===id){ featureTour(n,false); break; } } };
 /* ---------- iOS 앱 메뉴 (오른쪽 위 ☰) ----------
    첫 화면에 늘어놓던 목표·이달 목표·이번 주·산책·결산, 내보내기·불러오기, 다크 모드·로그아웃을 한곳에 모아요.
    웹 화면은 바뀌지 않아요(.ob-app에서만 보임). */
@@ -6062,7 +6141,10 @@ function openAppMenu(){
   const has=books.length>0, dark=state.theme==='dark';
   const it=(act,ic,lb,sub,cls)=>`<button type="button" class="am-item${cls?' '+cls:''}" data-am="${act}"><span class="ic">${ic}</span><span class="lb">${lb}</span>${sub?`<span class="sub">${sub}</span>`:''}</button>`;
   let h='<div class="am-sec">독서</div><div class="am-list">';
-  if(typeof habitOn==='function' && habitOn()) h+=it('habit','🪜','나의 독서 길 · 독서 알림','');
+  if(typeof habitOn==='function' && habitOn()){
+    h+=it('habit','🪜','나의 독서 길','');
+    if(obNotifPlugin()) h+=it('notif','🔔','독서 알림', obNotifLabel());
+  }
   h+=it('goal','🎯','올해 목표', goal?`${doneY}/${goal}권`:'정하기');
   h+=it('month','📌','이달 목표', mg.length?`${mgDone}/${mg.length}권`:'정하기');
   if(has) h+=it('week','📆','이번 주 기록','');
@@ -6093,7 +6175,7 @@ function openAppMenu(){
     const a=b.dataset.am;
     close('appMenuOverlay');
     const run={
-      habit:()=>openHabit(), goal:()=>setGoal(), month:()=>openMonthGoal(), week:()=>openWeek(),
+      habit:()=>openHabit(), notif:()=>openNotif(), goal:()=>setGoal(), month:()=>openMonthGoal(), week:()=>openWeek(),
       walk:()=>walkShelf(), review:()=>openReview(), export:()=>exportData(),
       homeedit:()=>{ if(state.mode!=='library') setMode('library'); openShelfEdit(); }, tour:()=>{ if(state.mode!=='library') setMode('library'); setTimeout(()=>tourStart(true),250); },
       import:()=>document.getElementById('fileIn').click(), theme:()=>toggleTheme(),

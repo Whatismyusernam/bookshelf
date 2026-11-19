@@ -7195,7 +7195,7 @@ async function frBlock(uid){
    - 신고 뒤: 친구는 (선택 시) 차단, 요청은 거절, 추천은 지움(+보낸 친구를 알 수 있으면 선택 시 차단)
    - REPORT_START(처리방침 개정 시행일) 전에는 iOS 앱과 미리보기(?report=1)에서만 보여요.
    - 이용약관(terms.html) 링크도 같은 스위치(.ob-report-ui)로 함께 켜져요. 약관도 같은 날 게시해요. */
-const REPORT_START='2099-01-01';   // ← 처리방침 개정판을 게시할 때 '시행일'로 바꿔요
+const REPORT_START='2026-11-27';   // ← 처리방침 개정판을 게시할 때 '시행일'로 바꿔요
 function reportOn(){
   if(window.OB_IS_APP) return true;
   if(localDay()>=REPORT_START) return true;

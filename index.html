@@ -841,6 +841,15 @@ if(window.OB_IS_APP){
   .fr-sec:first-of-type{border-top:none;padding-top:4px}
   .fr-h{font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--seal);margin-bottom:12px;display:flex;align-items:center;gap:8px}
   .fr-mut{color:var(--muted);font-weight:400;font-size:11.5px;text-transform:none;letter-spacing:0}
+  #frProfileSec:has(#frBlockedWrap.hide){display:none !important}
+  #frProfileSec .fr-blocked{margin-top:0;border-top:0;padding-top:0}
+  .pf-lead{font-size:13.5px;color:var(--ink-soft);line-height:1.6;margin:0 0 16px}
+  .pf-msg{font-size:12px;line-height:1.5;margin-top:6px;color:var(--muted);min-height:18px}
+  .pf-msg.ok{color:#2E7D4F} .pf-msg.bad{color:#B8322E}
+  body.dark .pf-msg.ok{color:#6FCF97} body.dark .pf-msg.bad{color:#F08A85}
+  #frNick:disabled{opacity:.55;cursor:not-allowed}
+  #profileOverlay.setup .pf-goal{display:none}
+  #profileOverlay.setup #pfClose{visibility:hidden}
   .fr-check{display:flex;align-items:flex-start;gap:9px;font-size:14px;margin:6px 0 14px;cursor:pointer;line-height:1.5}
   .fr-check input{margin-top:3px;width:16px;height:16px;flex-shrink:0}
   .fr-code-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
@@ -1889,18 +1898,6 @@ body.dark .cv-memo{background:rgba(15,20,29,.9);color:#E6EBF3}
     <div class="fr-loading" id="frLoading">불러오는 중…</div>
 
     <div class="fr-sec hide" id="frProfileSec">
-      <h3 class="fr-h">내 프로필</h3>
-      <div class="field"><label>닉네임 <span class="fr-mut">친구에게 이렇게 보여요</span></label>
-        <input id="frNick" type="text" maxlength="20" placeholder="예) 책읽는곰"></div>
-      <div class="field"><label>기본 공개 범위 <span class="fr-mut">책별로 따로 정하지 않았을 때</span></label>
-        <select id="frDefaultVis">
-          <option value="private">비공개 — 공개로 정한 책만 보임</option>
-          <option value="public">공개 — 비공개로 정한 책만 숨김</option>
-        </select></div>
-      <div class="field"><label>이달의 목표 <span class="fr-mut">한 달에 몇 권 읽을지 (0이면 챌린지 미참여)</span></label>
-        <input id="frGoal" type="number" min="0" max="99" placeholder="예) 4"></div>
-      <label class="fr-check"><input type="checkbox" id="frRankingOn"> <span>친구 랭킹에 참여하기 <span class="fr-mut">끄면 친구에게 내 기록이 보이지 않아요</span></span></label>
-      <button class="btn primary" id="frSaveProfile" style="margin-top:6px">저장</button>
       <div id="frBlockedWrap" class="fr-blocked hide">
         <button class="fr-blocked-toggle" id="frBlockedToggle">차단한 사용자 <span id="frBlockedCount">0</span> · 펼치기</button>
         <div id="frBlockedList" class="hide"></div>
@@ -2362,6 +2359,33 @@ body.dark .cv-memo{background:rgba(15,20,29,.9);color:#E6EBF3}
     <div class="modal-foot"><button class="btn primary" data-ntclose>닫기</button></div>
   </div>
 </div>
+<!-- 프로필 (첫 로그인 때 '프로필 만들기', 이후 메뉴 > 설정 > 프로필) -->
+<div class="overlay" id="profileOverlay">
+  <div class="modal quick" style="max-width:420px">
+    <div class="modal-head">
+      <h2 id="pfTitle">프로필</h2>
+      <button class="x" id="pfClose" aria-label="닫기">×</button>
+    </div>
+    <div class="modal-body">
+      <p class="pf-lead" id="pfLead">친구에게 보일 이름과 공개 범위를 정해 주세요. 나중에 메뉴 &gt; 설정 &gt; 프로필에서 바꿀 수 있어요.</p>
+      <div class="field"><label for="frNick">닉네임 <span class="fr-mut">친구에게 이렇게 보여요</span></label>
+        <input id="frNick" type="text" maxlength="12" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="예) 책읽는곰">
+        <div class="pf-msg" id="frNickMsg"></div></div>
+      <div class="field"><label>기본 공개 범위 <span class="fr-mut">책별로 따로 정하지 않았을 때</span></label>
+        <select id="frDefaultVis">
+          <option value="private">비공개 — 공개로 정한 책만 보임</option>
+          <option value="public">공개 — 비공개로 정한 책만 숨김</option>
+        </select></div>
+      <div class="field pf-goal"><label>이달의 목표 <span class="fr-mut">한 달에 몇 권 읽을지 (0이면 챌린지 미참여)</span></label>
+        <input id="frGoal" type="number" min="0" max="99" placeholder="예) 4"></div>
+      <label class="fr-check"><input type="checkbox" id="frRankingOn"> <span>친구 랭킹에 참여하기 <span class="fr-mut">끄면 친구에게 내 기록이 보이지 않아요</span></span></label>
+    </div>
+    <div class="modal-foot">
+      <button class="btn hide" id="pfLogout">다른 계정으로</button>
+      <button class="btn primary" id="frSaveProfile">저장</button>
+    </div>
+  </div>
+</div>
 <!-- 신고하기 (친구 기능) -->
 <div id="tour" role="dialog" aria-modal="true" aria-labelledby="trT">
   <div class="tr-hole" id="trHole"></div>
@@ -2670,7 +2694,8 @@ async function cloudLoad(){
   }catch(e){ console.warn('ideas load skipped', e); }   // 테이블 미생성 시에도 앱은 정상 동작
   await loadHabit();
   obNotifSync();
-  cloudLoadedOK=true;   // 핵심 데이터(책·구절 사진) 로드가 성공한 세션에서만 삭제 동기화 허용
+  cloudLoadedOK=true;
+  obProfileGate();   // 핵심 데이터(책·구절 사진) 로드가 성공한 세션에서만 삭제 동기화 허용
 }
 /* 책의 사진을 Storage/DB와 맞추기: 새 사진 업로드 → 삭제된 사진 정리 → 행 upsert */
 async function syncShots(b){
@@ -6157,6 +6182,7 @@ function openAppMenu(){
   h+=it('export','📤','기록 내보내기','파일로 백업');
   h+=it('import','📥','기록 불러오기','백업 파일에서');
   h+='</div><div class="am-sec">설정</div><div class="am-list">';
+  if(currentUserId) h+=it('profile','👤','프로필', esc(((frState&&frState.profile)||{}).nickname||''));
   h+=it('theme', dark?'☀️':'🌙', dark?'라이트 모드로':'다크 모드로','');
   if(currentUserId) h+=it('logout','🚪','로그아웃','','danger');
   h+='</div>';
@@ -6175,7 +6201,7 @@ function openAppMenu(){
     const a=b.dataset.am;
     close('appMenuOverlay');
     const run={
-      habit:()=>openHabit(), notif:()=>openNotif(), goal:()=>setGoal(), month:()=>openMonthGoal(), week:()=>openWeek(),
+      habit:()=>openHabit(), notif:()=>openNotif(), profile:()=>openProfile('edit'), goal:()=>setGoal(), month:()=>openMonthGoal(), week:()=>openWeek(),
       walk:()=>walkShelf(), review:()=>openReview(), export:()=>exportData(),
       homeedit:()=>{ if(state.mode!=='library') setMode('library'); openShelfEdit(); }, tour:()=>{ if(state.mode!=='library') setMode('library'); setTimeout(()=>tourStart(true),250); },
       import:()=>document.getElementById('fileIn').click(), theme:()=>toggleTheme(),
@@ -6202,7 +6228,7 @@ document.getElementById('qcSave').onclick=saveQuick;
 document.getElementById('qcPhotoBtn').onclick=()=>document.getElementById('qcPhotoInput').click();
 document.getElementById('qcPhotoInput').onchange=e=>{ addQuickPhotos(e.target.files); e.target.value=''; };
 document.getElementById('directPhotoInput').onchange=e=>{ handleDirectPhotos(e.target.files); e.target.value=''; };
-document.querySelectorAll('.overlay').forEach(o=>o.onclick=e=>{ if(e.target===o){ o.classList.remove('show'); document.body.style.overflow=''; if(o.id==='quickOverlay'){ state.quickId=null; state.quickPhotos=[]; } } });
+document.querySelectorAll('.overlay').forEach(o=>o.onclick=e=>{ if(e.target===o){ if(o.id==='profileOverlay' && o.classList.contains('setup')) return; o.classList.remove('show'); document.body.style.overflow=''; if(o.id==='quickOverlay'){ state.quickId=null; state.quickPhotos=[]; } } });
 document.addEventListener('keydown',e=>{
   if(document.getElementById('lightbox').classList.contains('show') && (e.key==='ArrowLeft'||e.key==='ArrowRight')){ lbGo(e.key==='ArrowLeft'?-1:1); return; }
   if(e.key==='Escape'){ if(document.getElementById('lightbox').classList.contains('show')){ closeLightbox(); return; } if(document.getElementById('shelfEditOverlay').classList.contains('show')){ closeShelfEdit(); return; } close('editOverlay'); close('detailOverlay'); close('reviewOverlay'); close('weekOverlay'); closeQuick(); close('ideaOverlay'); } });
@@ -6641,21 +6667,112 @@ function frRenderProfile(){
   document.getElementById('frMyCode').textContent=p.code||'------';
   const g=document.getElementById('frGoal'); if(g) g.value=(p.monthly_goal>0)?p.monthly_goal:'';
 }
+/* ---------- 프로필 (2026-11-19) ----------
+   닉네임은 서버 전체에서 중복 불가(대소문자·앞뒤 공백 무시), 2~12자 한글·영문·숫자·_ .
+   바꾸기는 30일에 한 번(처음 정하는 건 제외) — 서버(fr_save_profile)가 막고, 화면은 안내만 해요.
+   닉네임이 비어 있으면 로그인 직후 '프로필 만들기' 창이 떠요(닫을 수 없음). */
+const NICK_COOLDOWN_DAYS=30;
+const NICK_MSG={ empty:'닉네임을 입력해 주세요', length:'2~12자로 정해 주세요', chars:'한글·영문·숫자·밑줄(_)·점(.)만 쓸 수 있어요 (띄어쓰기 불가)',
+  reserved:'쓸 수 없는 닉네임이에요', taken:'이미 누가 쓰고 있어요', cooldown:'닉네임은 30일에 한 번 바꿀 수 있어요', ok:'쓸 수 있는 닉네임이에요' };
+let pfMode='edit', pfCheckTimer=null, pfCheckSeq=0;
+function nickLocalCheck(n){
+  n=(n||'').trim();
+  if(!n) return 'empty';
+  if(n.length<2 || n.length>12) return 'length';
+  if(!/^[가-힣A-Za-z0-9_.]+$/.test(n)) return 'chars';
+  return '';
+}
+function nickNextChange(p){
+  p=p||frState.profile||{};
+  if(!p.nickname || !p.nick_changed_at) return null;
+  const t=Date.parse(p.nick_changed_at)+NICK_COOLDOWN_DAYS*86400000;
+  return t>Date.now() ? new Date(t) : null;
+}
+function pfSetMsg(text, cls){ const m=document.getElementById('frNickMsg'); if(!m) return; m.textContent=text||''; m.className='pf-msg'+(cls?' '+cls:''); }
+function pfDefaultHint(){
+  const nx=nickNextChange();
+  if(pfMode!=='setup' && nx){ pfSetMsg(`닉네임은 30일에 한 번 바꿀 수 있어요 · ${nx.getMonth()+1}월 ${nx.getDate()}일부터 바꿀 수 있어요`); return; }
+  pfSetMsg('2~12자 한글·영문·숫자·_ . · 다른 사람과 겹칠 수 없고, 바꾸기는 30일에 한 번이에요');
+}
+function pfNickInput(){
+  const el=document.getElementById('frNick'), n=el.value.trim(), cur=((frState.profile||{}).nickname||'').trim();
+  clearTimeout(pfCheckTimer);
+  if(n && n.toLowerCase()===cur.toLowerCase()){ pfDefaultHint(); return; }
+  const lc=nickLocalCheck(n); if(lc){ pfSetMsg(NICK_MSG[lc], n?'bad':''); return; }
+  pfSetMsg('확인하는 중…');
+  const seq=++pfCheckSeq;
+  pfCheckTimer=setTimeout(async()=>{
+    try{
+      const {data,error}=await sb.rpc('fr_nick_check',{p_nick:n});
+      if(seq!==pfCheckSeq) return;
+      if(error) throw error;
+      pfSetMsg(NICK_MSG[data]||'', data==='ok'?'ok':'bad');
+    }catch(e){ if(seq===pfCheckSeq) pfSetMsg(''); }
+  }, 350);
+}
+function openProfile(mode){
+  pfMode = mode==='setup' ? 'setup' : 'edit';
+  const ov=document.getElementById('profileOverlay');
+  frRenderProfile();
+  const p=frState.profile||{};
+  ov.classList.toggle('setup', pfMode==='setup');
+  document.getElementById('pfTitle').textContent = pfMode==='setup' ? '프로필 만들기' : '프로필';
+  document.getElementById('pfLead').classList.toggle('hide', pfMode!=='setup');
+  document.getElementById('pfLogout').classList.toggle('hide', pfMode!=='setup');
+  document.getElementById('frSaveProfile').textContent = pfMode==='setup' ? '시작하기' : '저장';
+  if(pfMode==='setup'){
+    document.getElementById('frDefaultVis').value = (p.default_visibility==='public') ? 'public' : 'private';
+    if(!p.nickname) document.getElementById('frRankingOn').checked = true;
+  }
+  const nick=document.getElementById('frNick');
+  nick.disabled = pfMode!=='setup' && !!nickNextChange();
+  pfDefaultHint();
+  open('profileOverlay');
+  if(pfMode==='setup') setTimeout(()=>{ try{ nick.focus(); }catch(e){} }, 250);
+}
+function closeProfile(){ if(pfMode==='setup') return; close('profileOverlay'); }
 async function frSaveProfile(){
   const nick=document.getElementById('frNick').value.trim();
-  if(!nick){ showToast('닉네임을 입력하세요'); return; }
+  const lc=nickLocalCheck(nick); if(lc){ pfSetMsg(NICK_MSG[lc],'bad'); document.getElementById('frNick').focus(); return; }
   const vis=document.getElementById('frDefaultVis').value;
   const on=document.getElementById('frRankingOn').checked;
-  const goal=Math.max(0,Math.min(99,parseInt(document.getElementById('frGoal').value,10)||0));
+  const gEl=document.getElementById('frGoal');
+  const goal = pfMode==='setup' ? ((frState.profile||{}).monthly_goal||0) : Math.max(0,Math.min(99,parseInt(gEl.value,10)||0));
   const btn=document.getElementById('frSaveProfile'); btn.disabled=true;
   try{
     const {data,error}=await sb.rpc('fr_save_profile',{p_nick:nick,p_ranking_on:on,p_default_vis:vis,p_goal:goal});
     if(error) throw error;
+    const wasSetup = pfMode==='setup';
     frState.profile=Array.isArray(data)?data[0]:data; frRenderProfile();
-    showToast('저장했어요'); await frLoadRanking();
-  }catch(e){ showToast('저장 실패: '+(e.message||'')); }
+    pfMode='edit'; document.getElementById('profileOverlay').classList.remove('setup'); close('profileOverlay');
+    showToast(wasSetup ? `반가워요, ${frState.profile.nickname||nick}님` : '저장했어요');
+    if(frState.loaded){ try{ await frLoadRanking(); }catch(e){} }
+    if(wasSetup) render();
+  }catch(e){
+    const m=String((e&&e.message)||'');
+    const k=(/NICK_([A-Z]+)/.exec(m)||[])[1];
+    if(k){ pfSetMsg(NICK_MSG[k.toLowerCase()]||'닉네임을 확인해 주세요','bad'); }
+    else showToast('저장 실패 — 인터넷 연결을 확인하세요');
+  }
   finally{ btn.disabled=false; }
 }
+/* 로그인 후 한 번: 프로필이 없거나 닉네임이 비어 있으면 '프로필 만들기' */
+async function obProfileGate(){
+  if(!sb || !currentUserId) return;
+  try{
+    const {data,error}=await sb.rpc('fr_ensure_profile');
+    if(error) throw error;
+    frState.profile=Array.isArray(data)?data[0]:data;
+    if(!((frState.profile||{}).nickname||'').trim()) openProfile('setup');
+  }catch(e){ console.warn('profile gate skipped', e); }   // 친구 기능 미설치 등: 막지 않음
+}
+(function wireProfile(){
+  const ov=document.getElementById('profileOverlay'); if(!ov) return;
+  document.getElementById('pfClose').onclick=closeProfile;
+  ov.addEventListener('click',e=>{ if(e.target===ov) closeProfile(); });
+  document.getElementById('frNick').addEventListener('input', pfNickInput);
+  document.getElementById('pfLogout').onclick=()=>{ pfMode='edit'; ov.classList.remove('setup'); close('profileOverlay'); doLogout(); };
+})();
 function frMyLink(){ const c=(frState.profile&&frState.profile.code)||''; return obBase()+'?add='+c; }
 async function frAddByCode(code){
   code=(code||'').trim().toUpperCase();
@@ -6664,7 +6781,7 @@ async function frAddByCode(code){
     const {data,error}=await sb.rpc('fr_request_by_code',{p_code:code});
     if(error) throw error;
     const st=(Array.isArray(data)?data[0]:data); const s=(st&&st.status)||st;
-    const map={sent:'요청을 보냈어요',accepted:'서로 친구가 됐어요!',exists:'이미 요청했거나 친구예요',self:'내 코드예요',notfound:'그 코드의 사용자를 찾을 수 없어요',off:'상대가 랭킹 참여를 꺼놨어요'};
+    const map={sent:'요청을 보냈어요',accepted:'서로 친구가 됐어요!',exists:'이미 요청했거나 친구예요',self:'내 코드예요',notfound:'그 코드의 사용자를 찾을 수 없어요',off:'상대가 랭킹 참여를 꺼놨어요',blocked:'이 사용자에게는 요청을 보낼 수 없어요'};
     showToast(map[s]||'처리했어요');
     const inp=document.getElementById('frAddCode'); if(inp) inp.value='';
     await Promise.all([frLoadRequests(), frLoadRanking()]);

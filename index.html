@@ -4371,7 +4371,7 @@ function obNotifSync(){                                               // 겹쳐 
     if(!currentUserId) return;
     const plan=obNotifPlan(obNotifGet(), new Date()); if(!plan.length) return;
     try{
-      await LN.schedule({ notifications:plan.map(p=>({ id:p.id, title:'오버북', body:p.body,
+      await LN.schedule({ notifications:plan.map(p=>({ id:p.id, title:'오버북', body:p.body, sound:'default',   // 소리를 안 주면 iOS가 소리·진동 없이 조용히 띄움
         schedule:{ on:{ year:+p.day.slice(0,4), month:+p.day.slice(5,7), day:+p.day.slice(8,10), hour:p.h, minute:p.m } } })) });
     }catch(e){ console.warn('알림 예약 실패', e); }
   }).catch(()=>{});

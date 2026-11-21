@@ -1418,6 +1418,17 @@ body:not(.dark) .btn.primary:hover{background:#163B6C;border-color:#163B6C}
 .bk-opt mark{background:none;color:var(--seal);font-weight:700}
 .bk-empty,.bk-cap{padding:9px 10px;font-size:12px;color:var(--muted)}
 /* 책 상세: 이 책의 메모 */
+.d-acts{position:relative;display:flex;gap:6px;align-items:center}
+.d-act{height:34px;padding:0 13px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:5px}
+.d-act#dMoreBtn{width:34px;padding:0;justify-content:center;font-size:16px;letter-spacing:1px}
+.d-act[aria-expanded="true"]{border-color:var(--seal);color:var(--seal)}
+.d-menu{position:absolute;top:40px;left:0;z-index:20;min-width:190px;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:0 12px 30px rgba(16,24,42,.18);padding:6px}
+#dMoreMenu{left:46px}
+.d-mi{display:block;width:100%;text-align:left;padding:11px 12px;border-radius:9px;font-size:14px;color:var(--ink);background:none;border:0}
+.d-mi:hover,.d-mi:focus-visible{background:var(--paper-2)}
+.d-idea .pg{display:inline-block;font-size:11px;font-weight:700;color:var(--seal);background:var(--paper);border:1px solid var(--line);border-radius:999px;padding:0 7px;margin-right:6px;vertical-align:1px}
+.ia-page{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:13px;color:var(--ink-soft)}
+.ia-page input{width:96px}
 .d-memo-h{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .d-memo-h h4{margin:0}
 .d-memo-add{border:1px solid var(--seal-soft);background:var(--paper);color:var(--seal);font-size:12px;font-weight:500;border-radius:999px;padding:4px 11px;cursor:pointer;flex-shrink:0}
@@ -2076,7 +2087,22 @@ body.dark .cv-memo{background:rgba(15,20,29,.9);color:#E6EBF3}
 <div class="overlay" id="detailOverlay">
   <div class="modal detail">
     <div class="d-spine" id="dSpine"></div>
-    <div class="modal-head" style="border:none;padding-bottom:0"><div></div><button class="x" data-close>×</button></div>
+    <div class="modal-head" style="border:none;padding-bottom:0">
+      <div class="d-acts">
+        <button type="button" class="d-act" id="dShareMenuBtn" aria-haspopup="true" aria-expanded="false"><span aria-hidden="true">↗</span> 공유</button>
+        <button type="button" class="d-act" id="dMoreBtn" aria-haspopup="true" aria-expanded="false" aria-label="더 보기">⋯</button>
+        <div class="d-menu hide" id="dShareMenu" role="menu">
+          <button class="d-mi" id="dCard" role="menuitem">🖼️ 책 카드 이미지</button>
+          <button class="d-mi" id="dShare" role="menuitem">🔗 공유 링크</button>
+          <button class="d-mi" id="dRecommend" role="menuitem">👍 친구에게 추천</button>
+        </div>
+        <div class="d-menu hide" id="dMoreMenu" role="menu">
+          <button class="d-mi" id="dPin" role="menuitem">📍 선반 앞에 두기</button>
+          <button class="d-mi" id="dGoal" role="menuitem">📌 이달 목표</button>
+        </div>
+      </div>
+      <button class="x" data-close>×</button>
+    </div>
     <div class="d-head">
       <div class="d-cover ph" id="dCover"><img id="dCoverImg" alt=""><div class="ph-mini" id="dCoverPh"></div></div>
       <div class="d-htext">
@@ -2088,11 +2114,6 @@ body.dark .cv-memo{background:rgba(15,20,29,.9);color:#E6EBF3}
     </div>
     <div class="d-body" id="dBody"></div>
     <div class="modal-foot">
-      <button class="btn" id="dPin">📍 선반 앞에 두기</button>
-      <button class="btn" id="dGoal">📌 이달 목표</button>
-      <button class="btn" id="dCard">🖼️ 책 카드</button>
-      <button class="btn" id="dRecommend">👍 추천</button>
-      <button class="btn" id="dShare">공유 링크</button>
       <button class="btn" id="dEdit">수정</button>
       <button class="btn primary" data-close>닫기</button>
     </div>
@@ -2515,6 +2536,7 @@ body.dark .cv-memo{background:rgba(15,20,29,.9);color:#E6EBF3}
           <input id="iaBookQ" type="text" autocomplete="off" placeholder="책 제목이나 저자로 검색 (비워 두면 연결 안 함)" aria-autocomplete="list" aria-controls="iaBookList">
           <div class="bk-list hide" id="iaBookList" role="listbox"></div>
         </div>
+        <label class="ia-page hide" id="iaPageRow"><span>몇 쪽에서?</span><input id="iaPage" type="number" inputmode="numeric" min="1" max="9999" placeholder="예) 142"><span style="color:var(--muted);font-size:12px">쪽 (선택)</span></label>
       </div>
       <div class="field">
         <input id="iaTags" type="text" placeholder="태그 (쉼표로 구분 · 예: 사업, 글감)">
@@ -2690,7 +2712,7 @@ async function cloudLoad(){
     ideas=(ideaRows||[]).map(r=>({ id:r.id,
       createdAt:r.created_at?Date.parse(r.created_at):Date.now(),
       updatedAt:r.updated_at?Date.parse(r.updated_at):Date.now(),
-      title:r.title||'', body:r.body||'', tags:r.tags||[], bookId:r.book_id||null, pinned:!!r.pinned, status:r.status||'seed', retro:r.retro||'', shots:byIdea[r.id]||[] }));
+      title:r.title||'', body:r.body||'', tags:r.tags||[], bookId:r.book_id||null, page:(r.page>0?r.page:null), pinned:!!r.pinned, status:r.status||'seed', retro:r.retro||'', shots:byIdea[r.id]||[] }));
   }catch(e){ console.warn('ideas load skipped', e); }   // 테이블 미생성 시에도 앱은 정상 동작
   await loadHabit();
   obNotifSync();
@@ -5039,6 +5061,7 @@ function dailyShuffle(){
 /* ---------- detail ---------- */
 function openDetail(id){
   const b=books.find(x=>x.id===id); if(!b) return;
+  try{ dMenusClose(); }catch(e){}
   state.detailId=id;
   if(typeof syncDetailGoalBtn==='function') syncDetailGoalBtn();
   if(typeof syncDetailPinBtn==='function') syncDetailPinBtn();
@@ -5062,13 +5085,19 @@ function openDetail(id){
   const sec=[];
   // 이 책의 메모(아이디어 탭에서 이 책과 연결한 것) — 상세 맨 위에, 없어도 바로 쓸 수 있게
   {
-    const linked=ideas.filter(n=>n.bookId===b.id).sort((x,y)=>ideaWhen(y)-ideaWhen(x));
+    // 쪽수를 적은 메모는 쪽 순서로 앞에, 나머지는 최근 순으로 뒤에
+    const linked=ideas.filter(n=>n.bookId===b.id).sort((x,y)=>{
+      const px=x.page||0, py=y.page||0;
+      if(px&&py) return px-py||ideaWhen(y)-ideaWhen(x);
+      if(px||py) return px?-1:1;
+      return ideaWhen(y)-ideaWhen(x);
+    });
     const items=linked.map(n=>{
       const d=new Date(ideaWhen(n));
       const when=d.getFullYear()+'. '+(d.getMonth()+1)+'. '+d.getDate()+'.';
       const st=IDEA_STATUS[ideaStatus(n)];
       const pv=(n.body||'').trim()||((n.shots||[]).map(s=>(s.text||'').trim()).find(Boolean)||'');
-      return `<button class="d-idea" data-i="${n.id}"><div class="t">💡 ${esc(n.title)||'(제목 없음)'}</div><div class="m">${when} · ${st.ic} ${st.label}</div>${pv?`<div class="p">${esc(pv)}</div>`:''}</button>`;
+      return `<button class="d-idea" data-i="${n.id}"><div class="t">${n.page?`<span class="pg">p.${n.page}</span>`:'💡 '}${esc(n.title)||'(제목 없음)'}</div><div class="m">${when} · ${st.ic} ${st.label}</div>${pv?`<div class="p">${esc(pv)}</div>`:''}</button>`;
     }).join('');
     sec.push(`<div class="d-sec"><div class="d-memo-h"><h4>이 책의 메모${linked.length?` ${linked.length}`:''}</h4><button type="button" class="d-memo-add" id="dMemoAdd">+ 메모 쓰기</button></div>${linked.length?`<div style="margin-top:10px">${items}</div>`:'<p class="d-memo-empty">이 책을 읽다 떠오른 생각을 남겨 보세요. 아이디어 탭에도 함께 모여요.</p>'}</div>`);
   }
@@ -5478,7 +5507,7 @@ function ideaCardHTML(n){
   const thumbs=(n.shots||[]).filter(s=>s.img).slice(0,3).map(s=>`<img src="${s.img}" alt="" loading="lazy">`).join('');
   const tags=(n.tags||[]).slice(0,4).map(t=>`<span data-t="${esc(t)}">#${esc(t)}</span>`).join('');
   const bk=n.bookId?books.find(b=>b.id===n.bookId):null;
-  const bookChip=bk?`<button class="idea-book" data-b="${bk.id}" title="책 상세 보기"><span class="dot" style="background:${catHex(bk.cat)}"></span><b>『${esc(bk.title)||'제목 없음'}』</b></button>`:'';
+  const bookChip=bk?`<button class="idea-book" data-b="${bk.id}" title="책 상세 보기"><span class="dot" style="background:${catHex(bk.cat)}"></span><b>『${esc(bk.title)||'제목 없음'}』</b>${n.page?` · p.${n.page}`:''}</button>`:'';
   const t=new Date(ideaWhen(n));
   const time=String(t.getHours()).padStart(2,'0')+':'+String(t.getMinutes()).padStart(2,'0');
   const edited=(n.updatedAt&&n.createdAt&&(n.updatedAt-n.createdAt>60000))?' · 수정됨':'';
@@ -5655,6 +5684,10 @@ function openIdea(id, presetBookId){
   document.getElementById('iaBody').value=n?(n.body||''):'';
   document.getElementById('iaTags').value=n?(n.tags||[]).join(', '):'';
   setIdeaBook(n?(n.bookId||''):(presetBookId||''));
+  { const pi=document.getElementById('iaPage'); let pg=n?(n.page||''):'';
+    // 책 상세에서 '+ 메모 쓰기'로 새로 쓸 때: 읽는 중인 책이면 지금 쪽수를 미리 넣어 둠
+    if(!n && presetBookId){ const pb=books.find(x=>x.id===presetBookId); if(pb && pb.status==='reading' && pb.currentPage) pg=pb.currentPage; }
+    pi.value=pg; }
   document.getElementById('iaStatus').value=n?ideaStatus(n):'seed';
   document.getElementById('iaRetro').value=n?(n.retro||''):'';
   syncRetroField();
@@ -5670,11 +5703,13 @@ async function saveIdea(){
   const bookId=document.getElementById('iaBook').value||null;
   const status=document.getElementById('iaStatus').value||'seed';
   const retro=document.getElementById('iaRetro').value.trim();
+  const pgRaw=parseInt(document.getElementById('iaPage').value,10);
+  const page=(bookId && pgRaw>0) ? Math.min(pgRaw,9999) : null;
   if(!title && !body && ideaEdit.photos.length===0){ showToast('제목·내용·사진 중 하나는 있어야 해요'); return; }
   let n;
   if(ideaEdit.id){ n=ideas.find(x=>x.id===ideaEdit.id); if(!n) return; }
   else{ n={ id:uid(), createdAt:Date.now(), shots:[] }; ideas.push(n); logActivity('idea', bookId); }
-  n.title=title; n.body=body; n.tags=tags; n.bookId=bookId; n.status=status; n.retro=retro; n.updatedAt=Date.now(); n.shots=ideaEdit.photos;
+  n.title=title; n.body=body; n.tags=tags; n.bookId=bookId; n.page=page; n.status=status; n.retro=retro; n.updatedAt=Date.now(); n.shots=ideaEdit.photos;
   close('ideaOverlay'); render(); showToast('아이디어 저장됨');
   // 책 상세를 열어둔 채 아이디어를 저장했다면 상세의 연결 목록도 갱신
   if(state.detailId && document.getElementById('detailOverlay').classList.contains('show')) openDetail(state.detailId);
@@ -5694,13 +5729,13 @@ async function cloudSaveIdea(n){
   const row={ id:n.id, user_id:currentUserId,
     created_at:n.createdAt?new Date(n.createdAt).toISOString():new Date().toISOString(),
     updated_at:new Date().toISOString(),
-    title:n.title||'', body:n.body||'', tags:n.tags||[], book_id:n.bookId||null, pinned:!!n.pinned, status:n.status||'seed', retro:n.retro||'' };
+    title:n.title||'', body:n.body||'', tags:n.tags||[], book_id:n.bookId||null, page:n.page||null, pinned:!!n.pinned, status:n.status||'seed', retro:n.retro||'' };
   let { error } = await sb.from('ideas').upsert(row, { onConflict:'id' });
   // ideas 테이블에 새 열(book_id·pinned·status·retro)이 아직 없으면: 그 열만 빼고 재시도 (앱은 계속 동작)
   const dropped=[];
-  while(error && /(book_id|pinned|status|retro)/i.test(error.message||'')){
+  while(error && /(book_id|pinned|status|retro|page)/i.test(error.message||'')){
     const msg=error.message||'';
-    const col=/retro/i.test(msg)?'retro':(/pinned/i.test(msg)?'pinned':(/status/i.test(msg)?'status':'book_id'));
+    const col=/retro/i.test(msg)?'retro':(/pinned/i.test(msg)?'pinned':(/status/i.test(msg)?'status':(/\bpage\b/i.test(msg)?'page':'book_id')));
     if(dropped.includes(col)) break;
     dropped.push(col); delete row[col];
     ({ error } = await sb.from('ideas').upsert(row, { onConflict:'id' }));
@@ -5968,6 +6003,17 @@ async function shareBook(){
   catch(e){ prompt('아래 링크를 복사하세요', url); }
 }
 document.getElementById('dShare').onclick=shareBook;
+/* 상세 위쪽 '공유'·'⋯' 메뉴 (2026-11-21: 아래 버튼 줄을 수정·닫기만 남기고 정리) */
+function dMenusClose(){ ['dShareMenu','dMoreMenu'].forEach(id=>document.getElementById(id).classList.add('hide')); ['dShareMenuBtn','dMoreBtn'].forEach(id=>document.getElementById(id).setAttribute('aria-expanded','false')); }
+function dMenuToggle(menuId, btnId){
+  const m=document.getElementById(menuId), wasOpen=!m.classList.contains('hide');
+  dMenusClose(); if(wasOpen) return;
+  if(menuId==='dMoreMenu'){ if(typeof syncDetailPinBtn==='function') syncDetailPinBtn(); if(typeof syncDetailGoalBtn==='function') syncDetailGoalBtn(); }
+  m.classList.remove('hide'); document.getElementById(btnId).setAttribute('aria-expanded','true');
+}
+document.getElementById('dShareMenuBtn').onclick=e=>{ e.stopPropagation(); dMenuToggle('dShareMenu','dShareMenuBtn'); };
+document.getElementById('dMoreBtn').onclick=e=>{ e.stopPropagation(); dMenuToggle('dMoreMenu','dMoreBtn'); };
+document.addEventListener('click',e=>{ if(e.target.closest('.d-menu .d-mi') || !e.target.closest('.d-menu')) dMenusClose(); });
 document.getElementById('dCard').onclick=()=>{ const b=books.find(x=>x.id===state.detailId); if(b) exportBookCard(b); };
 
 /* ---------- 이달의 목표 책 ----------
@@ -6568,6 +6614,7 @@ function setIdeaBook(id){
   }else{
     ch.classList.add('hide'); ch.innerHTML=''; q.classList.remove('hide'); q.value='';
   }
+  { const pr=document.getElementById('iaPageRow'); if(pr) pr.classList.toggle('hide', !b); if(!b){ const pi=document.getElementById('iaPage'); if(pi) pi.value=''; } }
   document.getElementById('iaBookList').classList.add('hide');
 }
 let ideaBookHits=[], ideaBookOn=-1;

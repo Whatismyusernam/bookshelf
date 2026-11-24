@@ -1435,6 +1435,33 @@ body:not(.dark) .btn.primary:hover{background:#163B6C;border-color:#163B6C}
 .d-memo-add:hover{background:var(--paper-2)}
 .d-memo-empty{font-size:12.5px;color:var(--muted);margin:8px 0 0}
 /* 표지에 메모 개수 */
+.cv-rr{position:absolute;left:6px;bottom:6px;z-index:2;font-size:10.5px;font-weight:800;line-height:1;padding:4px 7px;border-radius:5px;background:#B8322E;color:#fff;transform:rotate(-4deg);box-shadow:0 1px 4px rgba(0,0,0,.28);pointer-events:none;letter-spacing:-.2px}
+.tl-rr{font-size:10px;font-weight:700;color:#B8322E}
+body.dark .tl-rr{color:#E7867D}
+.chip.chip-rr{border-style:dashed}
+.rr-sum{margin:8px 0 0;font-size:13px;color:var(--seal);font-weight:600}
+.rr-list{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
+.d-sec .rr-it::before{content:none}
+.d-sec .rr-it{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.rr-it.cur{border-color:var(--seal)}
+.rr-n{flex:none;min-width:46px;text-align:center;font-size:12px;font-weight:800;color:#fff;background:var(--seal);border-radius:6px;padding:4px 6px;transform:rotate(-3deg)}
+.rr-it:not(.cur) .rr-n{background:#7A5236}
+.rr-b{flex:1;min-width:0}
+.rr-p{font-size:14px;color:var(--ink);line-height:1.5}
+.rr-m{font-size:12.5px;color:var(--muted);margin-top:2px;line-height:1.5;word-break:keep-all}
+.rr-now{color:var(--seal)}
+.rr-st{color:#C9A227;font-size:12px;letter-spacing:1px;white-space:nowrap}.rr-st i{font-style:normal;color:var(--line)}
+.rr-acts{flex:none;display:flex;flex-direction:column;gap:4px}
+.rr-acts button{font:inherit;font-size:12px;padding:6px 9px;min-height:32px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--ink-soft,var(--ink));cursor:pointer}
+.rr-form{margin-top:10px;padding:12px;border:1px dashed var(--seal);border-radius:12px;display:flex;flex-direction:column;gap:10px}
+.rr-form.hide{display:none}
+.rr-ft{margin:0;font-weight:700;font-size:14px;color:var(--ink)}
+.rr-row{display:flex;gap:10px;flex-wrap:wrap}
+.rr-form label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted);flex:1;min-width:130px}
+.rr-form input,.rr-form select{font:inherit;font-size:15px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);min-height:40px;box-sizing:border-box;width:100%}
+.rr-btns{display:flex;gap:8px;justify-content:flex-end}
+.rr-btns button{font:inherit;font-size:14px;padding:9px 16px;min-height:40px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer}
+.rr-btns .rr-save{background:var(--seal);border-color:var(--seal);color:var(--on-accent,#fff);font-weight:700}
 .cv-memo{position:absolute;right:6px;bottom:6px;z-index:2;font-size:10.5px;font-weight:600;line-height:1;padding:4px 7px;border-radius:999px;background:rgba(255,255,255,.94);color:var(--ink);box-shadow:0 1px 4px rgba(0,0,0,.25);pointer-events:none}
 body.dark .cv-memo{background:rgba(15,20,29,.9);color:#E6EBF3}
 .auth-policy{margin:14px 0 0;font-size:11.5px;color:var(--muted);text-align:center;line-height:1.5}
@@ -1841,6 +1868,7 @@ body.dark .cv-memo{background:rgba(15,20,29,.9);color:#E6EBF3}
         <option value="title">제목순</option>
         <option value="rating">평점 높은순</option>
         <option value="date">읽은 날짜순</option>
+        <option value="reads">많이 읽은 순</option>
       </select>
     </span>
     <select class="sortsel hide" id="exSort">
@@ -2620,7 +2648,8 @@ function toRow(b){
     isbn:b.isbn||'', buy_link:b.buyLink||'',
     goal_month:b.goalMonth||'', pinned_at:b.pinnedAt||null,
     total_pages:b.totalPages||null, current_page:(b.currentPage===null||b.currentPage===undefined)?null:b.currentPage,
-    is_public:(b.isPublic===true||b.isPublic===false)?b.isPublic:null
+    is_public:(b.isPublic===true||b.isPublic===false)?b.isPublic:null,
+    reads:readsOf(b)
   };
 }
 /* 읽은 기간이 거꾸로(시작일 > 다 읽은 날) 저장된 옛 기록도 바른 순서로 보여줘요.
@@ -2630,6 +2659,27 @@ function fixDateOrder(b){
   if(s && e && s>e){ const t=b.dateStart; b.dateStart=b.date; b.date=t; }
   return b;
 }
+/* ---------- 회독(다시 읽기) ----------
+   b.reads = 지난 회독 [{start,end,rate,note}] (완독일 순). 지금 회차는 기존처럼 dateStart/date/status/rate에 그대로.
+   회독 수 = 지난 회독 + (지금 읽는 중이거나 다 읽었으면 1). */
+function normReads(a){
+  if(!Array.isArray(a)) return [];
+  return a.filter(r=>r&&typeof r==='object').map(r=>({ start:String(r.start||'').slice(0,10), end:String(r.end||'').slice(0,10), rate:Math.max(0,Math.min(5,+r.rate||0)), note:String(r.note||'').slice(0,200) }))
+    .sort((x,y)=>(x.end||x.start||'').localeCompare(y.end||y.start||''));
+}
+function readsOf(b){ return Array.isArray(b&&b.reads)?b.reads:[]; }
+function readCount(b){ return readsOf(b).length + ((b.status==='done'||b.status==='reading')?1:0); }
+function readNo(x){ return x._readN || (readsOf(x).length+1); }
+/* 완독 한 번 한 번을 책처럼 다루는 목록: 지난 회독은 그 회차의 기간·별점을 가진 복사본, 지금 완독은 책 그대로 */
+function finishes(){
+  const out=[];
+  books.forEach(b=>{
+    readsOf(b).forEach((r,i)=>{ if(r.end) out.push(Object.assign({}, b, { date:r.end, dateStart:r.start||'', rate:r.rate||0, status:'done', _readN:i+1, _past:true })); });
+    if(b.status==='done') out.push(b);
+  });
+  return out;
+}
+function doneOfYear(Y){ return finishes().filter(x=>bookYear(x)===Y); }
 function fromRow(r, shots){
   return fixDateOrder(foldInsight({
     id:r.id,
@@ -2644,6 +2694,7 @@ function fromRow(r, shots){
     goalMonth:r.goal_month||'', pinnedAt:r.pinned_at||null,
     totalPages:r.total_pages||null, currentPage:(r.current_page===null||r.current_page===undefined)?null:r.current_page,
     isPublic:(r.is_public===true||r.is_public===false)?r.is_public:null,
+    reads:normReads(r.reads),
     quoteShots:(shots||[]).map(s=>({id:s.id, img:s.img, text:s.text||'', path:s.path||''}))
   }));
 }
@@ -2773,6 +2824,12 @@ async function cloudSaveBook(b){
     const { total_pages, current_page, ...rest } = row;
     ({ error } = await sb.from('books').upsert(rest, { onConflict:'id' }));
     if(!error) console.warn('쪽수 칸이 없어 쪽수는 저장되지 않았습니다. 독서 습관 SQL을 실행하세요.');
+  }
+  // 회독 기록 칸(reads)을 아직 만들지 않은 경우: 그 칸만 빼고 저장해요. 지난 회독 기록은 이 기기 화면에만 남아요.
+  if(error && /\breads\b/.test(error.message||'')){
+    const { reads, ...rest } = row;
+    ({ error } = await sb.from('books').upsert(rest, { onConflict:'id' }));
+    if(!error && readsOf(b).length){ console.warn('reads 칸이 없어 회독 기록은 저장되지 않았습니다. 회독 SQL을 실행하세요.'); if(!window._rrWarned){ window._rrWarned=true; showToast('회독 기록 저장 칸이 아직 없어요 — 관리자 SQL이 필요해요'); } }
   }
   if(error) throw error;
   await syncShots(b);
@@ -2936,9 +2993,15 @@ function renderChips(){
   wrap.innerHTML=all.map(c=>{
     const on=state.cat===c?'on':'';
     const dot=c==='전체'?'':`<span class="dot" style="background:${catColor(c)}"></span>`;
-    return `<button class="chip ${on}" data-cat="${c}">${dot}${c}</button>`;
+    const on2=(state.browse==='reread')?'':on;
+    return `<button class="chip ${on2}" data-cat="${c}">${dot}${c}</button>`;
   }).join('');
-  wrap.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{ state.cat=b.dataset.cat; state.browse=''; render(); });
+  const rrN=books.filter(b=>readCount(b)>=2).length;
+  if(rrN) wrap.innerHTML+=`<button class="chip chip-rr ${state.browse==='reread'?'on':''}" data-rr="1">다시 읽은 책 ${rrN}</button>`;
+  wrap.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{
+    if(b.dataset.rr){ state.cat='전체'; state.browse=(state.browse==='reread')?'':'reread'; render(); return; }
+    state.cat=b.dataset.cat; state.browse=''; render();
+  });
 }
 function tagCounts(){
   const m={};
@@ -3027,7 +3090,7 @@ function renderStats(){
   const years=availableYears(); const yLabel=years.length?years[0]:new Date().getFullYear();
   const nowY=new Date().getFullYear();
   const goal=goals[nowY]||0;
-  const doneY=books.filter(b=>b.status==='done'&&bookYear(b)===nowY).length;
+  const doneY=doneOfYear(nowY).length;
   let goalHtml;
   if(goal){
     const C=2*Math.PI*8, pct=Math.min(1, doneY/goal);
@@ -3082,6 +3145,7 @@ function readPeriodLabel(b){
 function availableYears(){
   const set=new Set();
   books.forEach(b=>{ const y=bookYear(b); if(y) set.add(y); });
+  finishes().forEach(x=>{ const y=bookYear(x); if(y) set.add(y); });
   return [...set].sort((a,b)=>b-a);
 }
 function lovedPassages(arr){
@@ -3097,7 +3161,8 @@ function lovedPassages(arr){
 }
 function reviewData(Y){
   const ofYear=books.filter(b=>bookYear(b)===Y);
-  const done=ofYear.filter(b=>b.status==='done');
+  const done=doneOfYear(Y);
+  const rereadCount=done.filter(x=>readNo(x)>=2).length;
   const catCounts={}; done.forEach(b=>{ catCounts[b.cat]=(catCounts[b.cat]||0)+1; });
   const months=new Array(12).fill(0);
   done.forEach(b=>{ if(b.date&&/^\d{4}-\d{2}/.test(b.date)){ const m=+b.date.slice(5,7)-1; if(m>=0&&m<12) months[m]++; } });
@@ -3108,7 +3173,7 @@ function reviewData(Y){
   let topCat='',mx=0; Object.entries(catCounts).forEach(([k,v])=>{ if(v>mx){mx=v;topCat=k;} });
   let loved=lovedPassages(ofYear);
   if(loved.length===0){ fiveStars.forEach(b=>{ const q=(b.quote||'').split('\n').map(s=>s.trim()).filter(Boolean)[0]; if(q) loved.push({id:b.id,title:b.title,author:b.author,cat:b.cat,text:q}); }); }
-  return {Y, totalCount:ofYear.length, doneCount:done.length, catCounts, months, avg, fiveStars, passageCount, topCat, loved};
+  return {Y, totalCount:new Set(ofYear.map(b=>b.id).concat(done.map(b=>b.id))).size, doneCount:done.length, rereadCount, catCounts, months, avg, fiveStars, passageCount, topCat, loved};
 }
 /* 독서 타임라인: 해당 연도에 읽은 책들을 '시작~종료' 막대로 한눈에.
    시작일이 없거나 하루에 읽은 책은 점(●)으로 표시한다. 색은 분류별. */
@@ -3117,7 +3182,7 @@ function timelineHTML(Y){
   const jan1=new Date(Y,0,1);
   const doy=s=>{ const d=new Date(s+'T00:00:00'); return isNaN(d)?null:Math.floor((d-jan1)/86400000); };
   const clamp=n=>Math.max(0,Math.min(yearLen-1,n));
-  const rows=books.filter(b=>b.date&&/^\d{4}-\d{2}-\d{2}/.test(b.date)&&+b.date.slice(0,4)===Y).map(b=>{
+  const rows=books.concat(finishes().filter(x=>x._past)).filter(b=>b.date&&/^\d{4}-\d{2}-\d{2}/.test(b.date)&&+b.date.slice(0,4)===Y).map(b=>{
     const eRaw=doy(b.date.slice(0,10));
     const hasStart=b.dateStart&&/^\d{4}-\d{2}-\d{2}/.test(b.dateStart)&&b.dateStart.slice(0,10)!==b.date.slice(0,10);
     const sRaw=hasStart?doy(b.dateStart.slice(0,10)):eRaw;
@@ -3135,7 +3200,7 @@ function timelineHTML(Y){
     const mark=span
       ? `<div class="tl-bar" style="left:${left}%;width:${Math.max((e-s+1)/yearLen*100,1.4)}%;background:${col}" title="${tip}"></div>`
       : `<div class="tl-dot" style="left:${left}%;background:${col}" title="${tip}"></div>`;
-    return `<div class="tl-row" data-bid="${b.id}"><div class="tl-name">${esc(b.title)||'(제목 없음)'}</div><div class="tl-track">${mark}</div></div>`;
+    return `<div class="tl-row" data-bid="${b.id}"><div class="tl-name">${esc(b.title)||'(제목 없음)'}${readNo(b)>=2&&(b._past||b.status==='done')?` <span class="tl-rr">${readNo(b)}회독</span>`:''}</div><div class="tl-track">${mark}</div></div>`;
   }).join('');
   return `<div class="rv-sec"><h3>독서 타임라인</h3>`+
     `<div class="tl-head"><div class="tl-name"></div><div class="tl-track">${axis}</div></div>`+
@@ -3158,6 +3223,7 @@ function renderReview(){
   h+=`<div class="rv-chips"><div class="rv-chip"><b>${d.passageCount}</b><span>모은 문장</span></div>`;
   if(d.avg) h+=`<div class="rv-chip"><b>★ ${d.avg.toFixed(1)}</b><span>평균 별점</span></div>`;
   if(d.topCat) h+=`<div class="rv-chip"><b>${d.topCat}</b><span>최다 분류</span></div>`;
+  if(d.rereadCount) h+=`<div class="rv-chip"><b>${d.rereadCount}</b><span>다시 읽은 책</span></div>`;
   h+=`</div>`;
   const maxMo=Math.max(...d.months);
   if(maxMo>0){
@@ -3171,6 +3237,7 @@ function renderReview(){
   const dayKey=dt=>`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
   books.forEach(b=>{
     if(b.date&&/^\d{4}-\d{2}-\d{2}/.test(b.date)&&+b.date.slice(0,4)===Y) act[b.date.slice(0,10)]=(act[b.date.slice(0,10)]||0)+1;
+    readsOf(b).forEach(r=>{ if(r.end&&+r.end.slice(0,4)===Y) act[r.end]=(act[r.end]||0)+1; });
     if(b.createdAt){ const cd=new Date(b.createdAt); if(cd.getFullYear()===Y) act[dayKey(cd)]=(act[dayKey(cd)]||0)+1; }
   });
   if(Object.keys(act).length){
@@ -3274,7 +3341,7 @@ function countPassages(){
   return n;
 }
 function milestones(){
-  const done=books.filter(b=>b.status==='done').length;
+  const done=finishes().length;
   const quotes=countPassages();
   const defs=[
     {ic:'📖', label:'첫 책', metric:done, need:1},
@@ -3370,7 +3437,7 @@ function cardPalette(){
 }
 function strHash(s){ let h=0; for(const ch of (s||'')) h=(h*31+ch.charCodeAt(0))|0; return Math.abs(h); }
 function cardDoneBooks(Y){
-  return books.filter(b=>b.status==='done' && bookYear(b)===Y)
+  return doneOfYear(Y)
     .sort((a,b)=>((a.date||'')<(b.date||'')?-1:1));
 }
 function cardRecordDays(Y){
@@ -3553,7 +3620,7 @@ function renderYearEndBanner(show){
   }
   const Y=yearEndCardYear();
   let closed=false; try{ closed=localStorage.getItem('ob_ye_closed')===String(Y); }catch(e){}
-  const n=Y?books.filter(b=>b.status==='done'&&bookYear(b)===Y).length:0;
+  const n=Y?doneOfYear(Y).length:0;
   if(!show || !Y || closed || n===0){ el.classList.add('hide'); el.innerHTML=''; return; }
   el.classList.remove('hide');
   el.innerHTML=`<div class="ye-seal">冊</div><div class="ye-txt"><b>${Y}년, ${n}권을 끝까지 읽었어요</b><span>한 장짜리 결산 카드로 남겨보세요</span></div><button type="button" class="ye-go">카드 만들기</button><button type="button" class="ye-x" aria-label="닫기">×</button>`;
@@ -3760,7 +3827,7 @@ function weekRange(){
 function renderWeekBody(){
   const {start,end}=weekRange();
   const inR=t=>t>=start.getTime()&&t<=end.getTime();
-  const doneW=books.filter(b=>b.status==='done'&&b.date&&/^\d{4}-\d{2}-\d{2}/.test(b.date)&&inR(Date.parse(b.date+'T12:00:00')));
+  const doneW=finishes().filter(b=>b.date&&/^\d{4}-\d{2}-\d{2}/.test(b.date)&&inR(Date.parse(b.date+'T12:00:00')));
   const addedW=books.filter(b=>b.createdAt&&inR(b.createdAt));
   const touchedW=books.filter(b=>(b.updatedAt||b.createdAt)&&inR(b.updatedAt||b.createdAt)).sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
   const fmt=d=>`${d.getMonth()+1}월 ${d.getDate()}일`;
@@ -3790,6 +3857,7 @@ function openWeek(){ renderWeekBody(); open('weekOverlay'); }
 /* ---------- filtering ---------- */
 function matches(b){
   if(state.browse==='reading' && b.status!=='reading') return false;
+  if(state.browse==='reread' && readCount(b)<2) return false;
   if(state.cat!=='전체' && b.cat!==state.cat) return false;
   if(state.tags.length){ const bt=b.tags||[]; if(!state.tags.every(t=>bt.includes(t))) return false; }
   if(state.q){
@@ -3804,6 +3872,7 @@ function sortBooks(arr){
     if(s==='title') return (a.title||'').localeCompare(b.title||'','ko');
     if(s==='rating') return (b.rate||0)-(a.rate||0);
     if(s==='date') return (b.date||'').localeCompare(a.date||'');
+    if(s==='reads') return readCount(b)-readCount(a) || (b.date||'').localeCompare(a.date||'');
     return (b.createdAt||0)-(a.createdAt||0);
   });
 }
@@ -3815,8 +3884,8 @@ function renderReport(show){
   if(!show || !books.length){ el.classList.add('hide'); el.innerHTML=''; return; }
   const now=new Date(), Y=now.getFullYear(), M=now.getMonth()+1;
   const mk=Y+'-'+String(M).padStart(2,'0');
-  const doneY=books.filter(b=>b.status==='done'&&bookYear(b)===Y).length;
-  const doneM=books.filter(b=>b.status==='done'&&(b.date||'').slice(0,7)===mk).length;
+  const doneY=doneOfYear(Y).length;
+  const doneM=finishes().filter(b=>(b.date||'').slice(0,7)===mk).length;
   const rated=books.filter(b=>(b.rate||0)>0);
   const avg=rated.length?(rated.reduce((s,b)=>s+(b.rate||0),0)/rated.length).toFixed(1):'–';
   const goal=goals[Y]||0;
@@ -3839,7 +3908,9 @@ function coverHTML(b,cls){
   const stBadge=`<span class="cv-st ${st}" aria-hidden="true">${stMark}</span><span class="vh">${stLabel}</span>`;
   const memoN=(typeof ideas!=='undefined')?ideas.filter(n=>n.bookId===b.id).length:0;
   const memo=memoN?`<span class="cv-memo" aria-label="메모 ${memoN}개">💡 ${memoN}</span>`:'';
-  return `<div class="cover ${ph} st-${st}" style="--cc:${catHex(b.cat)}">${img}${body}${stBadge}${memo}</div>`;
+  const rc=readCount(b);
+  const rr=rc>=2?`<span class="cv-rr" aria-label="${rc}번째 읽기">${rc}회독</span>`:'';
+  return `<div class="cover ${ph} st-${st}" style="--cc:${catHex(b.cat)}">${img}${body}${stBadge}${memo}${rr}</div>`;
 }
 function render(){
   try{ pathCelCheck(); }catch(e){}
@@ -5101,6 +5172,7 @@ function openDetail(id){
     }).join('');
     sec.push(`<div class="d-sec"><div class="d-memo-h"><h4>이 책의 메모${linked.length?` ${linked.length}`:''}</h4><button type="button" class="d-memo-add" id="dMemoAdd">+ 메모 쓰기</button></div>${linked.length?`<div style="margin-top:10px">${items}</div>`:'<p class="d-memo-empty">이 책을 읽다 떠오른 생각을 남겨 보세요. 아이디어 탭에도 함께 모여요.</p>'}</div>`);
   }
+  { const rs=readsSecHTML(b); if(rs) sec.push(rs); }
   if(b.oneliner) sec.push(secP('한 줄 소개',b.oneliner));
   if(b.key) sec.push(secList('핵심 내용',b.key));
   // 상세에는 ♥한 사진만 표시 — 전체 사진은 수정 화면에서 관리
@@ -5129,7 +5201,93 @@ function openDetail(id){
   { const ims=[...body.querySelectorAll('.shot-view img')]; ims.forEach(im=>im.onclick=()=>openLightbox(im.src, ims.map(x=>x.src))); }
   body.querySelectorAll('.d-idea').forEach(el=>el.onclick=()=>openIdea(el.dataset.i));
   { const ma=document.getElementById('dMemoAdd'); if(ma) ma.onclick=()=>openIdea(null, b.id); }
+  wireReadsSec(b);
   open('detailOverlay');
+}
+/* 상세 '읽은 기록': 회차별 기간·별점·한 줄 메모, 다시 읽기, 지난 기록 추가·수정·삭제 */
+function rrDate(s){ return s?s.replace(/-/g,'.'):''; }
+function rrPeriod(s,e){
+  if(s&&e&&s!==e){ const n=readPeriodDays(s,e); const e2=s.slice(0,4)===e.slice(0,4)?e.slice(5).replace(/-/g,'.'):rrDate(e); return `${rrDate(s)} ~ ${e2}${n>0?` · ${n}일`:''}`; }
+  if(e) return rrDate(e); if(s) return `${rrDate(s)}부터`; return '날짜 없음';
+}
+function rrStars(n){ return n?`<span class="rr-st">${'★'.repeat(n)}<i>${'★'.repeat(5-n)}</i></span>`:''; }
+function readsSecHTML(b){
+  const past=readsOf(b), total=readCount(b);
+  if(!past.length && b.status==='todo') return '';
+  const items=[];
+  if(b.status==='done'||b.status==='reading'){
+    const now=b.status==='reading';
+    items.push(`<li class="rr-it cur"><span class="rr-n">${past.length+1}회독</span><div class="rr-b"><div class="rr-p">${now?`<b class="rr-now">읽는 중</b> · ${rrDate((b.dateStart||'').slice(0,10))||'시작일 없음'}부터`:rrPeriod((b.dateStart||'').slice(0,10),(b.date||'').slice(0,10))} ${now?'':rrStars(b.rate)}</div><div class="rr-m">${now?'지금 읽고 있어요':'가장 최근 기록 · 수정 화면에서 고쳐요'}</div></div></li>`);
+  }
+  past.map((r,i)=>({r,i})).reverse().forEach(({r,i})=>{
+    items.push(`<li class="rr-it"><span class="rr-n">${i+1}회독</span><div class="rr-b"><div class="rr-p">${rrPeriod(r.start,r.end)} ${rrStars(r.rate)}</div>${r.note?`<div class="rr-m">“${esc(r.note)}”</div>`:''}</div><span class="rr-acts"><button type="button" class="rr-ed" data-rri="${i}" aria-label="${i+1}회독 기록 고치기">고치기</button><button type="button" class="rr-del" data-rri="${i}" aria-label="${i+1}회독 기록 지우기">지우기</button></span></li>`);
+  });
+  // 회독 요약: 처음 읽은 해부터 몇 년, 별점이 어떻게 바뀌었는지
+  let sum='';
+  if(total>=2){
+    const firstD=(past[0]&&(past[0].start||past[0].end))||'';
+    const yrs=firstD?(new Date().getFullYear()-(+firstD.slice(0,4))):0;
+    const rates=past.map(r=>r.rate).concat(b.status==='done'?[b.rate||0]:[]).filter(n=>n>0);
+    const parts=[`${total}번째 함께하는 책`];
+    if(yrs>=1) parts.push(`처음 읽은 지 ${yrs}년`);
+    if(rates.length>=2) parts.push(`별점 ${rates.join(' → ')}`);
+    sum=`<p class="rr-sum">${parts.join(' · ')}</p>`;
+  }
+  const again=b.status==='done'?`<button type="button" class="d-memo-add" id="rrAgain">다시 읽기</button>`:'';
+  return `<div class="d-sec" id="rrSec"><div class="d-memo-h"><h4>읽은 기록${total>=2?` · ${total}회독`:''}</h4><span style="display:flex;gap:6px">${again}<button type="button" class="d-memo-add" id="rrAdd">+ 지난 기록</button></span></div>${sum}<ul class="rr-list">${items.join('')}</ul><div id="rrForm" class="rr-form hide"></div></div>`;
+}
+function rrFormHTML(r, title){
+  r=r||{start:'',end:'',rate:0,note:''};
+  const opts=[0,1,2,3,4,5].map(n=>`<option value="${n}" ${n===(r.rate||0)?'selected':''}>${n?('★'.repeat(n)):'별점 없음'}</option>`).join('');
+  return `<p class="rr-ft">${title}</p><div class="rr-row"><label>시작한 날<input type="date" id="rrS" value="${esc(r.start||'')}"></label><label>다 읽은 날<input type="date" id="rrE" value="${esc(r.end||'')}"></label></div>`+
+    `<div class="rr-row"><label>그때 별점<select id="rrR">${opts}</select></label></div>`+
+    `<label class="rr-wide">그때 남긴 한 줄 <input type="text" id="rrN" maxlength="200" placeholder="예) 스무 살엔 몰랐던 문장이 보였다" value="${esc(r.note||'')}"></label>`+
+    `<div class="rr-btns"><button type="button" class="rr-cancel" id="rrCancel">취소</button><button type="button" class="rr-save" id="rrSave">저장</button></div>`;
+}
+async function saveReads(b, msg){
+  b.reads=normReads(b.reads); b.updatedAt=Date.now();
+  render(); openDetail(b.id); if(msg) showToast(msg);
+  try{ await cloudSaveBook(b); }catch(e){ console.warn(e); showToast('클라우드 저장 실패 — 인터넷 연결을 확인하세요'); }
+}
+function wireReadsSec(b){
+  const sec=document.getElementById('rrSec'); if(!sec) return;
+  const form=document.getElementById('rrForm');
+  const openForm=(idx)=>{
+    const r=idx===null?null:readsOf(b)[idx];
+    form.innerHTML=rrFormHTML(r, idx===null?'예전에 읽었던 기록 더하기':`${idx+1}회독 기록 고치기`);
+    form.classList.remove('hide');
+    document.getElementById('rrCancel').onclick=()=>{ form.classList.add('hide'); form.innerHTML=''; };
+    document.getElementById('rrSave').onclick=()=>{
+      let s=document.getElementById('rrS').value, e=document.getElementById('rrE').value;
+      if(!e){ showToast('다 읽은 날을 넣어 주세요 (대략적인 날짜도 괜찮아요)'); return; }
+      if(s&&s>e){ const t=s; s=e; e=t; }
+      const rec={ start:s||'', end:e, rate:+document.getElementById('rrR').value||0, note:document.getElementById('rrN').value.trim() };
+      const arr=readsOf(b).slice();
+      if(idx===null) arr.push(rec); else arr[idx]=rec;
+      b.reads=arr;
+      saveReads(b, idx===null?'지난 기록을 더했어요':'기록을 고쳤어요');
+    };
+    try{ form.scrollIntoView({block:'nearest',behavior:'smooth'}); }catch(e){}
+  };
+  const add=document.getElementById('rrAdd'); if(add) add.onclick=()=>openForm(null);
+  sec.querySelectorAll('.rr-ed').forEach(el=>el.onclick=()=>openForm(+el.dataset.rri));
+  sec.querySelectorAll('.rr-del').forEach(el=>el.onclick=()=>{
+    const i=+el.dataset.rri;
+    if(!confirm(`${i+1}회독 기록을 지울까요?`)) return;
+    const arr=readsOf(b).slice(); arr.splice(i,1); b.reads=arr;
+    saveReads(b,'기록을 지웠어요');
+  });
+  const again=document.getElementById('rrAgain');
+  if(again) again.onclick=()=>{
+    const n=readCount(b)+1;
+    if(!confirm(`『${b.title||'이 책'}』을 ${n}회독으로 다시 읽을까요?\n지금까지의 기간과 별점은 '읽은 기록'에 ${n-1}회독으로 남아요.`)) return;
+    const _d=new Date(), today=_d.getFullYear()+'-'+String(_d.getMonth()+1).padStart(2,'0')+'-'+String(_d.getDate()).padStart(2,'0');
+    const arr=readsOf(b).slice();
+    arr.push({ start:(b.dateStart||'').slice(0,10), end:(b.date||'').slice(0,10)||today, rate:b.rate||0, note:'' });
+    b.reads=arr; b.status='reading'; b.dateStart=today; b.date='';
+    if(b.totalPages) b.currentPage=0;
+    saveReads(b, `${n}회독을 시작했어요`);
+  };
 }
 function secP(t,v){ return `<div class="d-sec"><h4>${t}</h4><p>${esc(v)}</p></div>`; }
 function secList(t,v){ const items=v.split('\n').map(s=>s.trim()).filter(Boolean); if(items.length<=1) return secP(t,v); return `<div class="d-sec"><h4>${t}</h4><ul>${items.map(i=>`<li>${esc(plainText(i))}</li>`).join('')}</ul></div>`; }
@@ -5834,6 +5992,7 @@ function importData(file){
         nb.quoteShots=nb.quoteShots.map(s=>({id:s.id||uid(), img:s.img, text:s.text||'', path:s.path||''}));
         delete nb.quotePhotos;
         if(!nb.dateStart) nb.dateStart='';
+        nb.reads=normReads(nb.reads);
         fixDateOrder(nb);
         nb.cat=normCat(nb.cat);
         return foldInsight(nb);
@@ -6205,7 +6364,7 @@ open=function(id){ _openBase(id); if(!currentUserId) return; for(const n in FEAT
    웹 화면은 바뀌지 않아요(.ob-app에서만 보임). */
 function openAppMenu(){
   const nowY=new Date().getFullYear(), goal=goals[nowY]||0;
-  const doneY=books.filter(b=>b.status==='done'&&bookYear(b)===nowY).length;
+  const doneY=doneOfYear(nowY).length;
   const ym=nowY+'-'+String(new Date().getMonth()+1).padStart(2,'0');
   const mg=books.filter(b=>b.goalMonth===ym), mgDone=mg.filter(b=>b.status==='done').length;
   const yrs=availableYears(); const yLabel=yrs.length?yrs[0]:nowY;
@@ -6409,6 +6568,7 @@ function browseLabel(){
   if(state.q) return `‘${state.q}’ 검색`;
   const parts=[];
   if(state.browse==='reading') parts.push('읽는 중');
+  if(state.browse==='reread') parts.push('다시 읽은 책');
   if(state.cat!=='전체') parts.push(state.cat);
   if(state.tags.length) parts.push(state.tags.map(t=>'#'+t).join(' '));
   return parts.length?parts.join(' · '):'전체';

@@ -1439,6 +1439,7 @@ body:not(.dark) .btn.primary:hover{background:#163B6C;border-color:#163B6C}
 .tl-rr{font-size:10px;font-weight:700;color:#B8322E}
 body.dark .tl-rr{color:#E7867D}
 .chip.chip-rr{border-style:dashed}
+.d-sec .d-memo-h:has(#rrAdd){flex-wrap:wrap;row-gap:8px}
 .rr-sum{margin:8px 0 0;font-size:13px;color:var(--seal);font-weight:600}
 .rr-list{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
 .d-sec .rr-it::before{content:none}
@@ -5217,7 +5218,7 @@ function readsSecHTML(b){
   const items=[];
   if(b.status==='done'||b.status==='reading'){
     const now=b.status==='reading';
-    items.push(`<li class="rr-it cur"><span class="rr-n">${past.length+1}회독</span><div class="rr-b"><div class="rr-p">${now?`<b class="rr-now">읽는 중</b> · ${rrDate((b.dateStart||'').slice(0,10))||'시작일 없음'}부터`:rrPeriod((b.dateStart||'').slice(0,10),(b.date||'').slice(0,10))} ${now?'':rrStars(b.rate)}</div><div class="rr-m">${now?'지금 읽고 있어요':'가장 최근 기록 · 수정 화면에서 고쳐요'}</div></div></li>`);
+    items.push(`<li class="rr-it cur"><span class="rr-n">${past.length+1}회독</span><div class="rr-b"><div class="rr-p">${now?`<b class="rr-now">읽는 중</b> · ${rrDate((b.dateStart||'').slice(0,10))||'시작일 없음'}부터`:rrPeriod((b.dateStart||'').slice(0,10),(b.date||'').slice(0,10))} ${now?'':rrStars(b.rate)}</div><div class="rr-m">${now?'지금 읽고 있어요':'가장 최근 기록'}</div></div><span class="rr-acts"><button type="button" class="rr-cur-ed" id="rrCurEd" aria-label="${past.length+1}회독 날짜·별점 고치기">고치기</button></span></li>`);
   }
   past.map((r,i)=>({r,i})).reverse().forEach(({r,i})=>{
     items.push(`<li class="rr-it"><span class="rr-n">${i+1}회독</span><div class="rr-b"><div class="rr-p">${rrPeriod(r.start,r.end)} ${rrStars(r.rate)}</div>${r.note?`<div class="rr-m">“${esc(r.note)}”</div>`:''}</div><span class="rr-acts"><button type="button" class="rr-ed" data-rri="${i}" aria-label="${i+1}회독 기록 고치기">고치기</button><button type="button" class="rr-del" data-rri="${i}" aria-label="${i+1}회독 기록 지우기">지우기</button></span></li>`);
@@ -5234,7 +5235,7 @@ function readsSecHTML(b){
     sum=`<p class="rr-sum">${parts.join(' · ')}</p>`;
   }
   const again=b.status==='done'?`<button type="button" class="d-memo-add" id="rrAgain">다시 읽기</button>`:'';
-  return `<div class="d-sec" id="rrSec"><div class="d-memo-h"><h4>읽은 기록${total>=2?` · ${total}회독`:''}</h4><span style="display:flex;gap:6px">${again}<button type="button" class="d-memo-add" id="rrAdd">+ 지난 기록</button></span></div>${sum}<ul class="rr-list">${items.join('')}</ul><div id="rrForm" class="rr-form hide"></div></div>`;
+  return `<div class="d-sec" id="rrSec"><div class="d-memo-h"><h4>읽은 기록${total>=2?` · ${total}회독`:''}</h4><span style="display:flex;gap:6px">${again}<button type="button" class="d-memo-add" id="rrAdd">+ 예전 회독 추가</button></span></div>${sum}<ul class="rr-list">${items.join('')}</ul><div id="rrForm" class="rr-form hide"></div></div>`;
 }
 function rrFormHTML(r, title){
   r=r||{start:'',end:'',rate:0,note:''};
@@ -5270,6 +5271,8 @@ function wireReadsSec(b){
     try{ form.scrollIntoView({block:'nearest',behavior:'smooth'}); }catch(e){}
   };
   const add=document.getElementById('rrAdd'); if(add) add.onclick=()=>openForm(null);
+  // 지금 회차(읽는 중·다 읽음)의 날짜·별점은 책 수정 화면에 있어요
+  const ce=document.getElementById('rrCurEd'); if(ce) ce.onclick=()=>{ close('detailOverlay'); openEdit(b.id); setTimeout(()=>{ try{ const f=document.getElementById('fDateStart'); if(f) f.scrollIntoView({block:'center',behavior:'smooth'}); }catch(e){} },250); };
   sec.querySelectorAll('.rr-ed').forEach(el=>el.onclick=()=>openForm(+el.dataset.rri));
   sec.querySelectorAll('.rr-del').forEach(el=>el.onclick=()=>{
     const i=+el.dataset.rri;

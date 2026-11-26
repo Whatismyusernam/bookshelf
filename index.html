@@ -2407,7 +2407,7 @@ body.dark .cv-memo{background:rgba(15,20,29,.9);color:#E6EBF3}
           <input type="time" id="hbNotifTime" value="21:00" aria-label="알림 시각" disabled>
         </div>
         <div class="rd-hint" id="hbNotifNote">기록하지 않은 날에만, 매일 다른 말로 알려요 — 읽는 중인 책의 쪽수, 예전에 남긴 문장, 이번 주 기록, 완독 기념일. 알림을 길게 누르면 ‘오늘 읽었어요’로 바로 기록돼요.</div>
-        <label for="hbNotifQuote" style="margin-top:12px;display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;color:var(--ink);cursor:pointer"><input type="checkbox" id="hbNotifQuote" checked> 남긴 문장을 잠금 화면에 보여 주기</label>
+        <label for="hbNotifQuote" style="margin-top:12px;display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;color:var(--ink);cursor:pointer"><input type="checkbox" id="hbNotifQuote" checked style="width:auto;flex:none;margin:0;min-height:0"> 남긴 문장을 잠금 화면에 보여 주기</label>
         <div id="hbNotifPreview"></div>
       </div>
       <p class="rd-hint" style="margin-top:14px">알림은 이 아이폰 안에서만 예약돼요. 아이폰 설정 &gt; 오버북 &gt; 알림이 꺼져 있으면 오지 않아요.</p>
@@ -4493,9 +4493,24 @@ function obNotifGet(){
 function obNotifSet(v){ try{ const c=obNotifGet(); localStorage.setItem('ob_notif', JSON.stringify(Object.assign({ q:c.q }, v))); }catch(e){} }
 async function obNotifCancel(){
   const LN=obNotifPlugin(); if(!LN) return;
-  try{ await LN.cancel({ notifications:NOTIF_IDS.map(id=>({id})) }); }catch(e){}
+  try{ await LN.cancel({ notifications:NOTIF_IDS.concat(NOTIF_BACK.map(x=>x.id)).map(id=>({id})) }); }catch(e){}
 }
 const NOTIF_SNOOZE_ID=9108;
+/* 앱을 오래 안 열었을 때: 7일치 뒤에 10·14·21일째 한 번씩만. 앱을 열면 매번 다시 짜므로, 계속 쓰는 사람에겐 오지 않아요. */
+const NOTIF_BACK=[{ id:9111, d:10 },{ id:9112, d:14 },{ id:9113, d:21 }];
+function obNotifBackMsg(n, cfg){
+  const rb=books.find(b=>b.status==='reading');
+  if(n===10){
+    if(rb){ const p=+rb.currentPage||0; return { body:p>0?`${obT(rb)} ${p}쪽에서 멈춰 있어요. 도장이가 그 자리에서 기다려요.`:`${obT(rb)}${obJosa(rb.title,'이','가')} 그대로 기다리고 있어요. 한 쪽만 펼쳐 볼까요?`, bookId:rb.id }; }
+    return { body:'도장이가 책장 앞에서 기다려요. 오늘 읽고 싶은 책 한 권 골라 볼까요?', path:true };
+  }
+  if(n===14){
+    const q=obQuotePool()[0];
+    if(q && cfg.q){ const t=q.t.length>50?q.t.slice(0,48)+'…':q.t; return { body:`예전에 남긴 문장 — “${t}” 다시 이어 읽어 볼까요?`, bookId:q.b.id }; }
+    return { body:'두 주 동안 쉬었어요. 한 쪽으로 다시 시작해도 충분해요.', bookId:rb?rb.id:null };
+  }
+  return { body:'도장이가 쉼터에서 기다려요. 돌아오면 멈춘 칸부터 그대로 이어져요.', path:true };
+}
 /* ---------- 매일 다른 알림 문구 ----------
    기기 안에 이미 있는 기록(읽는 중인 책·쪽수, 남긴 문장, 이번 주 기록, 완독 기념일, 회독)으로 그날의 한 줄을 골라요.
    새로 모으는 정보는 없어요. 알림을 누르면 그 책(또는 나의 독서 길)이 열려요. */
@@ -4580,6 +4595,7 @@ function obNotifPlan(cfg, now){
     const msg=obNotifPick(day,i,cfg);
     out.push({ id:NOTIF_IDS[i], day, h:cfg.h, m:cfg.m, body:msg.body, bookId:msg.bookId||null });
   }
+  NOTIF_BACK.forEach(x=>{ const m=obNotifBackMsg(x.d,cfg); out.push({ id:x.id, day:addDays(s.today,x.d), h:cfg.h, m:cfg.m, body:m.body, bookId:m.bookId||null, back:x.d }); });
   return out;
 }
 let obNotifBusy=Promise.resolve();
@@ -4670,6 +4686,8 @@ function obHandleAppUrl(url){
   if(!window.OB_IS_APP) return;
   const A=window.Capacitor.Plugins && window.Capacitor.Plugins.App; if(!A) return;
   try{ A.addListener('appUrlOpen', e=>obHandleAppUrl(e && e.url)); }catch(e){}
+  // 뒤에 있던 앱이 다시 앞으로 나오면: 날짜가 바뀌었을 수 있으니 알림(7일치)·위젯을 오늘 기준으로 다시 짜요
+  try{ A.addListener('appStateChange', st=>{ if(st && st.isActive && currentUserId && cloudLoadedOK){ try{ obNotifSync(); }catch(e){} try{ obWidgetSync(); }catch(e){} try{ render(); }catch(e){} } }); }catch(e){}
   try{ A.getLaunchUrl().then(r=>{ if(r && r.url) obHandleAppUrl(r.url); }).catch(()=>{}); }catch(e){}
 })();
 (function wireNotif(){
@@ -4724,10 +4742,12 @@ function obNotifRenderPreview(){
   const el=document.getElementById('hbNotifPreview'); if(!el) return;
   const cfg=obNotifGet();
   if(!cfg.on || !habitOn()){ el.innerHTML=''; return; }
-  const s=habitStats(), items=[];
-  for(let i=0;i<7;i++){ const day=addDays(s.today,i); items.push({ day, body:obNotifPick(day,i,cfg).body }); }
+  const s=habitStats(), items=obNotifPlan(cfg, new Date()).filter(x=>!x.back);
   const wd=['일','월','화','수','목','금','토'];
-  el.innerHTML='<p class="nt-pv-h">앞으로 이렇게 알려 드려요</p>'+items.map(x=>`<div class="nt-pv"><span>${+x.day.slice(5,7)}/${+x.day.slice(8,10)} ${wd[new Date(x.day+'T12:00:00').getDay()]}</span><p>${esc(x.body)}</p></div>`).join('')+'<p class="rd-hint">기록한 날과 목표를 채운 주의 남은 날은 쉬어요.</p>';
+  const back=NOTIF_BACK.map(x=>({ day:addDays(s.today,x.d), body:obNotifBackMsg(x.d,cfg).body, d:x.d }));
+  const row=x=>`<div class="nt-pv"><span>${+x.day.slice(5,7)}/${+x.day.slice(8,10)} ${wd[new Date(x.day+'T12:00:00').getDay()]}</span><p>${esc(x.body)}</p></div>`;
+  el.innerHTML='<p class="nt-pv-h">앞으로 이렇게 알려 드려요</p>'+(items.length?items.map(row).join(''):'<p class="rd-hint">이번 주는 목표를 채워서 쉬어요.</p>')+'<p class="rd-hint">기록한 날과 목표를 채운 주의 남은 날은 쉬어요. 앱을 열 때마다 오늘부터 다시 짜요.</p>'
+    +'<p class="nt-pv-h">한동안 앱을 열지 않으면</p>'+back.map(row).join('')+'<p class="rd-hint">10일·14일·21일째에 한 번씩만 알리고 그 뒤로는 쉬어요.</p>';
 }
 (function wireHabit(){
   const ro=document.getElementById('readOverlay'), ho=document.getElementById('habitOverlay');

@@ -144,6 +144,10 @@ if(window.OB_IS_APP){
 #authApple{display:none}
 #qScan{display:none}
 #hbNotifBox{display:none}
+.nt-pv-h{margin:16px 0 6px;font-size:13px;font-weight:700;color:var(--ink)}
+.nt-pv{display:flex;gap:10px;padding:9px 0;border-top:1px solid var(--line)}
+.nt-pv span{flex:none;width:58px;font-size:12px;color:var(--muted);padding-top:1px}
+.nt-pv p{margin:0;font-size:13.5px;line-height:1.5;color:var(--ink);word-break:keep-all}
 .ob-app #hbNotifBox{display:block}
 .hb-nt-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .hb-nt-row .hb-nt{display:inline-flex;align-items:center;gap:8px;margin:0;font-size:14px;font-weight:500;color:var(--ink);letter-spacing:0;min-height:40px}
@@ -2402,7 +2406,9 @@ body.dark .cv-memo{background:rgba(15,20,29,.9);color:#E6EBF3}
           <label class="hb-nt" for="hbNotifOn"><input type="checkbox" id="hbNotifOn"> 알림 받기</label>
           <input type="time" id="hbNotifTime" value="21:00" aria-label="알림 시각" disabled>
         </div>
-        <div class="rd-hint" id="hbNotifNote">아직 기록하지 않은 날에만 알려요. 이번 주 목표를 채우면 남은 날은 쉬어요.</div>
+        <div class="rd-hint" id="hbNotifNote">기록하지 않은 날에만, 매일 다른 말로 알려요 — 읽는 중인 책의 쪽수, 예전에 남긴 문장, 이번 주 기록, 완독 기념일. 알림을 길게 누르면 ‘오늘 읽었어요’로 바로 기록돼요.</div>
+        <label for="hbNotifQuote" style="margin-top:12px;display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;color:var(--ink);cursor:pointer"><input type="checkbox" id="hbNotifQuote" checked> 남긴 문장을 잠금 화면에 보여 주기</label>
+        <div id="hbNotifPreview"></div>
       </div>
       <p class="rd-hint" style="margin-top:14px">알림은 이 아이폰 안에서만 예약돼요. 아이폰 설정 &gt; 오버북 &gt; 알림이 꺼져 있으면 오지 않아요.</p>
     </div>
@@ -4481,13 +4487,86 @@ function obNotifPlugin(){ return (window.OB_IS_APP && window.Capacitor.Plugins &
 function obNotifGet(){
   try{ const d=JSON.parse(localStorage.getItem('ob_notif')||'{}');
     const h=Number.isInteger(d.h)?d.h:21, m=Number.isInteger(d.m)?d.m:0;
-    return { on:!!d.on, h:Math.min(23,Math.max(0,h)), m:Math.min(59,Math.max(0,m)) };
-  }catch(e){ return { on:false, h:21, m:0 }; }
+    return { on:!!d.on, h:Math.min(23,Math.max(0,h)), m:Math.min(59,Math.max(0,m)), q:d.q!==false };
+  }catch(e){ return { on:false, h:21, m:0, q:true }; }
 }
-function obNotifSet(v){ try{ localStorage.setItem('ob_notif', JSON.stringify(v)); }catch(e){} }
+function obNotifSet(v){ try{ const c=obNotifGet(); localStorage.setItem('ob_notif', JSON.stringify(Object.assign({ q:c.q }, v))); }catch(e){} }
 async function obNotifCancel(){
   const LN=obNotifPlugin(); if(!LN) return;
   try{ await LN.cancel({ notifications:NOTIF_IDS.map(id=>({id})) }); }catch(e){}
+}
+const NOTIF_SNOOZE_ID=9108;
+/* ---------- 매일 다른 알림 문구 ----------
+   기기 안에 이미 있는 기록(읽는 중인 책·쪽수, 남긴 문장, 이번 주 기록, 완독 기념일, 회독)으로 그날의 한 줄을 골라요.
+   새로 모으는 정보는 없어요. 알림을 누르면 그 책(또는 나의 독서 길)이 열려요. */
+function obJosa(w,a,b){ const c=(w||'').trim().slice(-1).charCodeAt(0); if(c>=0xAC00&&c<=0xD7A3) return ((c-0xAC00)%28)?a:b; return a+'('+b+')'; }
+function obT(b){ const t=(b.title||'').trim(); return '『'+(t.length>18?t.slice(0,17)+'…':t)+'』'; }
+function obQuotePool(){
+  const out=[];
+  books.forEach(b=>{
+    (b.quote||'').split('\n').map(x=>x.trim()).filter(x=>x.length>=8).forEach(t=>out.push({b,t}));
+    (b.quoteShots||[]).forEach(sh=>{ const t=String(sh.text||'').replace(/\s+/g,' ').trim(); if(t.length>=8) out.push({b,t}); });
+  });
+  return out;
+}
+function obNotifMsg(type, day, i, cfg){
+  const pick=(arr)=>arr.length?arr[(+day.slice(8,10)+i*3)%arr.length]:null;
+  const reading=books.filter(b=>b.status==='reading');
+  if(type==='anniv'){
+    const md=day.slice(5,10), y=+day.slice(0,4);
+    const hit=finishes().filter(x=>/^\d{4}-\d{2}-\d{2}/.test(x.date||'')&&x.date.slice(5,10)===md&&+x.date.slice(0,4)<y);
+    const x=hit[0]; if(!x) return null;
+    const n=y-(+x.date.slice(0,4));
+    return { body:`${n}년 전 오늘 ${obT(x)}${obJosa(x.title,'을','를')} 다 읽었어요. 그때 어떤 문장이 남았나요?`, bookId:x.id };
+  }
+  if(type==='book'){
+    const b=pick(reading); if(!b) return null;
+    const p=+b.currentPage||0, t=+b.totalPages||0;
+    if(p>0&&t>p){
+      const rem=t-p, half=Math.ceil(t/2);
+      if(p<half&&p+15>=half) return { body:`${obT(b)} ${p}쪽에 책갈피가 꽂혀 있어요. 오늘 ${half-p}쪽이면 절반을 넘어요.`, bookId:b.id };
+      const per=20, need=Math.ceil(rem/per), end=addDays(day,need-1);
+      return { body:`${obT(b)} 남은 ${rem}쪽 · 하루 ${per}쪽이면 ${+end.slice(5,7)}월 ${+end.slice(8,10)}일에 다 읽어요.`, bookId:b.id };
+    }
+    if(p>0) return { body:`${obT(b)} ${p}쪽에서 멈춰 있어요. 오늘은 몇 쪽까지 갈까요?`, bookId:b.id };
+    const since=(b.dateStart||'').slice(0,10);
+    if(since){ const d=Math.max(1,Math.round((Date.parse(day)-Date.parse(since))/864e5)+1); return { body:`${obT(b)}${obJosa(b.title,'과','와')} ${d}일째예요. 오늘 한 쪽만 같이 넘겨 볼까요?`, bookId:b.id }; }
+    return { body:`${obT(b)}${obJosa(b.title,'이','가')} 펼쳐지길 기다려요. 한 쪽이어도 좋아요.`, bookId:b.id };
+  }
+  if(type==='quote'){
+    const q=pick(obQuotePool()); if(!q) return null;
+    if(!cfg.q) return { body:`${obT(q.b)}에 남겨 둔 문장이 있어요. 오늘 다시 만나 볼까요?`, bookId:q.b.id };
+    const t=q.t.length>60?q.t.slice(0,58)+'…':q.t;
+    return { body:`${obT(q.b)}에 남긴 문장 — “${t}”`, bookId:q.b.id };
+  }
+  if(type==='week'){
+    const ws=weekStart(day), tg=targetFor(ws);
+    const c=new Set(readLogs.filter(l=>weekStart(l.day)===ws).map(l=>l.day)).size;
+    if(c>=tg) return null;
+    const s=habitStats(), run=(ws===s.ws?s.prevRun:0);
+    if(c+1>=tg) return { body:run?`이번 주 ${c}/${tg}일 · 오늘 읽으면 ${run+1}주째 이어져요.`:`이번 주 ${c}/${tg}일 · 오늘 읽으면 이번 주 목표를 채워요.`, path:true };
+    if(day===addDays(ws,6)) return { body:`이번 주는 오늘까지예요 · ${c}/${tg}일. 한 쪽이어도 한 칸이에요.`, path:true };
+    return { body:`이번 주 ${c}/${tg}일. 오늘 한 칸 채워 볼까요?`, path:true };
+  }
+  if(type==='path'){
+    return { body:'도장이가 다음 칸 앞에서 기다려요. 오늘 한 칸 같이 올라가요.', path:true };
+  }
+  if(type==='reread'){
+    const b=pick(books.filter(x=>readCount(x)>=2)); if(!b) return null;
+    const first=(readsOf(b)[0]||{}); const fy=+(first.start||first.end||'').slice(0,4);
+    const yrs=fy?(+day.slice(0,4))-fy:0;
+    return { body:yrs>=1?`${obT(b)}${obJosa(b.title,'을','를')} 처음 읽은 지 ${yrs}년 · 지금까지 ${readCount(b)}번 함께했어요.`:`${obT(b)}${obJosa(b.title,'과','와')} ${readCount(b)}번째 함께하고 있어요.`, bookId:b.id };
+  }
+  return null;
+}
+const NOTIF_ROT=['book','quote','week','book','reread','quote','path'];
+function obNotifPick(day, i, cfg){
+  const a=obNotifMsg('anniv',day,i,cfg); if(a) return a;
+  const doy=Math.floor((Date.parse(day)-Date.parse(day.slice(0,4)+'-01-01'))/864e5);
+  for(let k=0;k<NOTIF_ROT.length;k++){
+    const m=obNotifMsg(NOTIF_ROT[(doy+k)%NOTIF_ROT.length],day,i,cfg); if(m) return m;
+  }
+  return { body:NOTIF_MSGS[(+day.slice(8,10))%NOTIF_MSGS.length], path:true };
 }
 /* 예약할 날짜 계산(순수 함수): [{id, day, h, m, body}] */
 function obNotifPlan(cfg, now){
@@ -4498,7 +4577,8 @@ function obNotifPlan(cfg, now){
     if(days.has(day)) continue;                                       // 이미 기록한 날
     if(weekStart(day)===s.ws && s.thisDone) continue;                 // 목표를 채운 주의 남은 날
     if(i===0 && (now.getHours()*60+now.getMinutes()) >= cfg.h*60+cfg.m) continue;   // 오늘 시각이 지남
-    out.push({ id:NOTIF_IDS[i], day, h:cfg.h, m:cfg.m, body:NOTIF_MSGS[(+day.slice(8,10))%NOTIF_MSGS.length] });
+    const msg=obNotifPick(day,i,cfg);
+    out.push({ id:NOTIF_IDS[i], day, h:cfg.h, m:cfg.m, body:msg.body, bookId:msg.bookId||null });
   }
   return out;
 }
@@ -4507,16 +4587,18 @@ function obNotifSync(){                                               // 겹쳐 
   obNotifBusy=obNotifBusy.then(async()=>{
     const LN=obNotifPlugin(); if(!LN) return;
     await obNotifCancel();
+    if(readLogs.some(l=>l.day===localDay())){ try{ await LN.cancel({ notifications:[{id:NOTIF_SNOOZE_ID}] }); }catch(e){} }
     if(!currentUserId) return;
     const plan=obNotifPlan(obNotifGet(), new Date()); if(!plan.length) return;
     try{
-      await LN.schedule({ notifications:plan.map(p=>({ id:p.id, title:'오버북', body:p.body, sound:'default',   // 소리를 안 주면 iOS가 소리·진동 없이 조용히 띄움
+      await obNotifActions();
+      await LN.schedule({ notifications:plan.map(p=>({ id:p.id, title:'오버북', body:p.body, sound:'default', actionTypeId:'OB_READ', extra:{ bookId:p.bookId||'' },   // 소리를 안 주면 iOS가 소리·진동 없이 조용히 띄움
         schedule:{ on:{ year:+p.day.slice(0,4), month:+p.day.slice(5,7), day:+p.day.slice(8,10), hour:p.h, minute:p.m } } })) });
     }catch(e){ console.warn('알림 예약 실패', e); }
   }).catch(()=>{});
   return obNotifBusy;
 }
-function openNotif(){ obNotifRenderUI(); open('notifOverlay'); }
+function openNotif(){ obNotifRenderUI(); obNotifRenderPreview(); open('notifOverlay'); }
 function obNotifLabel(){ const c=obNotifGet(); return c.on ? `${c.h<12?'오전':'오후'} ${((c.h+11)%12)+1}:${String(c.m).padStart(2,'0')}` : '꺼짐'; }
 function obNotifRenderUI(){
   const box=document.getElementById('hbNotifBox'); if(!box || !obNotifPlugin()) return;
@@ -4524,6 +4606,7 @@ function obNotifRenderUI(){
   document.getElementById('hbNotifOn').checked=c.on;
   const t=document.getElementById('hbNotifTime'); t.disabled=!c.on;
   t.value=String(c.h).padStart(2,'0')+':'+String(c.m).padStart(2,'0');
+  const q=document.getElementById('hbNotifQuote'); if(q){ q.checked=c.q; q.disabled=!c.on; }
 }
 async function obNotifToggle(on){
   const LN=obNotifPlugin(); if(!LN) return;
@@ -4534,12 +4617,12 @@ async function obNotifToggle(on){
     if(!ok){ obNotifSet({ on:false, h:c.h, m:c.m }); obNotifRenderUI(); await obNotifCancel();
       showToast('알림이 꺼져 있어요. 아이폰 설정 > 오버북 > 알림에서 허용해 주세요'); return; }
   }
-  obNotifSet({ on:!!on, h:c.h, m:c.m }); obNotifRenderUI(); await obNotifSync();
+  obNotifSet({ on:!!on, h:c.h, m:c.m }); obNotifRenderUI(); obNotifRenderPreview(); await obNotifSync();
   if(on) showToast(`기록 안 한 날 ${c.h<12?'오전':'오후'} ${((c.h+11)%12)+1}:${String(c.m).padStart(2,'0')}에 알려 드릴게요`);
 }
 function obNotifTimeChanged(v){
   const mt=/^(\d{1,2}):(\d{2})/.exec(v||''); if(!mt) return;
-  const c=obNotifGet(); obNotifSet({ on:c.on, h:Math.min(23,+mt[1]), m:Math.min(59,+mt[2]) }); obNotifSync();
+  const c=obNotifGet(); obNotifSet({ on:c.on, h:Math.min(23,+mt[1]), m:Math.min(59,+mt[2]) }); obNotifSync(); obNotifRenderPreview();
 }
 /* ---------- 홈 화면 위젯 (앱 전용) ----------
    앱이 '이번 주 기록·연속 주·읽는 중인 책'을 한 덩어리로 정리해 아이폰 안의 위젯 공유 공간에 적어 둬요(서버로 보내지 않음).
@@ -4578,6 +4661,7 @@ function obOpenPathIfReady(){
   obPendingPath=false;
   try{ openHabit(); }catch(e){}
 }
+function obAfterLoad(){ obOpenPathIfReady(); try{ obRunPendingNotif(); }catch(e){} }
 function obHandleAppUrl(url){
   if(!/^overbook:\/\/path\b/i.test(String(url||''))) return;
   obPendingPath=true; obOpenPathIfReady();
@@ -4592,7 +4676,59 @@ function obHandleAppUrl(url){
   const on=document.getElementById('hbNotifOn'), t=document.getElementById('hbNotifTime'); if(!on || !t) return;
   on.onchange=()=>obNotifToggle(on.checked);
   t.onchange=()=>obNotifTimeChanged(t.value);
+  const q=document.getElementById('hbNotifQuote');
+  if(q) q.onchange=()=>{ obNotifSet({ q:q.checked }); obNotifSync(); obNotifRenderPreview(); };
+  const LN=obNotifPlugin(); if(!LN) return;
+  try{ LN.addListener('localNotificationActionPerformed', ev=>{
+    const n=(ev&&ev.notification)||{}, ex=n.extra||{};
+    obPendingNotif={ action:(ev&&ev.actionId)||'tap', bookId:ex.bookId||'', body:n.body||'' };
+    obRunPendingNotif();
+  }); }catch(e){}
 })();
+/* 알림 버튼: [📖 오늘 읽었어요]는 앱을 열며 바로 기록, [1시간 뒤에]는 한 시간 뒤 같은 알림 한 번 더 */
+let obNotifActionsOK=false;
+async function obNotifActions(){
+  const LN=obNotifPlugin(); if(!LN || obNotifActionsOK) return;
+  try{ await LN.registerActionTypes({ types:[{ id:'OB_READ', actions:[
+    { id:'read', title:'📖 오늘 읽었어요', foreground:true },
+    { id:'later', title:'1시간 뒤에 다시' } ] }] }); obNotifActionsOK=true; }catch(e){ console.warn('알림 버튼 등록 실패', e); }
+}
+let obPendingNotif=null;
+async function obRunPendingNotif(){
+  const p=obPendingNotif; if(!p) return;
+  const LN=obNotifPlugin();
+  if(p.action==='later'){
+    obPendingNotif=null;
+    if(!LN) return;
+    const d=new Date(Date.now()+3600e3);
+    try{ await LN.schedule({ notifications:[{ id:NOTIF_SNOOZE_ID, title:'오버북', body:p.body||'다시 알려 드려요. 한 쪽이어도 좋아요.', sound:'default', actionTypeId:'OB_READ', extra:{ bookId:p.bookId||'' },
+      schedule:{ on:{ year:d.getFullYear(), month:d.getMonth()+1, day:d.getDate(), hour:d.getHours(), minute:d.getMinutes() } } }] }); }catch(e){ console.warn(e); }
+    return;
+  }
+  if(!currentUserId || !cloudLoadedOK) return;                      // 불러오기가 끝난 뒤 다시 불려요
+  obPendingNotif=null;
+  const b=p.bookId?books.find(x=>x.id===p.bookId):null;
+  if(p.action==='read'){
+    const rb=(b&&b.status==='reading')?b:books.find(x=>x.status==='reading');
+    if(habitOn()){
+      await logActivity('read', rb?rb.id:null);
+      try{ render(); }catch(e){}
+      showToast(rb?`${obT(rb)} 오늘 기록했어요`:'오늘 읽은 날로 기록했어요');
+    }
+    if(rb){ try{ openRead(rb.id); }catch(e){} }                     // 쪽수도 남기고 싶으면 바로 적을 수 있게
+    return;
+  }
+  if(b){ try{ openDetail(b.id); }catch(e){} } else { try{ openHabit(); }catch(e){} }
+}
+function obNotifRenderPreview(){
+  const el=document.getElementById('hbNotifPreview'); if(!el) return;
+  const cfg=obNotifGet();
+  if(!cfg.on || !habitOn()){ el.innerHTML=''; return; }
+  const s=habitStats(), items=[];
+  for(let i=0;i<7;i++){ const day=addDays(s.today,i); items.push({ day, body:obNotifPick(day,i,cfg).body }); }
+  const wd=['일','월','화','수','목','금','토'];
+  el.innerHTML='<p class="nt-pv-h">앞으로 이렇게 알려 드려요</p>'+items.map(x=>`<div class="nt-pv"><span>${+x.day.slice(5,7)}/${+x.day.slice(8,10)} ${wd[new Date(x.day+'T12:00:00').getDay()]}</span><p>${esc(x.body)}</p></div>`).join('')+'<p class="rd-hint">기록한 날과 목표를 채운 주의 남은 날은 쉬어요.</p>';
+}
 (function wireHabit(){
   const ro=document.getElementById('readOverlay'), ho=document.getElementById('habitOverlay');
   if(!ro || !ho) return;
@@ -7808,7 +7944,7 @@ async function enterApp(session){
     const ld=document.getElementById('authLoading'); ld.classList.remove('hide'); ld.textContent='책장을 불러오는 중…';
     showGate();
     const ok=await bootWithData();
-    if(ok){ hideGate(); checkVisitStreak(); track('app_open'); frHandleInvite(); frRefreshBadge(); frCheckMonthly(); obWidgetSync(); obOpenPathIfReady(); } else showLoadError();
+    if(ok){ hideGate(); checkVisitStreak(); track('app_open'); frHandleInvite(); frRefreshBadge(); frCheckMonthly(); obWidgetSync(); obAfterLoad(); } else showLoadError();
   } else {
     bootedUser=null; currentUserId=null;
     books=[]; reactions={}; goals={};
